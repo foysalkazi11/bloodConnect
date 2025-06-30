@@ -1,0 +1,91 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try Again",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "navigation": {
+    "home": "Home",
+    "search": "Search",
+    "gallery": "Gallery",
+    "clubs": "Clubs",
+    "profile": "Profile"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "dontHaveAccount": "Don't have an account?",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInWithGoogle": "Sign in with Google",
+    "signInWithFacebook": "Sign in with Facebook"
+  },
+  "home": {
+    "title": "Save Lives Together",
+    "subtitle": "Connecting blood donors with those in need",
+    "heroMessage": "Every donation can save up to 3 lives",
+    "callToAction": "Find Donors",
+    "becomeDonor": "Become a Donor",
+    "stats": {
+      "donors": "Donors",
+      "clubs": "Clubs",
+      "donations": "Donations This Month"
+    }
+  },
+  "search": {
+    "title": "Find Blood Donors",
+    "bloodGroup": "Blood Group",
+    "location": "Location",
+    "district": "District",
+    "policeStation": "Police Station",
+    "availability": "Available Now",
+    "results": "Search Results",
+    "noResults": "No donors found matching your criteria",
+    "contactDonor": "Contact Donor"
+  },
+  "gallery": {
+    "title": "Donation Stories",
+    "shareStory": "Share Your Story",
+    "noStories": "No stories shared yet",
+    "likes": "likes"
+  },
+  "clubs": {
+    "title": "Blood Donation Clubs",
+    "joinClub": "Join Club",
+    "createClub": "Create Club",
+    "members": "members",
+    "noClubs": "No clubs found"
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "signOut": "Sign Out"
+  },
+  "bloodGroups": {
+    "A+": "A+",
+    "A-": "A-",
+    "B+": "B+",
+    "B-": "B-",
+    "AB+": "AB+",
+    "AB-": "AB-",
+    "O+": "O+",
+    "O-": "O-"
+  }
+}

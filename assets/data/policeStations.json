@@ -1,0 +1,3826 @@
+{
+    "content": [
+        {
+            "id": "0002",
+            "name": "ABHAYNAGAR",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0003",
+            "name": "ADABOR",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0004",
+            "name": "ADAMDIGHI",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0005",
+            "name": "ADITMARI",
+            "districtId": "52",
+            "rpoId": "4220"
+        },
+        {
+            "id": "0006",
+            "name": "AGAILJHARA",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "1126",
+            "name": "AIRPORT",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "4416",
+            "name": "AIRPORT",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "1136",
+            "name": "AIRPORT",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0563",
+            "name": "AIRPORT",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0007",
+            "name": "AJMIRIGANJ",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "1166",
+            "name": "AKBARSHAH",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0008",
+            "name": "AKHAURA",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0009",
+            "name": "AKKELPUR",
+            "districtId": "38",
+            "rpoId": "4216"
+        },
+        {
+            "id": "0010",
+            "name": "ALAMDANGA",
+            "districtId": "18",
+            "rpoId": "4206"
+        },
+        {
+            "id": "0011",
+            "name": "ALFADANGA",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0012",
+            "name": "ALIKADAM",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0956",
+            "name": "AMINPUR",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0013",
+            "name": "AMTOLI",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "0014",
+            "name": "ANWARA",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0015",
+            "name": "ARAIHAZAR",
+            "districtId": "67",
+            "rpoId": "4117"
+        },
+        {
+            "id": "4391",
+            "name": "ARONGHATA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0017",
+            "name": "ASHASHUNI",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0016",
+            "name": "ASHUGANJ",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0665",
+            "name": "ASHULIA",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0961",
+            "name": "ATAIKULA",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0018",
+            "name": "ATGHARIA",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0019",
+            "name": "ATPARA",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0020",
+            "name": "ATRAI",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0021",
+            "name": "ATWARI",
+            "districtId": "77",
+            "rpoId": "4229"
+        },
+        {
+            "id": "0022",
+            "name": "AUSTAGRAM",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0023",
+            "name": "BABUGANJ",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0024",
+            "name": "BADALGACHHI",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0025",
+            "name": "BADARGANJ",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0026",
+            "name": "BADDA",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0027",
+            "name": "BAGATIPARA",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0028",
+            "name": "BAGERHAT SADAR",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0029",
+            "name": "BAGHA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0030",
+            "name": "BAGHAICHHARI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0031",
+            "name": "BAGHERPARA",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0032",
+            "name": "BAGMARA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0033",
+            "name": "BAHUBAL",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0034",
+            "name": "BAJITPUR",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0035",
+            "name": "BAKALIA",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0036",
+            "name": "BAKERGANJ",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0037",
+            "name": "BAKSHIGONJ",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0038",
+            "name": "BALAGANJ",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0039",
+            "name": "BALIADANGI",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0040",
+            "name": "BALIAKANDI",
+            "districtId": "82",
+            "rpoId": "4231"
+        },
+        {
+            "id": "0041",
+            "name": "BAMNA",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "1131",
+            "name": "BANANI",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0042",
+            "name": "BANARIPARA",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0043",
+            "name": "BANCHARAMPUR",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "1118",
+            "name": "BANDAR",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0657",
+            "name": "BANDAR",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0044",
+            "name": "BANDAR",
+            "districtId": "67",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0045",
+            "name": "BANDARBAN SADAR",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "4425",
+            "name": "BANGABANDHU SETU EAST",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "1108",
+            "name": "BANGABANDHU SETU WEST",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "4396",
+            "name": "BANGABANDU SETU EAST",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "4397",
+            "name": "BANGORA BAZAR",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0568",
+            "name": "BANGSHAL",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0046",
+            "name": "BANIACHONG",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0047",
+            "name": "BANSHKHALI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0048",
+            "name": "BARAIGRAM",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0049",
+            "name": "BARGUNA",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "0050",
+            "name": "BARHATTA",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0052",
+            "name": "BARKAL",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0053",
+            "name": "BARLEKHA",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "0054",
+            "name": "BARURA",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0055",
+            "name": "BASAIL",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "4404",
+            "name": "BASON",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0056",
+            "name": "BATIAGHATA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0057",
+            "name": "BAUPHAL",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0058",
+            "name": "BAYEZID BOSTAMI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0059",
+            "name": "BEANIBAZAR",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0060",
+            "name": "BEGUMGANJ",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0061",
+            "name": "BELABO",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0062",
+            "name": "BELAICHHARI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0063",
+            "name": "BELKUCHI",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "1109",
+            "name": "BENAPOLE PORT",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0064",
+            "name": "BERA",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0065",
+            "name": "BETAGI",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "0066",
+            "name": "BHAIRAB",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0067",
+            "name": "BHALUKA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0068",
+            "name": "BHANDARIA",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0069",
+            "name": "BHANGA",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0070",
+            "name": "BHANGURA",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "4427",
+            "name": "BHASAN CHAR",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0071",
+            "name": "BHEDARGANJ",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0072",
+            "name": "BHERAMARA",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0074",
+            "name": "BHOLAHAT",
+            "districtId": "70",
+            "rpoId": "4205"
+        },
+        {
+            "id": "0073",
+            "name": "BHOLA SADAR MODEL",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0075",
+            "name": "BHUAPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "1117",
+            "name": "BHUJPUR",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "4429",
+            "name": "BHULLY",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0076",
+            "name": "BHURUNGAMARI",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "1124",
+            "name": "BIJOYNAGAR",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "4417",
+            "name": "BILPUKUR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0078",
+            "name": "BIRAL",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0079",
+            "name": "BIRAMPUR",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0080",
+            "name": "BIRGANJ",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0081",
+            "name": "BISHWAMBARPUR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0082",
+            "name": "BISHWANATH",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0083",
+            "name": "BOALIA MODEL",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0084",
+            "name": "BOALKHALI",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0085",
+            "name": "BOALMARI",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0086",
+            "name": "BOCHAGANJ",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0087",
+            "name": "BODA",
+            "districtId": "77",
+            "rpoId": "4229"
+        },
+        {
+            "id": "0088",
+            "name": "BOGURA SADAR",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0090",
+            "name": "BRAHMANBARIA SADAR",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0089",
+            "name": "BRAHMANPARA",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0091",
+            "name": "BURHANUDDIN",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0092",
+            "name": "BURICHONG",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0093",
+            "name": "CANTONMENT",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0094",
+            "name": "CHAKARIA",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0095",
+            "name": "CHANDANAISH",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0096",
+            "name": "CHANDGAON",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0097",
+            "name": "CHANDINA",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0098",
+            "name": "CHANDPUR SADAR MODEL",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "4414",
+            "name": "CHANDRAGONJ",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "4418",
+            "name": "CHANDRIMA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0694",
+            "name": "CHANDROGHONA",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0100",
+            "name": "CHAR BHADRASAN",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0101",
+            "name": "CHARFESSON",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0103",
+            "name": "CHARGHAT",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0754",
+            "name": "CHARJABBAR",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0102",
+            "name": "CHAR RAJIBPUR",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0104",
+            "name": "CHATKHIL",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0105",
+            "name": "CHATMOHAR",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0106",
+            "name": "CHAUDDAGRAM",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0107",
+            "name": "CHAUGACHHA",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "4389",
+            "name": "CHAWKBAZAR",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0570",
+            "name": "CHAWKBAZAR",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0109",
+            "name": "CHHAGALNAIYA",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "0110",
+            "name": "CHHATAK",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0111",
+            "name": "CHILMARI",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0112",
+            "name": "CHIRIRBANDAR",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0113",
+            "name": "CHITALMARI",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0108",
+            "name": "CHOWHALI",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0115",
+            "name": "CHUADANGA SADAR",
+            "districtId": "18",
+            "rpoId": "4206"
+        },
+        {
+            "id": "0116",
+            "name": "CHUNARUGHAT",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0119",
+            "name": "COMPANIGONJ",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0120",
+            "name": "COMPANYGONJ",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0121",
+            "name": "COX'S BAZAR ",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0122",
+            "name": "DACOPE",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0123",
+            "name": "DAGANBHUIYAN",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "1139",
+            "name": "DAKSHIN AICHA",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0126",
+            "name": "DAKSHINKHAN",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0124",
+            "name": "DAKSHIN SUNAMGANJ",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "4422",
+            "name": "DAMKURA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0127",
+            "name": "DAMUDYA",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0128",
+            "name": "DAMURHUDA",
+            "districtId": "18",
+            "rpoId": "4206"
+        },
+        {
+            "id": "4411",
+            "name": "DARSHANA",
+            "districtId": "18",
+            "rpoId": "4206"
+        },
+        {
+            "id": "0572",
+            "name": "DARUS SALAM",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "4394",
+            "name": "DASHAR",
+            "districtId": "54",
+            "rpoId": "4221"
+        },
+        {
+            "id": "0129",
+            "name": "DASHMINA",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0130",
+            "name": "DAUDKANDI",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0132",
+            "name": "DAULATPUR",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0134",
+            "name": "DAULATPUR",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0133",
+            "name": "DAULATPUR",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0135",
+            "name": "DEBHATA",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0136",
+            "name": "DEBIDWAR",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0137",
+            "name": "DEBIGANJ",
+            "districtId": "77",
+            "rpoId": "4229"
+        },
+        {
+            "id": "0138",
+            "name": "DELDUAR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0139",
+            "name": "DEMRA",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0140",
+            "name": "DERAI",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0141",
+            "name": "DEWANGANJ",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0142",
+            "name": "DHAMOIRHAT",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0143",
+            "name": "DHAMRAI",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0144",
+            "name": "DHANBARI",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0145",
+            "name": "DHANMONDI",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0146",
+            "name": "DHARAMPASHA",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0147",
+            "name": "DHOBAURA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0148",
+            "name": "DHUNAT",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0149",
+            "name": "DHUPCHANCHIA",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0151",
+            "name": "DIGHINALA",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0150",
+            "name": "DIGHOLIA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0152",
+            "name": "DIMLA",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "0154",
+            "name": "DOHAR",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0155",
+            "name": "DOMAR",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "0156",
+            "name": "DOUBLE MOORING",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0131",
+            "name": "DOULATKHAN",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0157",
+            "name": "DOWARABAZAR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "4423",
+            "name": "DULARHAT",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0158",
+            "name": "DUMKI",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0159",
+            "name": "DUMURIA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0160",
+            "name": "DURGAPUR",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0161",
+            "name": "DURGAPUR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0927",
+            "name": "DUSMARA",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "4428",
+            "name": "EIDGAON",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0968",
+            "name": "ENAYETPUR",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "1167",
+            "name": "EPZ",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0162",
+            "name": "FAKIRHAT",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0163",
+            "name": "FARIDGANJ",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0164",
+            "name": "FARIDPUR",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0166",
+            "name": "FATIKCHHARI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0765",
+            "name": "FATULLAH",
+            "districtId": "67",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0167",
+            "name": "FENCHUGANJ",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0168",
+            "name": "FENI SADAR",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "0170",
+            "name": "FULBARIA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0171",
+            "name": "FULCHHARI",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0172",
+            "name": "FULGAZI",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "0173",
+            "name": "GABTALI",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "4405",
+            "name": "GACHA",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0174",
+            "name": "GAFORGAON",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0175",
+            "name": "GAIBANDHA SADAR",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0176",
+            "name": "GALACHIPA",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0177",
+            "name": "GANGACHARA",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0178",
+            "name": "GANGNI",
+            "districtId": "57",
+            "rpoId": "4223"
+        },
+        {
+            "id": "0181",
+            "name": "GAZARIA",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0182",
+            "name": "GAZIPUR SADAR",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0567",
+            "name": "GENDARIA",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0183",
+            "name": "GHATAIL",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0184",
+            "name": "GHIOR",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0185",
+            "name": "GHORAGHAT",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0186",
+            "name": "GOALANDA GHAT",
+            "districtId": "82",
+            "rpoId": "4231"
+        },
+        {
+            "id": "0187",
+            "name": "GOBINDAGANJ",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0188",
+            "name": "GODAGARI",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0189",
+            "name": "GOLAPGONJ",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0190",
+            "name": "GOMOSTAPUR",
+            "districtId": "70",
+            "rpoId": "4205"
+        },
+        {
+            "id": "0191",
+            "name": "GOPALGANJ",
+            "districtId": "35",
+            "rpoId": "4108"
+        },
+        {
+            "id": "0192",
+            "name": "GOPALPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0193",
+            "name": "GOSAIRHAT",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0179",
+            "name": "GOURIPUR",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0180",
+            "name": "GOURNADI",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0194",
+            "name": "GOWAINGHAT",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0712",
+            "name": "GUIMARA",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0195",
+            "name": "GULSHAN",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0196",
+            "name": "GURUDASPUR",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0197",
+            "name": "HABIGANJ",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0198",
+            "name": "HAIMCHAR",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0200",
+            "name": "HAKIMPUR",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0201",
+            "name": "HALISHAHAR",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0202",
+            "name": "HALUAGHAT",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "4401",
+            "name": "HARAGACH",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0203",
+            "name": "HARINAKUNDA",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "0204",
+            "name": "HARIPUR",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0205",
+            "name": "HARIRAMPUR",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0206",
+            "name": "HATHAZARI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0207",
+            "name": "HATIBANDHA",
+            "districtId": "52",
+            "rpoId": "4220"
+        },
+        {
+            "id": "4413",
+            "name": "HATIRJHEEL",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0208",
+            "name": "HATIYA",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0209",
+            "name": "HAZARIBAGH",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0199",
+            "name": "HAZIGANJ",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "4399",
+            "name": "HAZIRHAT",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0210",
+            "name": "HIZLA",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0211",
+            "name": "HOMNA",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "4392",
+            "name": "HORINTANA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0212",
+            "name": "HOSSAINPUR",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "1110",
+            "name": "INDURKANI",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0213",
+            "name": "ISHWARDI",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0214",
+            "name": "ISHWARGANJ",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0833",
+            "name": "ISLAMIC UNIVERSITY",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0215",
+            "name": "ISLAMPUR",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0216",
+            "name": "ITNA",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0217",
+            "name": "JAGANNATHPUR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0218",
+            "name": "JAINTAPUR",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0533",
+            "name": "JAJIRA",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "1127",
+            "name": "JALALABAD",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0219",
+            "name": "JALDHAKA",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "0220",
+            "name": "JAMALGANJ",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0221",
+            "name": "JAMALPUR SADAR",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0222",
+            "name": "JATRABARI",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0223",
+            "name": "JHALOKATI",
+            "districtId": "42",
+            "rpoId": "4214"
+        },
+        {
+            "id": "0224",
+            "name": "JHENAIDAH",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "0225",
+            "name": "JHENAIGATI",
+            "districtId": "89",
+            "rpoId": "4233"
+        },
+        {
+            "id": "0226",
+            "name": "JHIKARGACHHA",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0227",
+            "name": "JIBANNAGAR",
+            "districtId": "18",
+            "rpoId": "4206"
+        },
+        {
+            "id": "1165",
+            "name": "JORARGANJ",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0841",
+            "name": "JOYDEBPUR",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0228",
+            "name": "JOYPURHAT",
+            "districtId": "38",
+            "rpoId": "4216"
+        },
+        {
+            "id": "0229",
+            "name": "JURAICHHARI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0230",
+            "name": "JURI",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "0231",
+            "name": "KABIRHAT",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0924",
+            "name": "KACHAKATA",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0232",
+            "name": "KACHUA",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0233",
+            "name": "KACHUA",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0573",
+            "name": "KADOMTALI",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0234",
+            "name": "KAFRUL",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0235",
+            "name": "KAHALOO",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0236",
+            "name": "KAHAROLE",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0569",
+            "name": "KALABAGAN",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0238",
+            "name": "KALAI",
+            "districtId": "38",
+            "rpoId": "4216"
+        },
+        {
+            "id": "0237",
+            "name": "KALAPARA",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0239",
+            "name": "KALAROA",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0240",
+            "name": "KALIA",
+            "districtId": "65",
+            "rpoId": "4227"
+        },
+        {
+            "id": "0241",
+            "name": "KALIAKAIR",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0245",
+            "name": "KALIGANJ",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0243",
+            "name": "KALIGANJ",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "0244",
+            "name": "KALIGANJ",
+            "districtId": "52",
+            "rpoId": "4220"
+        },
+        {
+            "id": "0242",
+            "name": "KALIGANJ",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0246",
+            "name": "KALIHATI",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0247",
+            "name": "KALKINI",
+            "districtId": "54",
+            "rpoId": "4221"
+        },
+        {
+            "id": "0248",
+            "name": "KALMAKANDA",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "1157",
+            "name": "KALUKHALI",
+            "districtId": "82",
+            "rpoId": "4231"
+        },
+        {
+            "id": "0250",
+            "name": "KAMALNAGAR",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "0251",
+            "name": "KAMARKHAND",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0252",
+            "name": "KAMRANGIRCHAR",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0253",
+            "name": "KANAIGHAT",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0255",
+            "name": "KAPASIA",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0256",
+            "name": "KAPTAI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0257",
+            "name": "KARIMGANJ",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "1112",
+            "name": "KARNAPHULI",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0258",
+            "name": "KASBA",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "4419",
+            "name": "KASHIADANGA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0259",
+            "name": "KASHIANI",
+            "districtId": "35",
+            "rpoId": "4108"
+        },
+        {
+            "id": "4410",
+            "name": "KASIMPUR",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "4420",
+            "name": "KATAKHALI",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0254",
+            "name": "KATHALIA",
+            "districtId": "42",
+            "rpoId": "4214"
+        },
+        {
+            "id": "0260",
+            "name": "KATIADI",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0261",
+            "name": "KAUNIA",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0262",
+            "name": "KAWKHALI",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0263",
+            "name": "KAWKHALI (BETBUNIA)",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "1120",
+            "name": "KAWNIA",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0264",
+            "name": "KAZIPUR",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "1163",
+            "name": "KAZIRHAT",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0265",
+            "name": "KENDUA",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0266",
+            "name": "KERANIGANJ MODEL",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0267",
+            "name": "KESHABPUR",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0268",
+            "name": "KHAGRACHARI",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0269",
+            "name": "KHALIAJURI",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0270",
+            "name": "KHALISHPUR",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0271",
+            "name": "KHAN JAHAN ALI",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0272",
+            "name": "KHANSAMA",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0273",
+            "name": "KHETLAL",
+            "districtId": "38",
+            "rpoId": "4216"
+        },
+        {
+            "id": "0274",
+            "name": "KHILGAON",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0275",
+            "name": "KHILKHET",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0276",
+            "name": "KHOKSA",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0277",
+            "name": "KHULNA SADAR",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0278",
+            "name": "KHULSHI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0280",
+            "name": "KISHOREGANJ",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "0279",
+            "name": "KISHOREGANJ SADAR",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0249",
+            "name": "KOMOLGANJ",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "4409",
+            "name": "KONABARI",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "4421",
+            "name": "KORNAHAR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0281",
+            "name": "KOTALIPARA",
+            "districtId": "35",
+            "rpoId": "4108"
+        },
+        {
+            "id": "0282",
+            "name": "KOTCHANDPUR",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "0283",
+            "name": "KOTOWALI",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0285",
+            "name": "KOTWALI",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0284",
+            "name": "KOTWALI",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "1089",
+            "name": "KOTWALI",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0636",
+            "name": "KOTWALI",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "1047",
+            "name": "KOTWALI",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "4398",
+            "name": "KOTWALI",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0700",
+            "name": "KOTWALI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0894",
+            "name": "KOTWALI METRO",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "1003",
+            "name": "KOTWALI MODEL",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0720",
+            "name": "KOTWALI MODEL",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0286",
+            "name": "KOYRA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0287",
+            "name": "KULAURA",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "0288",
+            "name": "KULIARCHAR",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0289",
+            "name": "KUMARKHALI",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0290",
+            "name": "KURIGRAM SADAR",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0291",
+            "name": "KUSHTIA MODEL",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0292",
+            "name": "KUTUBDIA",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "4390",
+            "name": "LABANCHORA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0293",
+            "name": "LAKHAI",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0294",
+            "name": "LAKSAM",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0296",
+            "name": "LAKSHMIPUR SADAR",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "0297",
+            "name": "LALBAGH",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "4412",
+            "name": "LALMAI",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0298",
+            "name": "LALMOHAN",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0299",
+            "name": "LALMONIRHAT",
+            "districtId": "52",
+            "rpoId": "4220"
+        },
+        {
+            "id": "0300",
+            "name": "LALPUR",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0301",
+            "name": "LAMA",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0302",
+            "name": "LANGADU",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0295",
+            "name": "LAXMICHHARI",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0303",
+            "name": "LOHAGARA",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0304",
+            "name": "LOHAGARA",
+            "districtId": "65",
+            "rpoId": "4227"
+        },
+        {
+            "id": "0305",
+            "name": "LOUHAJONG",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0307",
+            "name": "MADARGANJ",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0308",
+            "name": "MADARIPUR SADAR",
+            "districtId": "54",
+            "rpoId": "4221"
+        },
+        {
+            "id": "4393",
+            "name": "MADHABDI",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0309",
+            "name": "MADHABPUR",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "1064",
+            "name": "MADHANAGAR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0310",
+            "name": "MADHUKHALI",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0311",
+            "name": "MADHUPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0312",
+            "name": "MAGURA SADAR",
+            "districtId": "55",
+            "rpoId": "4222"
+        },
+        {
+            "id": "0313",
+            "name": "MAHADEBPUR",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0315",
+            "name": "MAHESHKHALI",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0316",
+            "name": "MAHESHPUR",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "4403",
+            "name": "MAHIGONJ",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0317",
+            "name": "MANDA",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0318",
+            "name": "MANIKCHARI",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0319",
+            "name": "MANIKGANJ SADAR",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0320",
+            "name": "MANIRAMPUR",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0322",
+            "name": "MANOHARGANJ",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0323",
+            "name": "MANPURA",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0324",
+            "name": "MATHBARIA",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0326",
+            "name": "MATIRANGA",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0327",
+            "name": "MATLAB DAKSHIN",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0328",
+            "name": "MATLAB UTTAR",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0330",
+            "name": "MEGHNA",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0333",
+            "name": "MEHENDIGANJ",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0331",
+            "name": "MEHERPUR SADAR",
+            "districtId": "57",
+            "rpoId": "4223"
+        },
+        {
+            "id": "0332",
+            "name": "MELANDOHO",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0335",
+            "name": "MIRPUR",
+            "districtId": "50",
+            "rpoId": "4112"
+        },
+        {
+            "id": "0334",
+            "name": "MIRPUR",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0336",
+            "name": "MIRSHARAI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0337",
+            "name": "MIRZAGANJ",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0338",
+            "name": "MIRZAPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0340",
+            "name": "MITHAMAIN",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0339",
+            "name": "MITHA PUKUR",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0306",
+            "name": "MODON",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "1133",
+            "name": "MOGLABAZAR",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0314",
+            "name": "MOHALCHARI",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0341",
+            "name": "MOHAMMADPUR",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0342",
+            "name": "MOHAMMADPUR",
+            "districtId": "55",
+            "rpoId": "4222"
+        },
+        {
+            "id": "0343",
+            "name": "MOHANGANJ",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0344",
+            "name": "MOHANPUR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "2120",
+            "name": "MOHIPUR",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0345",
+            "name": "MOLLAHAT",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0346",
+            "name": "MONGLA",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0321",
+            "name": "MONOHARDI",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0347",
+            "name": "MORRELGANJ",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0325",
+            "name": "MOTIHAR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0348",
+            "name": "MOTIJHEEL",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0329",
+            "name": "MOULVIBAZAR SADAR",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "1155",
+            "name": "MUGDA",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0349",
+            "name": "MUJIBNAGAR",
+            "districtId": "57",
+            "rpoId": "4223"
+        },
+        {
+            "id": "0350",
+            "name": "MUKSUDPUR",
+            "districtId": "35",
+            "rpoId": "4108"
+        },
+        {
+            "id": "0351",
+            "name": "MUKTAGACHA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0352",
+            "name": "MULADI",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0353",
+            "name": "MUNSHIGANJ",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0354",
+            "name": "MURADNAGAR",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0356",
+            "name": "NABIGANJ",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0357",
+            "name": "NABINAGAR",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0358",
+            "name": "NACHOL",
+            "districtId": "70",
+            "rpoId": "4205"
+        },
+        {
+            "id": "0359",
+            "name": "NAGARKANDA",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0360",
+            "name": "NAGARPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0361",
+            "name": "NAGESHWARI",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0362",
+            "name": "NAIKHONGCHHARI",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0363",
+            "name": "NAKLA",
+            "districtId": "89",
+            "rpoId": "4233"
+        },
+        {
+            "id": "0364",
+            "name": "NALCHITY",
+            "districtId": "42",
+            "rpoId": "4214"
+        },
+        {
+            "id": "0881",
+            "name": "NALDANGA",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0365",
+            "name": "NALITABARI",
+            "districtId": "89",
+            "rpoId": "4233"
+        },
+        {
+            "id": "0366",
+            "name": "NANDAIL",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0367",
+            "name": "NANDIGRAM",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0368",
+            "name": "NANGALKOT",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0369",
+            "name": "NANIARCHAR",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0370",
+            "name": "NAOGAON SADAR",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0830",
+            "name": "NARAGATI",
+            "districtId": "65",
+            "rpoId": "4227"
+        },
+        {
+            "id": "0371",
+            "name": "NARAIL SADAR",
+            "districtId": "65",
+            "rpoId": "4227"
+        },
+        {
+            "id": "0372",
+            "name": "NARAYANGANJ SADAR",
+            "districtId": "67",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0373",
+            "name": "NARIA",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0374",
+            "name": "NARSINGDI SADAR",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0375",
+            "name": "NASIRNAGAR",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0376",
+            "name": "NATORE",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0378",
+            "name": "NAWABGANJ",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0377",
+            "name": "NAWABGONJ",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0379",
+            "name": "NAZIRPUR",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0380",
+            "name": "NESARABAD",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0381",
+            "name": "NETROKONA SADAR MODEL",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0382",
+            "name": "NEW MARKET",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0383",
+            "name": "NIAMATPUR",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0384",
+            "name": "NIKLI",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0385",
+            "name": "NILPHAMARI SADAR",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "0537",
+            "name": "OSMANINAGAR",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0387",
+            "name": "PABA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0388",
+            "name": "PABNA SADAR",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "4426",
+            "name": "PADMA SETU NORTH",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "4424",
+            "name": "PADMA SETU SOUTH",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "4395",
+            "name": "PAGLA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0389",
+            "name": "PAHARTOLI",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0390",
+            "name": "PAIKGASA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0391",
+            "name": "PAKUNDIA",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "0392",
+            "name": "PALASH",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0393",
+            "name": "PALASHBARI",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0394",
+            "name": "PALLABI",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "1101",
+            "name": "PALONG MODEL",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0395",
+            "name": "PALTAN MODEL",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0396",
+            "name": "PANCHAGARH SADAR",
+            "districtId": "77",
+            "rpoId": "4229"
+        },
+        {
+            "id": "0397",
+            "name": "PANCHBIBI",
+            "districtId": "38",
+            "rpoId": "4216"
+        },
+        {
+            "id": "0398",
+            "name": "PANCHHARI",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0399",
+            "name": "PANCHLAISH",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0400",
+            "name": "PANGSHA",
+            "districtId": "82",
+            "rpoId": "4231"
+        },
+        {
+            "id": "0401",
+            "name": "PARBATIPUR",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0402",
+            "name": "PARSHURAM",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "0403",
+            "name": "PATENGA",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0404",
+            "name": "PATGRAM",
+            "districtId": "52",
+            "rpoId": "4220"
+        },
+        {
+            "id": "0405",
+            "name": "PATHARGHATA",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "0406",
+            "name": "PATIYA",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0801",
+            "name": "PATKELGHATA",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0407",
+            "name": "PATNITALA",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0408",
+            "name": "PATUAKHALI SADAR",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0409",
+            "name": "PEKUA",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0169",
+            "name": "PHULBARI",
+            "districtId": "27",
+            "rpoId": "4105"
+        },
+        {
+            "id": "0410",
+            "name": "PHULBARI",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0411",
+            "name": "PHULPUR",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0412",
+            "name": "PHULTALA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0413",
+            "name": "PIRGACHHA",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0415",
+            "name": "PIRGANJ",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0414",
+            "name": "PIRGANJ",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0416",
+            "name": "PIROJPUR SADAR",
+            "districtId": "79",
+            "rpoId": "4230"
+        },
+        {
+            "id": "0417",
+            "name": "PORSHA",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "4400",
+            "name": "PORSHURAM",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "4406",
+            "name": "PUBAIL",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0418",
+            "name": "PURBADHALA",
+            "districtId": "72",
+            "rpoId": "4225"
+        },
+        {
+            "id": "0419",
+            "name": "PUTHIA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0441",
+            "name": "RAIGONJ",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0442",
+            "name": "RAIPUR",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "0443",
+            "name": "RAIPURA",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0420",
+            "name": "RAJAPUR",
+            "districtId": "42",
+            "rpoId": "4214"
+        },
+        {
+            "id": "0421",
+            "name": "RAJARHAT",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0422",
+            "name": "RAJASTHALI",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0423",
+            "name": "RAJBARI",
+            "districtId": "82",
+            "rpoId": "4231"
+        },
+        {
+            "id": "0424",
+            "name": "RAJNAGAR",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "0425",
+            "name": "RAJOIR",
+            "districtId": "54",
+            "rpoId": "4221"
+        },
+        {
+            "id": "0426",
+            "name": "RAJPARA",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0427",
+            "name": "RAMGANJ",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "0428",
+            "name": "RAMGARH",
+            "districtId": "46",
+            "rpoId": "4217"
+        },
+        {
+            "id": "0429",
+            "name": "RAMGATI",
+            "districtId": "51",
+            "rpoId": "4219"
+        },
+        {
+            "id": "0430",
+            "name": "RAMNA MODEL",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0431",
+            "name": "RAMPAL",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0580",
+            "name": "RAMPURA",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0432",
+            "name": "RAMU",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "1016",
+            "name": "RANGABALI",
+            "districtId": "78",
+            "rpoId": "4119"
+        },
+        {
+            "id": "0888",
+            "name": "RANGPUR SADAR",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0435",
+            "name": "RANGUNIA",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0436",
+            "name": "RANINAGAR",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0437",
+            "name": "RANISANKAIL",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0438",
+            "name": "RAOZAN",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0440",
+            "name": "ROWANGCHHARI",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0439",
+            "name": "ROWMARI",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "1115",
+            "name": "RUHIA",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0444",
+            "name": "RUMA",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0445",
+            "name": "RUPGANJ",
+            "districtId": "67",
+            "rpoId": "4117"
+        },
+        {
+            "id": "1148",
+            "name": "RUPNAGAR",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0446",
+            "name": "RUPSHA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0447",
+            "name": "SABUJBAGH",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0118",
+            "name": "SADAR DAKSHIN",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "1168",
+            "name": "SADARGHAT",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "4415",
+            "name": "SADAR MODEL",
+            "districtId": "70",
+            "rpoId": "4205"
+        },
+        {
+            "id": "0448",
+            "name": "SADARPUR",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0449",
+            "name": "SADULLAPUR",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0451",
+            "name": "SAIDPUR",
+            "districtId": "73",
+            "rpoId": "4226"
+        },
+        {
+            "id": "1116",
+            "name": "SAJEK",
+            "districtId": "84",
+            "rpoId": "4120"
+        },
+        {
+            "id": "0452",
+            "name": "SAKHIPUR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0976",
+            "name": "SALANGA",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0536",
+            "name": "SALTHA",
+            "districtId": "29",
+            "rpoId": "4106"
+        },
+        {
+            "id": "0453",
+            "name": "SANDWIP",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0454",
+            "name": "SANTHIA",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0455",
+            "name": "SAPAHAR",
+            "districtId": "64",
+            "rpoId": "4228"
+        },
+        {
+            "id": "0456",
+            "name": "SARAIL",
+            "districtId": "12",
+            "rpoId": "4101"
+        },
+        {
+            "id": "0457",
+            "name": "SARANKHOLA",
+            "districtId": "01",
+            "rpoId": "4200"
+        },
+        {
+            "id": "0458",
+            "name": "SARIAKANDI",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0459",
+            "name": "SARISHABARI",
+            "districtId": "39",
+            "rpoId": "4213"
+        },
+        {
+            "id": "0460",
+            "name": "SATKANIA",
+            "districtId": "15",
+            "rpoId": "4102"
+        },
+        {
+            "id": "0461",
+            "name": "SATKHIRA SADAR",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0462",
+            "name": "SATURIA",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0463",
+            "name": "SAVAR",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0464",
+            "name": "SENBAGH",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0539",
+            "name": "SHAESTAGONJ",
+            "districtId": "36",
+            "rpoId": "4109"
+        },
+        {
+            "id": "0450",
+            "name": "SHAGHATA",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0466",
+            "name": "SHAH ALI",
+            "districtId": "26",
+            "rpoId": "4210"
+        },
+        {
+            "id": "0468",
+            "name": "SHAHBAGH",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0469",
+            "name": "SHAHJADPUR",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "1145",
+            "name": "SHAHJAHANPUR",
+            "districtId": "26",
+            "rpoId": "4209"
+        },
+        {
+            "id": "0467",
+            "name": "SHAH MAKHDUM",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "1134",
+            "name": "SHAHPORAN",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0470",
+            "name": "SHAHRASTI",
+            "districtId": "13",
+            "rpoId": "4103"
+        },
+        {
+            "id": "0471",
+            "name": "SHAILKUPA",
+            "districtId": "44",
+            "rpoId": "4215"
+        },
+        {
+            "id": "0472",
+            "name": "SHAJAHANPUR",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "1100",
+            "name": "SHAKHIPUR",
+            "districtId": "86",
+            "rpoId": "4234"
+        },
+        {
+            "id": "0473",
+            "name": "SHALIKHA",
+            "districtId": "55",
+            "rpoId": "4222"
+        },
+        {
+            "id": "0484",
+            "name": "SHAMPUR",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0475",
+            "name": "SHARSHA",
+            "districtId": "41",
+            "rpoId": "4110"
+        },
+        {
+            "id": "0571",
+            "name": "SHER-E-BANGLA NAGAR",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0477",
+            "name": "SHERPUR",
+            "districtId": "89",
+            "rpoId": "4233"
+        },
+        {
+            "id": "0476",
+            "name": "SHERPUR",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0479",
+            "name": "SHIBALAYA",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0478",
+            "name": "SHIBCHAR",
+            "districtId": "54",
+            "rpoId": "4221"
+        },
+        {
+            "id": "0481",
+            "name": "SHIBGANJ",
+            "districtId": "70",
+            "rpoId": "4205"
+        },
+        {
+            "id": "0480",
+            "name": "SHIBGANJ",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "0482",
+            "name": "SHIBPUR",
+            "districtId": "68",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0483",
+            "name": "SHYAMNAGAR",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "0767",
+            "name": "SIDDHIRGANJ",
+            "districtId": "67",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0485",
+            "name": "SINGAIR",
+            "districtId": "56",
+            "rpoId": "4113"
+        },
+        {
+            "id": "0486",
+            "name": "SINGRA",
+            "districtId": "69",
+            "rpoId": "4224"
+        },
+        {
+            "id": "0465",
+            "name": "SIRAJDIKHAN",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0487",
+            "name": "SIRAJGANJ",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0488",
+            "name": "SITAKUNDA",
+            "districtId": "15",
+            "rpoId": "4006"
+        },
+        {
+            "id": "0489",
+            "name": "SONADANGA MODEL",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0490",
+            "name": "SONAGAZI",
+            "districtId": "30",
+            "rpoId": "4107"
+        },
+        {
+            "id": "0491",
+            "name": "SONAIMURI",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0492",
+            "name": "SONARGAON",
+            "districtId": "67",
+            "rpoId": "4117"
+        },
+        {
+            "id": "0493",
+            "name": "SONATOLA",
+            "districtId": "10",
+            "rpoId": "4100"
+        },
+        {
+            "id": "1138",
+            "name": "SOSHIVUSION",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0578",
+            "name": "SOUTH KERANIGANJ",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0125",
+            "name": "SOUTH SURMA",
+            "districtId": "91",
+            "rpoId": "4010"
+        },
+        {
+            "id": "0495",
+            "name": "SREEMANGAL",
+            "districtId": "58",
+            "rpoId": "4114"
+        },
+        {
+            "id": "0496",
+            "name": "SREENAGAR",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "0497",
+            "name": "SREEPUR",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0498",
+            "name": "SREEPUR",
+            "districtId": "55",
+            "rpoId": "4222"
+        },
+        {
+            "id": "0494",
+            "name": "SRIBARDI",
+            "districtId": "89",
+            "rpoId": "4233"
+        },
+        {
+            "id": "0386",
+            "name": "SUDHARAM",
+            "districtId": "75",
+            "rpoId": "4008"
+        },
+        {
+            "id": "0500",
+            "name": "SUJANAGAR",
+            "districtId": "76",
+            "rpoId": "4118"
+        },
+        {
+            "id": "0501",
+            "name": "SULLAH",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0502",
+            "name": "SUNAMGANJ SADAR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "0503",
+            "name": "SUNDARGANJ",
+            "districtId": "32",
+            "rpoId": "4211"
+        },
+        {
+            "id": "0504",
+            "name": "SUTRAPUR",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0506",
+            "name": "TAHIRPUR",
+            "districtId": "90",
+            "rpoId": "4235"
+        },
+        {
+            "id": "4402",
+            "name": "TAJHAT",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0507",
+            "name": "TALA",
+            "districtId": "87",
+            "rpoId": "4232"
+        },
+        {
+            "id": "1029",
+            "name": "TALTOLI",
+            "districtId": "04",
+            "rpoId": "4204"
+        },
+        {
+            "id": "0508",
+            "name": "TANGAIL SADAR",
+            "districtId": "93",
+            "rpoId": "4123"
+        },
+        {
+            "id": "0509",
+            "name": "TANOR",
+            "districtId": "81",
+            "rpoId": "4009"
+        },
+        {
+            "id": "0510",
+            "name": "TARAGANJ",
+            "districtId": "85",
+            "rpoId": "4121"
+        },
+        {
+            "id": "0511",
+            "name": "TARAIL",
+            "districtId": "48",
+            "rpoId": "4111"
+        },
+        {
+            "id": "1080",
+            "name": "TARAKANDA",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0512",
+            "name": "TARASH",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "0513",
+            "name": "TAZUMUDDIN",
+            "districtId": "09",
+            "rpoId": "4203"
+        },
+        {
+            "id": "0514",
+            "name": "TEJGAON",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0515",
+            "name": "TEJGAON INDUSTRIAL AREA",
+            "districtId": "26",
+            "rpoId": "4000"
+        },
+        {
+            "id": "0516",
+            "name": "TEKNAF",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0518",
+            "name": "TEROKHADA",
+            "districtId": "47",
+            "rpoId": "4005"
+        },
+        {
+            "id": "0517",
+            "name": "TETULIA",
+            "districtId": "77",
+            "rpoId": "4229"
+        },
+        {
+            "id": "0519",
+            "name": "THAKURGAON SADAR",
+            "districtId": "94",
+            "rpoId": "4236"
+        },
+        {
+            "id": "0520",
+            "name": "THANCHI",
+            "districtId": "03",
+            "rpoId": "4201"
+        },
+        {
+            "id": "0521",
+            "name": "TITAS",
+            "districtId": "19",
+            "rpoId": "4003"
+        },
+        {
+            "id": "0522",
+            "name": "TONGIBARI",
+            "districtId": "59",
+            "rpoId": "4115"
+        },
+        {
+            "id": "4407",
+            "name": "TONGI EAST",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "4408",
+            "name": "TONGI WEST",
+            "districtId": "33",
+            "rpoId": "4212"
+        },
+        {
+            "id": "0523",
+            "name": "TRISHAL",
+            "districtId": "61",
+            "rpoId": "4007"
+        },
+        {
+            "id": "0524",
+            "name": "TUNGIPARA",
+            "districtId": "35",
+            "rpoId": "4108"
+        },
+        {
+            "id": "0525",
+            "name": "TURAG",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0526",
+            "name": "UKHIA",
+            "districtId": "22",
+            "rpoId": "4104"
+        },
+        {
+            "id": "0527",
+            "name": "ULIPUR",
+            "districtId": "49",
+            "rpoId": "4218"
+        },
+        {
+            "id": "0528",
+            "name": "ULLAPARA MODEL",
+            "districtId": "88",
+            "rpoId": "4122"
+        },
+        {
+            "id": "1153",
+            "name": "UTTARA EAST",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "1154",
+            "name": "UTTARA WEST",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "0529",
+            "name": "UTTARKHAN",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "1130",
+            "name": "VASHANTEK",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "1150",
+            "name": "VATARA",
+            "districtId": "26",
+            "rpoId": "4011"
+        },
+        {
+            "id": "1141",
+            "name": "WARI",
+            "districtId": "26",
+            "rpoId": "4004"
+        },
+        {
+            "id": "0531",
+            "name": "WAZIRPUR",
+            "districtId": "06",
+            "rpoId": "4002"
+        },
+        {
+            "id": "0532",
+            "name": "ZOKIGANJ",
+            "districtId": "91",
+            "rpoId": "4010"
+        }
+    ]
+}

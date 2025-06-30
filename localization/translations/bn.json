@@ -1,0 +1,91 @@
+{
+  "common": {
+    "welcome": "স্বাগতম",
+    "continue": "চালিয়ে যান",
+    "cancel": "বাতিল",
+    "save": "সংরক্ষণ",
+    "edit": "সম্পাদনা",
+    "delete": "মুছুন",
+    "search": "খুঁজুন",
+    "filter": "ফিল্টার",
+    "loading": "লোড হচ্ছে...",
+    "error": "কিছু ভুল হয়েছে",
+    "retry": "আবার চেষ্টা করুন",
+    "yes": "হ্যাঁ",
+    "no": "না"
+  },
+  "navigation": {
+    "home": "হোম",
+    "search": "খুঁজুন",
+    "gallery": "গ্যালারি",
+    "clubs": "ক্লাব",
+    "profile": "প্রোফাইল"
+  },
+  "auth": {
+    "signIn": "সাইন ইন",
+    "signUp": "সাইন আপ",
+    "email": "ইমেইল",
+    "password": "পাসওয়ার্ড",
+    "confirmPassword": "পাসওয়ার্ড নিশ্চিত করুন",
+    "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
+    "dontHaveAccount": "অ্যাকাউন্ট নেই?",
+    "alreadyHaveAccount": "ইতিমধ্যে অ্যাকাউন্ট আছে?",
+    "signInWithGoogle": "গুগল দিয়ে সাইন ইন",
+    "signInWithFacebook": "ফেসবুক দিয়ে সাইন ইন"
+  },
+  "home": {
+    "title": "একসাথে জীবন বাঁচান",
+    "subtitle": "রক্তদাতাদের প্রয়োজনীয়দের সাথে সংযুক্ত করা",
+    "heroMessage": "প্রতিটি দান ৩টি জীবন বাঁচাতে পারে",
+    "callToAction": "দাতা খুঁজুন",
+    "becomeDonor": "দাতা হন",
+    "stats": {
+      "donors": "দাতা",
+      "clubs": "ক্লাব",
+      "donations": "এই মাসের দান"
+    }
+  },
+  "search": {
+    "title": "রক্তদাতা খুঁজুন",
+    "bloodGroup": "রক্তের গ্রুপ",
+    "location": "অবস্থান",
+    "district": "জেলা",
+    "policeStation": "থানা",
+    "availability": "এখনই উপলব্ধ",
+    "results": "অনুসন্ধানের ফলাফল",
+    "noResults": "আপনার মানদণ্ড অনুযায়ী কোন দাতা পাওয়া যায়নি",
+    "contactDonor": "দাতার সাথে যোগাযোগ"
+  },
+  "gallery": {
+    "title": "দানের গল্প",
+    "shareStory": "আপনার গল্প শেয়ার করুন",
+    "noStories": "এখনো কোন গল্প শেয়ার করা হয়নি",
+    "likes": "পছন্দ"
+  },
+  "clubs": {
+    "title": "রক্তদান ক্লাব",
+    "joinClub": "ক্লাবে যোগ দিন",
+    "createClub": "ক্লাব তৈরি করুন",
+    "members": "সদস্য",
+    "noClubs": "কোন ক্লাব পাওয়া যায়নি"
+  },
+  "profile": {
+    "title": "প্রোফাইল",
+    "editProfile": "প্রোফাইল সম্পাদনা",
+    "settings": "সেটিংস",
+    "language": "ভাষা",
+    "notifications": "বিজ্ঞপ্তি",
+    "privacy": "গোপনীয়তা",
+    "signOut": "সাইন আউট"
+  },
+  "bloodGroups": {
+    "A+": "এ+",
+    "A-": "এ-",
+    "B+": "বি+",
+    "B-": "বি-",
+    "AB+": "এবি+",
+    "AB-": "এবি-",
+    "O+": "ও+",
+    "O-": "ও-"
+  }
+}
