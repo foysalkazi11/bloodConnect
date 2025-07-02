@@ -1,140 +1,181 @@
 import React, { useState } from 'react';
-import { View, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
-import { styled } from 'nativewind';
-import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
-import Text from './Text';
+import { 
+  View, 
+  TextInput, 
+  Text, 
+  StyleSheet, 
+  TextInputProps, 
+  TouchableOpacity 
+} from 'react-native';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+import { colors, fonts, fontSizes, spacing, borderRadius } from '../theme';
 
-export interface InputProps extends TextInputProps {
+interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
-  helperText?: string;
+  helper?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   isPassword?: boolean;
-  touched?: boolean;
   required?: boolean;
+  className?: string;
 }
-
-const StyledView = styled(View);
-const StyledTextInput = styled(TextInput);
-const StyledTouchableOpacity = styled(TouchableOpacity);
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
-  helperText,
+  helper,
   leftIcon,
   rightIcon,
   isPassword = false,
-  touched = false,
   required = false,
-  className = '',
   style,
+  className = '',
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const hasError = touched && error;
-  const showSuccess = touched && !error && props.value && props.value.length > 0;
-
-  const getBorderColorClass = (): string => {
-    if (hasError) return 'border-error-500';
-    if (showSuccess) return 'border-success-500';
-    if (isFocused) return 'border-primary-500';
-    return 'border-neutral-300';
+  const handleFocus = () => setIsFocused(true);
+  const handleBlur = () => {
+    setIsFocused(false);
+    props.onBlur?.({} as any);
   };
 
-  const getBackgroundColorClass = (): string => {
-    if (hasError) return 'bg-error-50';
-    if (showSuccess) return 'bg-success-50';
-    if (isFocused) return 'bg-white';
-    return 'bg-neutral-50';
-  };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
+
+  const passwordIcon = showPassword ? (
+    <EyeOff size={20} color={colors.secondary[500]} />
+  ) : (
+    <Eye size={20} color={colors.secondary[500]} />
+  );
 
   return (
-    <StyledView className={`mb-4 ${className}`}>
+    <View className={className} style={styles.container}>
       {label && (
-        <StyledView className="flex-row mb-1.5">
-          <Text variant="body-sm" weight="medium" color="text-neutral-700">
-            {label}
-          </Text>
-          {required && (
-            <Text variant="body-sm" weight="medium" color="text-error-500">
-              {" *"}
-            </Text>
-          )}
-        </StyledView>
-      )}
-
-      <StyledView 
-        className={`
-          flex-row 
-          items-center 
-          border 
-          rounded-lg 
-          px-3 
-          py-2.5
-          ${getBorderColorClass()} 
-          ${getBackgroundColorClass()}
-        `}
-      >
-        {leftIcon && (
-          <StyledView className="mr-2">
-            {leftIcon}
-          </StyledView>
-        )}
-
-        <StyledTextInput
-          className="flex-1 text-base text-neutral-900 font-inter-regular"
-          placeholderTextColor="#9CA3AF"
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            setIsFocused(false);
-            props.onBlur && props.onBlur(null as any);
-          }}
-          secureTextEntry={isPassword && !showPassword}
-          style={[{ outlineStyle: 'none' }, style]}
-          {...props}
-        />
-
-        {isPassword && (
-          <StyledTouchableOpacity
-            className="ml-2 p-1"
-            onPress={() => setShowPassword(!showPassword)}
-            activeOpacity={0.7}
-          >
-            {showPassword ? (
-              <EyeOff size={20} color="#6B7280" />
-            ) : (
-              <Eye size={20} color="#6B7280" />
-            )}
-          </StyledTouchableOpacity>
-        )}
-
-        {rightIcon && !isPassword && (
-          <StyledView className="ml-2">
-            {rightIcon}
-          </StyledView>
-        )}
-      </StyledView>
-
-      {hasError && (
-        <StyledView className="flex-row items-center mt-1.5">
-          <AlertCircle size={14} color="#EF4444" />
-          <Text variant="caption" color="text-error-500" className="ml-1.5">
-            {error}
-          </Text>
-        </StyledView>
-      )}
-
-      {helperText && !hasError && (
-        <Text variant="caption" color="text-neutral-500" className="mt-1.5">
-          {helperText}
+        <Text style={styles.label}>
+          {label}
+          {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-    </StyledView>
+      
+      <View
+        style={[
+          styles.inputContainer,
+          isFocused && styles.inputContainerFocused,
+          error && styles.inputContainerError,
+        ]}
+      >
+        {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
+        
+        <TextInput
+          style={[
+            styles.input,
+            leftIcon && styles.inputWithLeftIcon,
+            (rightIcon || isPassword) && styles.inputWithRightIcon,
+            style,
+          ]}
+          placeholderTextColor={colors.secondary[400]}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          secureTextEntry={isPassword && !showPassword}
+          {...props}
+        />
+        
+        {isPassword ? (
+          <TouchableOpacity 
+            style={styles.rightIcon} 
+            onPress={togglePasswordVisibility}
+          >
+            {passwordIcon}
+          </TouchableOpacity>
+        ) : rightIcon ? (
+          <View style={styles.rightIcon}>{rightIcon}</View>
+        ) : null}
+      </View>
+      
+      {(error || helper) && (
+        <View style={styles.messageContainer}>
+          {error ? (
+            <View style={styles.errorContainer}>
+              <AlertCircle size={16} color={colors.error[600]} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : helper ? (
+            <Text style={styles.helperText}>{helper}</Text>
+          ) : null}
+        </View>
+      )}
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: spacing[4],
+  },
+  label: {
+    fontFamily: fonts.medium,
+    fontSize: fontSizes.sm,
+    color: colors.secondary[700],
+    marginBottom: spacing[2],
+  },
+  required: {
+    color: colors.error[600],
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.secondary[200],
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.white,
+  },
+  inputContainerFocused: {
+    borderColor: colors.primary[600],
+  },
+  inputContainerError: {
+    borderColor: colors.error[600],
+    backgroundColor: colors.error[50],
+  },
+  input: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.md,
+    color: colors.secondary[900],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+  },
+  inputWithLeftIcon: {
+    paddingLeft: spacing[2],
+  },
+  inputWithRightIcon: {
+    paddingRight: spacing[2],
+  },
+  leftIcon: {
+    paddingLeft: spacing[3],
+  },
+  rightIcon: {
+    paddingRight: spacing[3],
+  },
+  messageContainer: {
+    marginTop: spacing[1],
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.sm,
+    color: colors.error[600],
+    marginLeft: spacing[1],
+  },
+  helperText: {
+    fontFamily: fonts.regular,
+    fontSize: fontSizes.sm,
+    color: colors.secondary[500],
+  },
+});
 
 export default Input;

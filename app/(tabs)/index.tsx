@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Search, Users, Award, MapPin, Phone } from 'lucide-react-native';
@@ -8,6 +8,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
+import { colors } from '@/components/theme';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -264,7 +265,7 @@ export default function HomeScreen() {
       return (
         <Image 
           source={{ uri: getProfileImage() }}
-          style={styles.profileAvatar}
+          className="w-12 h-12 rounded-full border-2 border-white"
           onError={() => setImageError(true)}
         />
       );
@@ -279,34 +280,33 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 bg-white">
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Connection Error Banner */}
         {connectionError && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>
+          <View className="bg-warning-100 px-4 py-3 border-b border-warning-500">
+            <Text className="font-medium text-warning-800 text-center text-sm">
               ⚠️ Demo Mode: Configure Supabase CORS settings to connect to live data
             </Text>
           </View>
         )}
 
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.welcomeText}>{getWelcomeMessage()}</Text>
-            <Text style={styles.appTitle}>BloodConnect</Text>
+        <View className="flex-row justify-between items-center px-5 pt-5 pb-2.5">
+          <View className="flex-1">
+            <Text className="text-secondary-500 font-inter-regular text-base">{getWelcomeMessage()}</Text>
+            <Text className="text-secondary-900 font-inter-bold text-2xl mt-1">BloodConnect</Text>
           </View>
           {user && profile && (
             <TouchableOpacity 
-              style={styles.profileButton}
+              className="relative"
               onPress={() => router.push('/profile')}
             >
-              <View style={styles.avatarContainer}>
+              <View className="relative">
                 {renderProfileAvatar()}
-                <View style={[
-                  styles.availabilityIndicator,
-                  { backgroundColor: profile.is_available ? '#10B981' : '#EF4444' }
-                ]} />
+                <View 
+                  className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${profile.is_available ? 'bg-success-500' : 'bg-error-500'}`} 
+                />
               </View>
             </TouchableOpacity>
           )}
@@ -315,29 +315,29 @@ export default function HomeScreen() {
         {/* Hero Section */}
         <LinearGradient
           colors={['#FEE2E2', '#FECACA']}
-          style={styles.heroSection}
+          className="mx-5 rounded-2xl mt-5"
         >
-          <View style={styles.heroContent}>
-            <Heart size={48} color="#DC2626" style={styles.heroIcon} />
-            <Text style={styles.heroTitle}>{t('home.title')}</Text>
-            <Text style={styles.heroSubtitle}>{t('home.subtitle')}</Text>
-            <Text style={styles.heroMessage}>{getHeroMessage()}</Text>
+          <View className="p-6 items-center">
+            <Heart size={48} color={colors.primary[600]} className="mb-4" />
+            <Text className="text-secondary-900 font-inter-bold text-2xl text-center mb-2">{t('home.title')}</Text>
+            <Text className="text-secondary-500 font-inter-regular text-base text-center mb-3">{t('home.subtitle')}</Text>
+            <Text className="text-primary-600 font-inter-medium text-sm text-center mb-6">{getHeroMessage()}</Text>
             
-            <View style={styles.actionButtons}>
+            <View className="flex-row gap-3 w-full">
               <TouchableOpacity 
-                style={styles.primaryButton}
+                className="flex-1 bg-primary-600 flex-row items-center justify-center py-3 rounded-xl gap-2"
                 onPress={handleFindDonors}
               >
                 <Search size={20} color="#FFFFFF" />
-                <Text style={styles.primaryButtonText}>{t('home.callToAction')}</Text>
+                <Text className="text-white font-inter-semibold text-sm">{t('home.callToAction')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={styles.secondaryButton}
+                className="flex-1 bg-white flex-row items-center justify-center py-3 rounded-xl border-2 border-primary-600 gap-2"
                 onPress={handleBecomeDonor}
               >
-                <Heart size={20} color="#DC2626" />
-                <Text style={styles.secondaryButtonText}>
+                <Heart size={20} color={colors.primary[600]} />
+                <Text className="text-primary-600 font-inter-semibold text-sm">
                   {user ? 'My Profile' : t('home.becomeDonor')}
                 </Text>
               </TouchableOpacity>
@@ -346,36 +346,30 @@ export default function HomeScreen() {
         </LinearGradient>
 
         {/* Stats Section */}
-        <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Our Impact</Text>
-          <View style={styles.statsGrid}>
+        <View className="px-5 pt-8">
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Our Impact</Text>
+          <View className="flex-row gap-3">
             {dashboardStats.map((stat, index) => (
-              <View key={index} style={styles.statCard}>
-                <stat.icon size={24} color="#DC2626" />
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
+              <View key={index} className="flex-1 bg-secondary-50 p-4 rounded-xl items-center gap-2">
+                <stat.icon size={24} color={colors.primary[600]} />
+                <Text className="text-secondary-900 font-inter-bold text-xl">{stat.value}</Text>
+                <Text className="text-secondary-500 font-inter-regular text-xs text-center">{stat.label}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* Blood Groups Section */}
-        <View style={styles.bloodGroupsSection}>
-          <Text style={styles.sectionTitle}>Blood Groups</Text>
-          <View style={styles.bloodGroupsGrid}>
+        <View className="px-5 pt-8">
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Blood Groups</Text>
+          <View className="flex-row flex-wrap gap-3">
             {BLOOD_GROUPS.map((group, index) => (
               <TouchableOpacity 
                 key={index} 
-                style={[
-                  styles.bloodGroupCard,
-                  user && profile && profile.blood_group === group && styles.bloodGroupCardActive
-                ]}
+                className={`bg-primary-100 py-3 px-4 rounded-lg min-w-[60px] items-center border-2 ${user && profile && profile.blood_group === group ? 'bg-primary-600 border-primary-700' : 'border-transparent'}`}
                 onPress={() => router.push(`/search?bloodGroup=${group}`)}
               >
-                <Text style={[
-                  styles.bloodGroupText,
-                  user && profile && profile.blood_group === group && styles.bloodGroupTextActive
-                ]}>
+                <Text className={`font-inter-semibold text-sm ${user && profile && profile.blood_group === group ? 'text-white' : 'text-primary-600'}`}>
                   {group}
                 </Text>
               </TouchableOpacity>
@@ -384,62 +378,62 @@ export default function HomeScreen() {
         </View>
 
         {/* Emergency Contact */}
-        <View style={styles.emergencySection}>
-          <View style={styles.emergencyCard}>
-            <Phone size={24} color="#DC2626" />
-            <View style={styles.emergencyText}>
-              <Text style={styles.emergencyTitle}>Emergency Blood Need?</Text>
-              <Text style={styles.emergencySubtitle}>Call our 24/7 helpline</Text>
+        <View className="px-5 pt-8">
+          <View className="bg-primary-50 rounded-xl p-5 flex-row items-center gap-4 border-l-4 border-l-primary-600">
+            <Phone size={24} color={colors.primary[600]} />
+            <View className="flex-1">
+              <Text className="text-secondary-900 font-inter-semibold text-base">Emergency Blood Need?</Text>
+              <Text className="text-secondary-500 font-inter-regular text-sm mt-0.5">Call our 24/7 helpline</Text>
             </View>
-            <TouchableOpacity style={styles.emergencyButton}>
-              <Text style={styles.emergencyButtonText}>Call Now</Text>
+            <TouchableOpacity className="bg-primary-600 py-2 px-4 rounded-lg">
+              <Text className="text-white font-inter-semibold text-sm">Call Now</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Recent Activity */}
-        <View style={styles.activitySection}>
-          <Text style={styles.sectionTitle}>Recent Donations</Text>
-          <View style={styles.activityList}>
+        <View className="px-5 pt-8 pb-8">
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Recent Donations</Text>
+          <View className="gap-3">
             {loading ? (
               // Loading placeholder
               [1, 2, 3].map((item, index) => (
-                <View key={index} style={[styles.activityItem, styles.loadingItem]}>
-                  <View style={styles.loadingAvatar} />
-                  <View style={styles.loadingContent}>
-                    <View style={styles.loadingLine} />
-                    <View style={[styles.loadingLine, styles.loadingLineShort]} />
+                <View key={index} className="flex-row items-center bg-secondary-100 p-4 rounded-xl gap-3">
+                  <View className="w-12 h-12 rounded-full bg-secondary-200" />
+                  <View className="flex-1 gap-2">
+                    <View className="h-3 bg-secondary-200 rounded-md w-3/4" />
+                    <View className="h-3 bg-secondary-200 rounded-md w-1/2" />
                   </View>
                 </View>
               ))
             ) : recentDonations.length > 0 ? (
               recentDonations.map((donation) => (
-                <View key={donation.id} style={styles.activityItem}>
-                  <View style={styles.activityAvatar}>
+                <View key={donation.id} className="flex-row items-center bg-secondary-50 p-4 rounded-xl gap-3">
+                  <View className="w-12 h-12 rounded-full overflow-hidden">
                     <TextAvatar 
                       name={donation.donor_name} 
                       size={48}
                     />
                   </View>
-                  <View style={styles.activityInfo}>
-                    <Text style={styles.activityName}>{donation.donor_name}</Text>
-                    <Text style={styles.activityDetails}>
+                  <View className="flex-1">
+                    <Text className="text-secondary-900 font-inter-semibold text-base">{donation.donor_name}</Text>
+                    <Text className="text-secondary-500 font-inter-regular text-sm">
                       Donated {donation.blood_group} • {donation.location}
                     </Text>
-                    <Text style={styles.activityTime}>
+                    <Text className="text-secondary-400 font-inter-regular text-xs mt-0.5">
                       {formatTimeAgo(donation.donation_date)}
                     </Text>
                   </View>
-                  <View style={styles.bloodGroupBadge}>
-                    <Text style={styles.bloodGroupBadgeText}>{donation.blood_group}</Text>
+                  <View className="bg-primary-600 px-2 py-1 rounded-md">
+                    <Text className="text-white font-inter-semibold text-xs">{donation.blood_group}</Text>
                   </View>
                 </View>
               ))
             ) : (
-              <View style={styles.emptyActivity}>
-                <Heart size={48} color="#D1D5DB" />
-                <Text style={styles.emptyActivityText}>No recent donations</Text>
-                <Text style={styles.emptyActivitySubtext}>
+              <View className="items-center py-12 gap-3">
+                <Heart size={48} color={colors.secondary[300]} />
+                <Text className="text-secondary-500 font-inter-semibold text-base">No recent donations</Text>
+                <Text className="text-secondary-400 font-inter-regular text-sm">
                   Be the first to make a difference!
                 </Text>
               </View>
@@ -450,330 +444,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  errorBanner: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F59E0B',
-  },
-  errorText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: '#92400E',
-    textAlign: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  headerText: {
-    flex: 1,
-  },
-  welcomeText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  appTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 28,
-    color: '#111827',
-    marginTop: 4,
-  },
-  profileButton: {
-    position: 'relative',
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  availabilityIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  heroSection: {
-    marginHorizontal: 20,
-    borderRadius: 16,
-    marginTop: 20,
-  },
-  heroContent: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  heroIcon: {
-    marginBottom: 16,
-  },
-  heroTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  heroMessage: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: '#DC2626',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: '#DC2626',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    gap: 8,
-  },
-  primaryButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  secondaryButton: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#DC2626',
-    gap: 8,
-  },
-  secondaryButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#DC2626',
-  },
-  statsSection: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 20,
-    color: '#111827',
-    marginBottom: 16,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    gap: 8,
-  },
-  statValue: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 20,
-    color: '#111827',
-  },
-  statLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
-  bloodGroupsSection: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-  },
-  bloodGroupsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  bloodGroupCard: {
-    backgroundColor: '#FEE2E2',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    minWidth: 60,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  bloodGroupCardActive: {
-    backgroundColor: '#DC2626',
-    borderColor: '#B91C1C',
-  },
-  bloodGroupText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#DC2626',
-  },
-  bloodGroupTextActive: {
-    color: '#FFFFFF',
-  },
-  emergencySection: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-  },
-  emergencyCard: {
-    backgroundColor: '#FEF2F2',
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DC2626',
-  },
-  emergencyText: {
-    flex: 1,
-  },
-  emergencyTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#111827',
-  },
-  emergencySubtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  emergencyButton: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  emergencyButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  activitySection: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 32,
-  },
-  activityList: {
-    gap: 12,
-  },
-  activityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-  },
-  loadingItem: {
-    backgroundColor: '#F3F4F6',
-  },
-  loadingAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E5E7EB',
-  },
-  loadingContent: {
-    flex: 1,
-    gap: 8,
-  },
-  loadingLine: {
-    height: 12,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-  },
-  loadingLineShort: {
-    width: '60%',
-  },
-  activityAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityName: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#111827',
-  },
-  activityDetails: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  activityTime: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  bloodGroupBadge: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-  },
-  bloodGroupBadgeText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-  emptyActivity: {
-    alignItems: 'center',
-    paddingVertical: 32,
-    gap: 12,
-  },
-  emptyActivityText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  emptyActivitySubtext: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#9CA3AF',
-  },
-});
