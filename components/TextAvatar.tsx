@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { styled } from 'nativewind/api';
+import { styled } from 'nativewind';
 
 interface TextAvatarProps {
   name: string;
