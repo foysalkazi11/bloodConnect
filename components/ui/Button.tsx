@@ -1,144 +1,190 @@
 import React from 'react';
-import { TouchableOpacity, TouchableOpacityProps, ActivityIndicator, View } from 'react-native';
-import { styled } from 'nativewind';
-import Text from './Text';
+import { 
+  TouchableOpacity, 
+  Text, 
+  ActivityIndicator, 
+  StyleSheet, 
+  TouchableOpacityProps, 
+  View 
+} from 'react-native';
+import { colors, fonts, fontSizes, spacing, borderRadius } from '../theme';
 
-export interface ButtonProps extends TouchableOpacityProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
+export type ButtonSize = 'sm' | 'md' | 'lg';
+
+interface ButtonProps extends TouchableOpacityProps {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  className?: string;
 }
 
-const StyledTouchableOpacity = styled(TouchableOpacity);
-const StyledView = styled(View);
-
 export const Button: React.FC<ButtonProps> = ({
+  children,
   variant = 'primary',
   size = 'md',
   loading = false,
-  disabled = false,
   leftIcon,
   rightIcon,
   fullWidth = false,
+  disabled = false,
   className = '',
-  children,
+  style,
   ...props
 }) => {
-  const getVariantClasses = (): string => {
-    switch (variant) {
-      case 'primary':
-        return 'bg-primary-600 border border-primary-600';
-      case 'secondary':
-        return 'bg-secondary-600 border border-secondary-600';
-      case 'outline':
-        return 'bg-transparent border border-primary-600';
-      case 'ghost':
-        return 'bg-transparent border border-transparent';
-      default:
-        return 'bg-primary-600 border border-primary-600';
-    }
-  };
+  // Get styles based on variant and size
+  const buttonStyles = [
+    styles.button,
+    styles[`button_${variant}`],
+    styles[`button_${size}`],
+    fullWidth && styles.button_fullWidth,
+    (disabled || loading) && styles.button_disabled,
+    (disabled || loading) && styles[`button_disabled_${variant}`],
+    style,
+  ];
 
-  const getSizeClasses = (): string => {
-    switch (size) {
-      case 'sm':
-        return 'py-2 px-3';
-      case 'md':
-        return 'py-3 px-4';
-      case 'lg':
-        return 'py-4 px-6';
-      default:
-        return 'py-3 px-4';
-    }
-  };
-
-  const getTextColor = (): string => {
-    if (disabled) {
-      return 'text-neutral-400';
-    }
-    
-    switch (variant) {
-      case 'primary':
-      case 'secondary':
-        return 'text-white';
-      case 'outline':
-        return 'text-primary-600';
-      case 'ghost':
-        return 'text-primary-600';
-      default:
-        return 'text-white';
-    }
-  };
-
-  const getDisabledClasses = (): string => {
-    if (!disabled) return '';
-    
-    switch (variant) {
-      case 'primary':
-      case 'secondary':
-        return 'bg-neutral-200 border-neutral-200';
-      case 'outline':
-        return 'border-neutral-300';
-      case 'ghost':
-        return 'opacity-50';
-      default:
-        return 'bg-neutral-200 border-neutral-200';
-    }
-  };
-
-  const getWidthClass = (): string => {
-    return fullWidth ? 'w-full' : '';
-  };
-
-  // Combine all classes
-  const combinedClasses = `
-    rounded-xl
-    flex-row
-    items-center
-    justify-center
-    ${getSizeClasses()}
-    ${getVariantClasses()}
-    ${getDisabledClasses()}
-    ${getWidthClass()}
-    ${className}
-  `;
+  const textStyles = [
+    styles.text,
+    styles[`text_${variant}`],
+    styles[`text_${size}`],
+    (disabled || loading) && styles.text_disabled,
+    (disabled || loading) && styles[`text_disabled_${variant}`],
+  ];
 
   return (
-    <StyledTouchableOpacity
-      className={combinedClasses}
+    <TouchableOpacity
+      className={className}
+      style={buttonStyles}
       disabled={disabled || loading}
-      activeOpacity={0.7}
       {...props}
     >
       {loading ? (
         <ActivityIndicator 
           size="small" 
-          color={variant === 'outline' || variant === 'ghost' ? '#DC2626' : '#FFFFFF'} 
+          color={variant === 'primary' ? colors.white : colors.primary[600]} 
         />
       ) : (
-        <StyledView className="flex-row items-center justify-center">
-          {leftIcon && <StyledView className="mr-2">{leftIcon}</StyledView>}
-          
-          {typeof children === 'string' ? (
-            <Text 
-              variant="button" 
-              weight="semibold" 
-              color={getTextColor()}
-            >
-              {children}
-            </Text>
-          ) : (
-            children
-          )}
-          
-          {rightIcon && <StyledView className="ml-2">{rightIcon}</StyledView>}
-        </StyledView>
+        <View style={styles.contentContainer}>
+          {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
+          <Text style={textStyles}>{children}</Text>
+          {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
+        </View>
       )}
-    </StyledTouchableOpacity>
+    </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  button: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: borderRadius.lg,
+  },
+  button_primary: {
+    backgroundColor: colors.primary[600],
+  },
+  button_secondary: {
+    backgroundColor: colors.secondary[100],
+  },
+  button_outline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary[600],
+  },
+  button_ghost: {
+    backgroundColor: 'transparent',
+  },
+  button_link: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  button_sm: {
+    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[3],
+  },
+  button_md: {
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+  },
+  button_lg: {
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[5],
+  },
+  button_fullWidth: {
+    width: '100%',
+  },
+  button_disabled: {
+    opacity: 0.6,
+  },
+  button_disabled_primary: {
+    backgroundColor: colors.secondary[400],
+  },
+  button_disabled_secondary: {},
+  button_disabled_outline: {
+    borderColor: colors.secondary[400],
+  },
+  button_disabled_ghost: {},
+  button_disabled_link: {},
+  text: {
+    fontFamily: fonts.semiBold,
+    textAlign: 'center',
+  },
+  text_primary: {
+    color: colors.white,
+  },
+  text_secondary: {
+    color: colors.secondary[900],
+  },
+  text_outline: {
+    color: colors.primary[600],
+  },
+  text_ghost: {
+    color: colors.primary[600],
+  },
+  text_link: {
+    color: colors.primary[600],
+  },
+  text_sm: {
+    fontSize: fontSizes.sm,
+  },
+  text_md: {
+    fontSize: fontSizes.md,
+  },
+  text_lg: {
+    fontSize: fontSizes.lg,
+  },
+  text_disabled: {},
+  text_disabled_primary: {
+    color: colors.white,
+  },
+  text_disabled_secondary: {
+    color: colors.secondary[500],
+  },
+  text_disabled_outline: {
+    color: colors.secondary[500],
+  },
+  text_disabled_ghost: {
+    color: colors.secondary[500],
+  },
+  text_disabled_link: {
+    color: colors.secondary[500],
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconLeft: {
+    marginRight: spacing[2],
+  },
+  iconRight: {
+    marginLeft: spacing[2],
+  },
+});
 
 export default Button;

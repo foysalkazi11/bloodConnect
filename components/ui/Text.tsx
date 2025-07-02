@@ -1,73 +1,125 @@
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps } from 'react-native';
-import { styled } from 'nativewind';
+import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
+import { colors, fonts, fontSizes } from '../theme';
 
-export interface TextProps extends RNTextProps {
-  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body' | 'body-sm' | 'caption' | 'button';
-  weight?: 'regular' | 'medium' | 'semibold' | 'bold';
+export type TextVariant = 
+  | 'h1' 
+  | 'h2' 
+  | 'h3' 
+  | 'h4' 
+  | 'h5' 
+  | 'h6' 
+  | 'body' 
+  | 'body-sm' 
+  | 'body-lg' 
+  | 'caption' 
+  | 'label';
+
+export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
+
+interface TextProps extends RNTextProps {
+  variant?: TextVariant;
+  weight?: TextWeight;
   color?: string;
+  className?: string;
 }
 
-const StyledText = styled(RNText);
-
-export const Text: React.FC<TextProps> = ({ 
-  variant = 'body', 
-  weight = 'regular', 
-  color = 'text-neutral-900',
-  className = '',
+export const Text: React.FC<TextProps> = ({
   children,
-  ...props 
+  variant = 'body',
+  weight = 'regular',
+  color,
+  style,
+  className = '',
+  ...props
 }) => {
-  const getVariantClasses = (): string => {
-    switch (variant) {
-      case 'h1':
-        return 'text-4xl';
-      case 'h2':
-        return 'text-3xl';
-      case 'h3':
-        return 'text-2xl';
-      case 'h4':
-        return 'text-xl';
-      case 'h5':
-        return 'text-lg';
-      case 'h6':
-        return 'text-base';
-      case 'body':
-        return 'text-base';
-      case 'body-sm':
-        return 'text-sm';
-      case 'caption':
-        return 'text-xs';
-      case 'button':
-        return 'text-base';
-      default:
-        return 'text-base';
-    }
-  };
-
-  const getWeightClasses = (): string => {
-    switch (weight) {
-      case 'regular':
-        return 'font-inter-regular';
-      case 'medium':
-        return 'font-inter-medium';
-      case 'semibold':
-        return 'font-inter-semibold';
-      case 'bold':
-        return 'font-inter-bold';
-      default:
-        return 'font-inter-regular';
-    }
-  };
-
-  // Combine all classes
-  const combinedClasses = `${getVariantClasses()} ${getWeightClasses()} ${color} ${className}`;
-
   return (
-    <StyledText className={combinedClasses} {...props}>
+    <RNText
+      className={className}
+      style={[
+        styles[variant],
+        styles[weight],
+        color ? { color } : {},
+        style,
+      ]}
+      {...props}
+    >
       {children}
-    </StyledText>
+    </RNText>
   );
 };
+
+const styles = StyleSheet.create({
+  // Variants
+  h1: {
+    fontSize: fontSizes['4xl'],
+    lineHeight: fontSizes['4xl'] * 1.2,
+    color: colors.secondary[900],
+  },
+  h2: {
+    fontSize: fontSizes['3xl'],
+    lineHeight: fontSizes['3xl'] * 1.2,
+    color: colors.secondary[900],
+  },
+  h3: {
+    fontSize: fontSizes['2xl'],
+    lineHeight: fontSizes['2xl'] * 1.2,
+    color: colors.secondary[900],
+  },
+  h4: {
+    fontSize: fontSizes.xl,
+    lineHeight: fontSizes.xl * 1.2,
+    color: colors.secondary[900],
+  },
+  h5: {
+    fontSize: fontSizes.lg,
+    lineHeight: fontSizes.lg * 1.2,
+    color: colors.secondary[900],
+  },
+  h6: {
+    fontSize: fontSizes.md,
+    lineHeight: fontSizes.md * 1.2,
+    color: colors.secondary[900],
+  },
+  body: {
+    fontSize: fontSizes.md,
+    lineHeight: fontSizes.md * 1.5,
+    color: colors.secondary[700],
+  },
+  'body-sm': {
+    fontSize: fontSizes.sm,
+    lineHeight: fontSizes.sm * 1.5,
+    color: colors.secondary[700],
+  },
+  'body-lg': {
+    fontSize: fontSizes.lg,
+    lineHeight: fontSizes.lg * 1.5,
+    color: colors.secondary[700],
+  },
+  caption: {
+    fontSize: fontSizes.xs,
+    lineHeight: fontSizes.xs * 1.5,
+    color: colors.secondary[500],
+  },
+  label: {
+    fontSize: fontSizes.sm,
+    lineHeight: fontSizes.sm * 1.2,
+    color: colors.secondary[700],
+  },
+  
+  // Weights
+  regular: {
+    fontFamily: fonts.regular,
+  },
+  medium: {
+    fontFamily: fonts.medium,
+  },
+  semibold: {
+    fontFamily: fonts.semiBold,
+  },
+  bold: {
+    fontFamily: fonts.bold,
+  },
+});
 
 export default Text;
