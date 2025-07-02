@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { styled } from 'nativewind';
-import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react-native';
+import { CircleCheck as CheckCircle, CircleAlert as AlertCircle, Info, X, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import { Text } from './ui';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';

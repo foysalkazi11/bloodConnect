@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, TextInputProps, TouchableOpacity } from 'react-native';
 import { styled } from 'nativewind';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
 import Text from './Text';
 
 export interface InputProps extends TextInputProps {

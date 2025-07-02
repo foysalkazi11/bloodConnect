@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInputProps } from 'react-native';
 import { styled } from 'nativewind';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react-native';
+import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { Input } from './ui';
 
 interface ValidatedInputProps extends Omit<TextInputProps, 'onChangeText' | 'onBlur'> {
