@@ -120,12 +120,12 @@ export default function GalleryScreen() {
           });
         }
         
-        // Format posts
+        // Format posts with null safety
         const formattedPosts: GalleryPost[] = data.map(post => ({
           id: post.id,
-          author: post.user_profiles.name,
+          author: post.user_profiles?.name || 'Unknown User',
           authorId: post.user_id,
-          bloodGroup: post.user_profiles.blood_group,
+          bloodGroup: post.user_profiles?.blood_group || undefined,
           image: post.image_url,
           caption: post.caption,
           location: post.location,
@@ -288,11 +288,11 @@ export default function GalleryScreen() {
       if (data) {
         const formattedComments = data.map(comment => ({
           id: comment.id,
-          author: comment.user_profiles.name,
+          author: comment.user_profiles?.name || 'Unknown User',
           authorId: comment.user_id,
           content: comment.content,
           timeAgo: formatTimeAgo(comment.created_at),
-          bloodGroup: comment.user_profiles.blood_group
+          bloodGroup: comment.user_profiles?.blood_group || undefined
         }));
         
         setComments(formattedComments);
