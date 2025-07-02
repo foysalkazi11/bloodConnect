@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Heart, User, Users } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
@@ -24,7 +32,11 @@ export default function CompleteProfileScreen() {
   useEffect(() => {
     if (profile?.user_type) {
       setAccountType(profile.user_type);
-    } else if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+    } else if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.sessionStorage
+    ) {
       const pendingType = sessionStorage.getItem('pendingAccountType');
       if (pendingType === 'donor' || pendingType === 'club') {
         setAccountType(pendingType);
@@ -37,13 +49,19 @@ export default function CompleteProfileScreen() {
   useEffect(() => {
     const initializeProfile = async () => {
       if (user && user.email_confirmed_at && !profile && !profileInitialized) {
-        console.log('CompleteProfile: User authenticated but no profile, initializing...');
+        console.log(
+          'CompleteProfile: User authenticated but no profile, initializing...'
+        );
         setProfileInitialized(true);
-        
+
         try {
           // Check for pending signup data
           let pendingData = null;
-          if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
+          if (
+            Platform.OS === 'web' &&
+            typeof window !== 'undefined' &&
+            window.sessionStorage
+          ) {
             const pendingDataStr = sessionStorage.getItem('pendingSignupData');
             if (pendingDataStr) {
               try {
@@ -54,7 +72,7 @@ export default function CompleteProfileScreen() {
               }
             }
           }
-          
+
           // Create minimal profile to satisfy RLS
           const initialData: any = {
             email: user.email || '',
@@ -69,19 +87,25 @@ export default function CompleteProfileScreen() {
           if (pendingData?.bloodGroup && pendingData.userType === 'donor') {
             initialData.blood_group = pendingData.bloodGroup;
           }
-          if (pendingData?.district) initialData.district = pendingData.district;
-          if (pendingData?.policeStation) initialData.police_station = pendingData.policeStation;
+          if (pendingData?.district)
+            initialData.district = pendingData.district;
+          if (pendingData?.policeStation)
+            initialData.police_station = pendingData.policeStation;
           if (pendingData?.state) initialData.state = pendingData.state;
           if (pendingData?.city) initialData.city = pendingData.city;
           if (pendingData?.address) initialData.address = pendingData.address;
           if (pendingData?.website) initialData.website = pendingData.website;
-          if (pendingData?.description) initialData.description = pendingData.description;
+          if (pendingData?.description)
+            initialData.description = pendingData.description;
 
           console.log('CompleteProfile: Creating initial profile...');
           await updateProfile(initialData);
           console.log('CompleteProfile: Initial profile created');
         } catch (error) {
-          console.error('CompleteProfile: Failed to initialize profile:', error);
+          console.error(
+            'CompleteProfile: Failed to initialize profile:',
+            error
+          );
           // Don't show error to user - they can still complete profile manually
         }
       }
@@ -98,38 +122,50 @@ export default function CompleteProfileScreen() {
       district: {
         required: false,
         custom: (value: string, allData?: Record<string, string>) => {
-          if (allData?.country === 'BANGLADESH' && (!value || value.trim().length === 0)) {
+          if (
+            allData?.country === 'BANGLADESH' &&
+            (!value || value.trim().length === 0)
+          ) {
             return 'This field is required';
           }
           return null;
-        }
+        },
       },
       policeStation: {
         required: false,
         custom: (value: string, allData?: Record<string, string>) => {
-          if (allData?.country === 'BANGLADESH' && (!value || value.trim().length === 0)) {
+          if (
+            allData?.country === 'BANGLADESH' &&
+            (!value || value.trim().length === 0)
+          ) {
             return 'This field is required';
           }
           return null;
-        }
+        },
       },
       state: {
         required: false,
         custom: (value: string, allData?: Record<string, string>) => {
-          if (allData?.country !== 'BANGLADESH' && (!value || value.trim().length === 0)) {
+          if (
+            allData?.country !== 'BANGLADESH' &&
+            (!value || value.trim().length === 0)
+          ) {
             return 'This field is required';
           }
           return null;
-        }
+        },
       },
       city: {
         required: false,
         custom: (value: string, allData?: Record<string, string>) => {
-          if (allData?.country !== 'BANGLADESH' && (!value || value.trim().length === 0)) {
+          if (
+            allData?.country !== 'BANGLADESH' &&
+            (!value || value.trim().length === 0)
+          ) {
             return 'This field is required';
           }
           return null;
-        }
+        },
       },
     };
 
@@ -160,12 +196,17 @@ export default function CompleteProfileScreen() {
     validateAll: validateProfile,
     setValidationRules,
   } = useFormValidation(
-    { 
-      name: profile?.name === profile?.email ? '' : (profile?.name || ''), // Clear if it's the temporary email name
-      phone: profile?.phone || '', 
-      bloodGroup: profile?.blood_group || '', 
-      clubName: profile?.user_type === 'club' ? (profile?.name === profile?.email ? '' : (profile?.name || '')) : '', 
-      website: profile?.website || '', 
+    {
+      name: profile?.name === profile?.email ? '' : profile?.name || '', // Clear if it's the temporary email name
+      phone: profile?.phone || '',
+      bloodGroup: profile?.blood_group || '',
+      clubName:
+        profile?.user_type === 'club'
+          ? profile?.name === profile?.email
+            ? ''
+            : profile?.name || ''
+          : '',
+      website: profile?.website || '',
       description: profile?.description || '',
       country: profile?.country || 'BANGLADESH',
       district: profile?.district || '',
@@ -188,7 +229,8 @@ export default function CompleteProfileScreen() {
       // Only prevent navigation if we're in the middle of completing a profile
       if (user && !isProfileComplete()) {
         e.preventDefault();
-        e.returnValue = 'You need to complete your profile before leaving this page. Are you sure you want to leave?';
+        e.returnValue =
+          'You need to complete your profile before leaving this page. Are you sure you want to leave?';
         return e.returnValue;
       }
     };
@@ -196,31 +238,40 @@ export default function CompleteProfileScreen() {
     // Check if profile is complete
     const isProfileComplete = () => {
       if (!profile) return false;
-      
+
       // Basic required fields
-      if (!profile.name || profile.name === profile.email || !profile.phone) return false;
-      
+      if (!profile.name || profile.name === profile.email || !profile.phone)
+        return false;
+
       // Location fields
       if (profile.country === 'BANGLADESH') {
         if (!profile.district || !profile.police_station) return false;
       } else {
         if (!profile.state || !profile.city) return false;
       }
-      
+
       // Donor-specific fields
       if (profile.user_type === 'donor' && !profile.blood_group) return false;
-      
+
       return true;
     };
 
     // Add event listener for beforeunload only on web platform
-    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.addEventListener) {
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.addEventListener
+    ) {
       window.addEventListener('beforeunload', preventNavigation);
     }
 
     // Clean up
     return () => {
-      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.removeEventListener) {
+      if (
+        Platform.OS === 'web' &&
+        typeof window !== 'undefined' &&
+        window.removeEventListener
+      ) {
         window.removeEventListener('beforeunload', preventNavigation);
       }
     };
@@ -228,7 +279,7 @@ export default function CompleteProfileScreen() {
 
   const handleCompleteProfile = async () => {
     console.log('Starting profile completion...');
-    
+
     if (isSubmitting) {
       console.log('Already submitting, preventing duplicate submission');
       return;
@@ -287,26 +338,26 @@ export default function CompleteProfileScreen() {
 
       // Call the updateProfile function from AuthProvider
       await updateProfile(updates);
-      
+
       console.log('Profile updated successfully');
-      
+
       showNotification({
         type: 'success',
         title: 'Profile Completed!',
         message: `Welcome to BloodConnect! Your ${accountType} profile has been set up successfully.`,
         duration: 4000,
       });
-      
+
       // Navigate to home screen
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Profile update error:', error);
-      
+
       let errorMessage = 'Something went wrong. Please try again.';
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
+
       showNotification({
         type: 'error',
         title: 'Profile Update Failed',
@@ -330,7 +381,7 @@ export default function CompleteProfileScreen() {
       [
         {
           text: 'Cancel',
-          style: 'cancel'
+          style: 'cancel',
         },
         {
           text: 'Sign Out',
@@ -344,8 +395,8 @@ export default function CompleteProfileScreen() {
               console.error('Error signing out:', error);
               router.replace('/auth');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -360,14 +411,17 @@ export default function CompleteProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBackAttempt}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBackAttempt}
+          >
             <Text style={styles.backButtonText}>Sign Out</Text>
           </TouchableOpacity>
           <Heart size={48} color="#DC2626" />
@@ -385,15 +439,20 @@ export default function CompleteProfileScreen() {
               <TouchableOpacity
                 style={[
                   styles.accountTypeCard,
-                  accountType === 'donor' && styles.accountTypeCardActive
+                  accountType === 'donor' && styles.accountTypeCardActive,
                 ]}
                 onPress={() => setAccountType('donor')}
               >
-                <User size={24} color={accountType === 'donor' ? '#FFFFFF' : '#DC2626'} />
-                <Text style={[
-                  styles.accountTypeText,
-                  accountType === 'donor' && styles.accountTypeTextActive
-                ]}>
+                <User
+                  size={24}
+                  color={accountType === 'donor' ? '#FFFFFF' : '#DC2626'}
+                />
+                <Text
+                  style={[
+                    styles.accountTypeText,
+                    accountType === 'donor' && styles.accountTypeTextActive,
+                  ]}
+                >
                   Blood Donor
                 </Text>
               </TouchableOpacity>
@@ -401,15 +460,20 @@ export default function CompleteProfileScreen() {
               <TouchableOpacity
                 style={[
                   styles.accountTypeCard,
-                  accountType === 'club' && styles.accountTypeCardActive
+                  accountType === 'club' && styles.accountTypeCardActive,
                 ]}
                 onPress={() => setAccountType('club')}
               >
-                <Users size={24} color={accountType === 'club' ? '#FFFFFF' : '#DC2626'} />
-                <Text style={[
-                  styles.accountTypeText,
-                  accountType === 'club' && styles.accountTypeTextActive
-                ]}>
+                <Users
+                  size={24}
+                  color={accountType === 'club' ? '#FFFFFF' : '#DC2626'}
+                />
+                <Text
+                  style={[
+                    styles.accountTypeText,
+                    accountType === 'club' && styles.accountTypeTextActive,
+                  ]}
+                >
                   Blood Donation Club
                 </Text>
               </TouchableOpacity>
@@ -465,14 +529,18 @@ export default function CompleteProfileScreen() {
                     key={group}
                     style={[
                       styles.bloodGroupChip,
-                      profileData.bloodGroup === group && styles.bloodGroupChipActive
+                      profileData.bloodGroup === group &&
+                        styles.bloodGroupChipActive,
                     ]}
                     onPress={() => updateProfileField('bloodGroup', group)}
                   >
-                    <Text style={[
-                      styles.bloodGroupChipText,
-                      profileData.bloodGroup === group && styles.bloodGroupChipTextActive
-                    ]}>
+                    <Text
+                      style={[
+                        styles.bloodGroupChipText,
+                        profileData.bloodGroup === group &&
+                          styles.bloodGroupChipTextActive,
+                      ]}
+                    >
                       {group}
                     </Text>
                   </TouchableOpacity>
@@ -488,9 +556,15 @@ export default function CompleteProfileScreen() {
             selectedCountry={profileData.country}
             selectedDistrict={profileData.district}
             selectedPoliceStation={profileData.policeStation}
-            onCountryChange={(country) => handleLocationChange('country', country)}
-            onDistrictChange={(district) => handleLocationChange('district', district)}
-            onPoliceStationChange={(policeStation) => handleLocationChange('policeStation', policeStation)}
+            onCountryChange={(country) =>
+              handleLocationChange('country', country)
+            }
+            onDistrictChange={(district) =>
+              handleLocationChange('district', district)
+            }
+            onPoliceStationChange={(policeStation) =>
+              handleLocationChange('policeStation', policeStation)
+            }
             onLocationInputChange={handleLocationChange}
           />
 
@@ -519,8 +593,11 @@ export default function CompleteProfileScreen() {
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity 
-            style={[styles.completeButton, isButtonDisabled && styles.completeButtonDisabled]}
+          <TouchableOpacity
+            style={[
+              styles.completeButton,
+              isButtonDisabled && styles.completeButtonDisabled,
+            ]}
             onPress={handleCompleteProfile}
             disabled={isButtonDisabled}
           >
@@ -528,7 +605,7 @@ export default function CompleteProfileScreen() {
               {isSubmitting ? 'Setting up profile...' : 'Complete Profile'}
             </Text>
           </TouchableOpacity>
-          
+
           <View style={styles.warningContainer}>
             <Text style={styles.warningText}>
               You must complete your profile before you can use the app.

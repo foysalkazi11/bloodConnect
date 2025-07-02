@@ -1,7 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  Modal,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, CreditCard as Edit3, Settings, Bell, Shield, Globe, LogOut, Heart, Award, Calendar, Phone, Mail, MapPin, Users, ArrowLeft, Camera, ChevronRight, ToggleLeft, ToggleRight } from 'lucide-react-native';
+import {
+  User,
+  CreditCard as Edit3,
+  Settings,
+  Bell,
+  Shield,
+  Globe,
+  LogOut,
+  Heart,
+  Award,
+  Calendar,
+  Phone,
+  Mail,
+  MapPin,
+  Users,
+  ArrowLeft,
+  Camera,
+  ChevronRight,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
@@ -23,7 +53,13 @@ interface EditProfileModalProps {
   loading: boolean;
 }
 
-const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose, profile, onSave, loading }) => {
+const EditProfileModal: React.FC<EditProfileModalProps> = ({
+  visible,
+  onClose,
+  profile,
+  onSave,
+  loading,
+}) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [website, setWebsite] = useState('');
@@ -72,7 +108,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose, p
           <View style={styles.headerRight} />
         </View>
 
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.modalContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.modalSection}>
             <Text style={styles.modalLabel}>Name *</Text>
             <TextInput
@@ -127,10 +166,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose, p
             </>
           )}
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
-              styles.saveButton, 
-              (!isFormValid() || loading) && styles.saveButtonDisabled
+              styles.saveButton,
+              (!isFormValid() || loading) && styles.saveButtonDisabled,
             ]}
             onPress={handleSave}
             disabled={!isFormValid() || loading}
@@ -142,7 +181,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onClose, p
 
           <View style={styles.modalNote}>
             <Text style={styles.modalNoteText}>
-              * Required fields. Other profile details like location and blood group can be updated through the complete profile flow.
+              * Required fields. Other profile details like location and blood
+              group can be updated through the complete profile flow.
             </Text>
           </View>
         </ScrollView>
@@ -190,9 +230,10 @@ export default function ProfileScreen() {
       const joinedClubs = profile?.user_type === 'club' ? 1 : 0;
 
       // Get last donation date
-      const lastDonation = donations && donations.length > 0 
-        ? donations[0].donation_date 
-        : undefined;
+      const lastDonation =
+        donations && donations.length > 0
+          ? donations[0].donation_date
+          : undefined;
 
       setUserStats({
         totalDonations: donationCount || 0,
@@ -209,31 +250,29 @@ export default function ProfileScreen() {
   const handleLanguageToggle = () => {
     const newLanguage = currentLanguage === 'en' ? 'bn' : 'en';
     changeLanguage(newLanguage);
-    
+
     showNotification({
       type: 'success',
       title: 'Language Changed',
-      message: `Language switched to ${newLanguage === 'en' ? 'English' : 'বাংলা'}`,
+      message: `Language switched to ${
+        newLanguage === 'en' ? 'English' : 'বাংলা'
+      }`,
       duration: 3000,
     });
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: performSignOut,
-        },
-      ]
-    );
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: performSignOut,
+      },
+    ]);
   };
 
   const performSignOut = async () => {
@@ -244,7 +283,7 @@ export default function ProfileScreen() {
 
     console.log('Profile: Starting sign out process...');
     setSignOutLoading(true);
-    
+
     try {
       // Show immediate feedback
       showNotification({
@@ -257,9 +296,9 @@ export default function ProfileScreen() {
       // Call the sign out function from AuthProvider
       console.log('Profile: Calling signOut from AuthProvider...');
       await signOut();
-      
+
       console.log('Profile: Sign out successful, showing success notification');
-      
+
       // Show success notification
       showNotification({
         type: 'success',
@@ -273,14 +312,16 @@ export default function ProfileScreen() {
       setTimeout(() => {
         router.replace('/(tabs)');
       }, 100);
-      
     } catch (error) {
       console.error('Profile: Sign out error:', error);
-      
+
       showNotification({
         type: 'error',
         title: 'Sign Out Failed',
-        message: error instanceof Error ? error.message : 'Failed to sign out. Please try again.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to sign out. Please try again.',
         duration: 4000,
       });
     } finally {
@@ -299,12 +340,12 @@ export default function ProfileScreen() {
     try {
       const newAvailability = !profile.is_available;
       await updateProfile({ is_available: newAvailability });
-      
+
       showNotification({
         type: 'success',
         title: 'Availability Updated',
-        message: newAvailability 
-          ? 'You are now available for blood donation' 
+        message: newAvailability
+          ? 'You are now available for blood donation'
           : 'You are no longer available for blood donation',
         duration: 4000,
       });
@@ -350,8 +391,10 @@ export default function ProfileScreen() {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMonths = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 30));
-    
+    const diffInMonths = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 30)
+    );
+
     if (diffInMonths < 1) return 'This month';
     if (diffInMonths === 1) return '1 month ago';
     return `${diffInMonths} months ago`;
@@ -359,7 +402,7 @@ export default function ProfileScreen() {
 
   const getLocationDisplay = () => {
     if (!profile) return 'Location not set';
-    
+
     if (profile.country === 'BANGLADESH') {
       const parts = [];
       if (profile.police_station) parts.push(profile.police_station);
@@ -375,7 +418,9 @@ export default function ProfileScreen() {
 
   const getProfileImage = () => {
     // Generate a consistent avatar based on user ID
-    const avatarId = user?.id ? parseInt(user.id.slice(-3), 16) % 1000 + 1 : 220453;
+    const avatarId = user?.id
+      ? (parseInt(user.id.slice(-3), 16) % 1000) + 1
+      : 220453;
     return `https://images.pexels.com/photos/${avatarId}/pexels-photo-${avatarId}.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop`;
   };
 
@@ -390,20 +435,15 @@ export default function ProfileScreen() {
   const renderAvatar = () => {
     if (!imageError) {
       return (
-        <Image 
-          source={{ uri: getProfileImage() }} 
+        <Image
+          source={{ uri: getProfileImage() }}
           style={styles.profileAvatar}
           onError={() => setImageError(true)}
         />
       );
     }
-    
-    return (
-      <TextAvatar 
-        name={profile?.name || 'User'} 
-        size={100}
-      />
-    );
+
+    return <TextAvatar name={profile?.name || 'User'} size={100} />;
   };
 
   if (!user || !profile) {
@@ -426,7 +466,10 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
             <Text style={styles.signInButtonText}>{t('auth.signIn')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.signUpButton} onPress={() => router.push('/auth/signup')}>
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={() => router.push('/auth/signup')}
+          >
             <Text style={styles.signUpButtonText}>{t('auth.signUp')}</Text>
           </TouchableOpacity>
         </View>
@@ -455,7 +498,7 @@ export default function ProfileScreen() {
               <Camera size={16} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{profile.name}</Text>
             {profile.blood_group && (
@@ -507,10 +550,12 @@ export default function ProfileScreen() {
           <View style={styles.availabilitySection}>
             <View style={styles.availabilityCard}>
               <View style={styles.availabilityInfo}>
-                <Text style={styles.availabilityTitle}>Donation Availability</Text>
+                <Text style={styles.availabilityTitle}>
+                  Donation Availability
+                </Text>
                 <Text style={styles.availabilitySubtitle}>
-                  {profile.is_available 
-                    ? 'You are available for donation' 
+                  {profile.is_available
+                    ? 'You are available for donation'
                     : 'You are not available for donation'}
                 </Text>
               </View>
@@ -546,27 +591,29 @@ export default function ProfileScreen() {
                 <Heart size={24} color="#DC2626" />
                 <Text style={styles.statValue}>{userStats.totalDonations}</Text>
                 <Text style={styles.statLabel}>
-                  {profile.user_type === 'donor' ? 'Total Donations' : 'Total Drives'}
+                  {profile.user_type === 'donor'
+                    ? 'Total Donations'
+                    : 'Total Drives'}
                 </Text>
               </View>
               <View style={styles.statCard}>
                 <Award size={24} color="#DC2626" />
                 <Text style={styles.statValue}>{userStats.joinedClubs}</Text>
                 <Text style={styles.statLabel}>
-                  {profile.user_type === 'donor' ? 'Clubs Joined' : 'Active Members'}
+                  {profile.user_type === 'donor'
+                    ? 'Clubs Joined'
+                    : 'Active Members'}
                 </Text>
               </View>
               <View style={styles.statCard}>
                 <Calendar size={24} color="#DC2626" />
                 <Text style={styles.statValue}>
-                  {userStats.lastDonation 
+                  {userStats.lastDonation
                     ? formatTimeAgo(userStats.lastDonation).split(' ')[0]
                     : 'Never'}
                 </Text>
                 <Text style={styles.statLabel}>
-                  {userStats.lastDonation 
-                    ? 'Last Donation' 
-                    : 'No Donations'}
+                  {userStats.lastDonation ? 'Last Donation' : 'No Donations'}
                 </Text>
               </View>
             </>
@@ -599,7 +646,10 @@ export default function ProfileScreen() {
             <ChevronRight size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={handleLanguageToggle}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleLanguageToggle}
+          >
             <View style={styles.menuItemLeft}>
               <Globe size={20} color="#374151" />
               <Text style={styles.menuItemText}>Language</Text>
@@ -623,19 +673,21 @@ export default function ProfileScreen() {
 
         {/* Sign Out */}
         <View style={styles.signOutSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.signOutButton,
-              signOutLoading && styles.signOutButtonDisabled
-            ]} 
-            onPress={handleSignOut}
+              signOutLoading && styles.signOutButtonDisabled,
+            ]}
+            onPress={performSignOut}
             disabled={signOutLoading}
           >
-            <LogOut size={20} color={signOutLoading ? "#9CA3AF" : "#EF4444"} />
-            <Text style={[
-              styles.signOutText,
-              signOutLoading && styles.signOutTextDisabled
-            ]}>
+            <LogOut size={20} color={signOutLoading ? '#9CA3AF' : '#EF4444'} />
+            <Text
+              style={[
+                styles.signOutText,
+                signOutLoading && styles.signOutTextDisabled,
+              ]}
+            >
               {signOutLoading ? 'Signing Out...' : 'Sign Out'}
             </Text>
           </TouchableOpacity>
@@ -644,7 +696,9 @@ export default function ProfileScreen() {
         {/* App Info */}
         <View style={styles.appInfoSection}>
           <Text style={styles.appInfoText}>BloodConnect v1.0.0</Text>
-          <Text style={styles.appInfoSubtext}>Connecting hearts, saving lives</Text>
+          <Text style={styles.appInfoSubtext}>
+            Connecting hearts, saving lives
+          </Text>
         </View>
       </ScrollView>
 
