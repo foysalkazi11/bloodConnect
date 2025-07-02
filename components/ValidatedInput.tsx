@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInputProps } from 'react-native';
-import { styled } from 'nativewind';
+import { styled } from 'nativewind/api';
 import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { Input } from './ui';
 
