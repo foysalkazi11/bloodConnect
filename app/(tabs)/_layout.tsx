@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Chrome as Home, Search, Camera, Users, User } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
+import { colors } from '@/components/theme';
 
 export default function TabLayout() {
   const { t } = useI18n();
@@ -9,12 +10,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#DC2626',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: colors.primary[600],
+        tabBarInactiveTintColor: colors.secondary[500],
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.white,
           borderTopWidth: 1,
-          borderTopColor: '#F3F4F6',
+          borderTopColor: colors.secondary[100],
           paddingBottom: 8,
           paddingTop: 8,
           height: 60,
