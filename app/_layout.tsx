@@ -3,11 +3,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
+import '../global.css';
 import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
-  Inter_700Bold
+  Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { I18nProvider } from '@/providers/I18nProvider';
@@ -43,7 +44,10 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="auth" options={{ headerShown: false }} />
-            <Stack.Screen name="complete-profile" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="complete-profile"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
