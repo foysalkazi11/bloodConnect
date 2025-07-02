@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions } from 'react-native';
-import { CircleCheck as CheckCircle, CircleAlert as AlertCircle, Info, X, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { styled } from 'nativewind';
+import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react-native';
+import { Text } from './ui';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -33,6 +35,9 @@ export const useNotification = () => {
 };
 
 const { width: screenWidth } = Dimensions.get('window');
+
+const StyledView = styled(View);
+const StyledTouchableOpacity = styled(TouchableOpacity);
 
 interface NotificationItemProps {
   notification: Notification;
@@ -100,77 +105,109 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onHid
     }
   };
 
-  const getBackgroundColor = () => {
+  const getBackgroundColorClass = () => {
     switch (notification.type) {
       case 'success':
-        return '#F0FDF4';
+        return 'bg-success-50';
       case 'error':
-        return '#FEF2F2';
+        return 'bg-error-50';
       case 'warning':
-        return '#FFFBEB';
+        return 'bg-warning-50';
       case 'info':
-        return '#EFF6FF';
+        return 'bg-secondary-50';
       default:
-        return '#F9FAFB';
+        return 'bg-neutral-50';
     }
   };
 
-  const getBorderColor = () => {
+  const getBorderColorClass = () => {
     switch (notification.type) {
       case 'success':
-        return '#10B981';
+        return 'border-l-success-500';
       case 'error':
-        return '#EF4444';
+        return 'border-l-error-500';
       case 'warning':
-        return '#F59E0B';
+        return 'border-l-warning-500';
       case 'info':
-        return '#3B82F6';
+        return 'border-l-secondary-500';
       default:
-        return '#D1D5DB';
+        return 'border-l-neutral-500';
+    }
+  };
+
+  const getActionTextColorClass = () => {
+    switch (notification.type) {
+      case 'success':
+        return 'text-success-600';
+      case 'error':
+        return 'text-error-600';
+      case 'warning':
+        return 'text-warning-600';
+      case 'info':
+        return 'text-secondary-600';
+      default:
+        return 'text-neutral-600';
     }
   };
 
   return (
     <Animated.View
       style={[
-        styles.notificationContainer,
         {
-          backgroundColor: getBackgroundColor(),
-          borderLeftColor: getBorderColor(),
           transform: [{ translateX: slideAnim }],
           opacity: opacityAnim,
         },
       ]}
     >
-      <View style={styles.notificationContent}>
-        <View style={styles.iconContainer}>
-          {getIcon()}
-        </View>
-        
-        <View style={styles.textContainer}>
-          <Text style={styles.notificationTitle}>{notification.title}</Text>
-          {notification.message && (
-            <Text style={styles.notificationMessage}>{notification.message}</Text>
-          )}
-          {notification.action && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={notification.action.onPress}
-            >
-              <Text style={[styles.actionButtonText, { color: getBorderColor() }]}>
-                {notification.action.label}
+      <StyledView
+        className={`
+          mx-4 my-1 rounded-xl border-l-4 shadow-sm
+          ${getBackgroundColorClass()} 
+          ${getBorderColorClass()}
+        `}
+      >
+        <StyledView className="flex-row p-4">
+          <StyledView className="mr-3 mt-0.5">
+            {getIcon()}
+          </StyledView>
+          
+          <StyledView className="flex-1">
+            <Text variant="h6" weight="semibold" color="text-neutral-900">
+              {notification.title}
+            </Text>
+            
+            {notification.message && (
+              <Text variant="body-sm" color="text-neutral-600" className="mt-1">
+                {notification.message}
               </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+            )}
+            
+            {notification.action && (
+              <StyledTouchableOpacity
+                className="mt-2 self-start"
+                onPress={notification.action.onPress}
+                activeOpacity={0.7}
+              >
+                <Text 
+                  variant="body-sm" 
+                  weight="semibold" 
+                  className={getActionTextColorClass()}
+                >
+                  {notification.action.label}
+                </Text>
+              </StyledTouchableOpacity>
+            )}
+          </StyledView>
 
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={hideNotification}
-        >
-          <X size={20} color="#6B7280" />
-        </TouchableOpacity>
-      </View>
+          <StyledTouchableOpacity
+            className="p-1"
+            onPress={hideNotification}
+            activeOpacity={0.7}
+          >
+            <X size={20} color="#6B7280" />
+          </StyledTouchableOpacity>
+        </StyledView>
+      </StyledView>
     </Animated.View>
   );
 };
@@ -204,7 +241,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   return (
     <NotificationContext.Provider value={{ showNotification, hideNotification, clearAll }}>
       {children}
-      <View style={styles.notificationsOverlay} pointerEvents="box-none">
+      <StyledView className="absolute top-0 left-0 right-0 z-50 pt-14 pointer-events-none">
         {notifications.map(notification => (
           <NotificationItem
             key={notification.id}
@@ -212,68 +249,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
             onHide={hideNotification}
           />
         ))}
-      </View>
+      </StyledView>
     </NotificationContext.Provider>
   );
 };
 
-const styles = StyleSheet.create({
-  notificationsOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 9999,
-    paddingTop: 60, // Account for status bar and safe area
-  },
-  notificationContainer: {
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  notificationContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 16,
-  },
-  iconContainer: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  textContainer: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#111827',
-    marginBottom: 4,
-  },
-  notificationMessage: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  actionButton: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-  },
-  actionButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-  },
-  closeButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-});
+export default NotificationProvider;

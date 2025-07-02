@@ -1,12 +1,15 @@
 import { Tabs } from 'expo-router';
 import { Chrome as Home, Search, Camera, Users, User } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
+import { styled } from 'nativewind';
+
+const StyledTabs = styled(Tabs);
 
 export default function TabLayout() {
   const { t } = useI18n();
 
   return (
-    <Tabs
+    <StyledTabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#DC2626',
@@ -69,6 +72,6 @@ export default function TabLayout() {
           ),
         }}
       />
-    </Tabs>
+    </StyledTabs>
   );
 }
