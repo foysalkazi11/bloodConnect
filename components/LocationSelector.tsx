@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, ScrollView, Modal } from 'react-native';
-import { styled } from 'nativewind';
 import { ChevronDown, Search, X } from 'lucide-react-native';
 import { Text } from './ui';
 
@@ -47,11 +46,6 @@ interface DropdownProps {
   displayKey?: string;
 }
 
-const StyledView = styled(View);
-const StyledTextInput = styled(TextInput);
-const StyledTouchableOpacity = styled(TouchableOpacity);
-const StyledScrollView = styled(ScrollView);
-
 const SearchableDropdown: React.FC<DropdownProps> = ({
   label,
   value,
@@ -73,12 +67,12 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
   const displayValue = selectedItem ? selectedItem[displayKey] : '';
 
   return (
-    <StyledView className="mb-5">
+    <View className="mb-5">
       <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
         {label}
       </Text>
       
-      <StyledTouchableOpacity
+      <TouchableOpacity
         className={`
           flex-row items-center justify-between
           bg-neutral-50 border rounded-lg px-4 py-3
@@ -94,7 +88,7 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
           {displayValue || placeholder}
         </Text>
         <ChevronDown size={20} color={disabled ? "#9CA3AF" : "#6B7280"} />
-      </StyledTouchableOpacity>
+      </TouchableOpacity>
 
       <Modal
         visible={isVisible}
@@ -102,29 +96,29 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
         animationType="slide"
         onRequestClose={() => setIsVisible(false)}
       >
-        <StyledView className="flex-1 bg-black/50 justify-end">
-          <StyledView className="bg-white rounded-t-3xl pt-5">
-            <StyledView className="flex-row justify-between items-center px-5 pb-4 border-b border-neutral-200">
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl pt-5">
+            <View className="flex-row justify-between items-center px-5 pb-4 border-b border-neutral-200">
               <Text variant="h5" weight="semibold">Select {label}</Text>
-              <StyledTouchableOpacity onPress={() => setIsVisible(false)}>
+              <TouchableOpacity onPress={() => setIsVisible(false)}>
                 <X size={24} color="#374151" />
-              </StyledTouchableOpacity>
-            </StyledView>
+              </TouchableOpacity>
+            </View>
 
-            <StyledView className="flex-row items-center bg-neutral-50 rounded-lg px-4 py-3 mx-5 my-5">
+            <View className="flex-row items-center bg-neutral-50 rounded-lg px-4 py-3 mx-5 my-5">
               <Search size={20} color="#6B7280" />
-              <StyledTextInput
+              <TextInput
                 className="flex-1 ml-3 text-base text-neutral-900 font-inter-regular"
                 placeholder={`Search ${label.toLowerCase()}...`}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholderTextColor="#9CA3AF"
               />
-            </StyledView>
+            </View>
 
-            <StyledScrollView className="max-h-80" nestedScrollEnabled={true}>
+            <ScrollView className="max-h-80" nestedScrollEnabled={true}>
               {filteredData.map((item, index) => (
-                <StyledTouchableOpacity
+                <TouchableOpacity
                   key={index}
                   className={`
                     px-5 py-4 border-b border-neutral-100
@@ -142,18 +136,18 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
                   >
                     {item[displayKey]}
                   </Text>
-                </StyledTouchableOpacity>
+                </TouchableOpacity>
               ))}
               {filteredData.length === 0 && (
-                <StyledView className="py-12 items-center">
+                <View className="py-12 items-center">
                   <Text color="text-neutral-500">No results found</Text>
-                </StyledView>
+                </View>
               )}
-            </StyledScrollView>
-          </StyledView>
-        </StyledView>
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
-    </StyledView>
+    </View>
   );
 };
 
@@ -193,12 +187,12 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       onDistrictChange('');
       onPoliceStationChange('');
     }
-  }, [selectedCountry]);
+  }, [selectedCountry, onDistrictChange, onPoliceStationChange]);
 
   // Reset police station when district changes
   useEffect(() => {
     onPoliceStationChange('');
-  }, [selectedDistrict]);
+  }, [selectedDistrict, onPoliceStationChange]);
 
   const handleOtherLocationChange = (field: string, value: string) => {
     setOtherLocationInputs(prev => ({ ...prev, [field]: value }));
@@ -206,7 +200,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   };
 
   return (
-    <StyledView>
+    <View>
       {/* Country Selection */}
       <SearchableDropdown
         label="Country"
@@ -247,38 +241,38 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {/* Other countries location fields */}
       {!isBangladesh && selectedCountry && (
-        <StyledView className="gap-5">
-          <StyledView>
+        <View className="gap-5">
+          <View>
             <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
               State/Province
             </Text>
-            <StyledTextInput
+            <TextInput
               className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular"
               value={otherLocationInputs.state}
               onChangeText={(text) => handleOtherLocationChange('state', text)}
               placeholder="Enter state or province"
               placeholderTextColor="#9CA3AF"
             />
-          </StyledView>
+          </View>
 
-          <StyledView>
+          <View>
             <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
               City
             </Text>
-            <StyledTextInput
+            <TextInput
               className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular"
               value={otherLocationInputs.city}
               onChangeText={(text) => handleOtherLocationChange('city', text)}
               placeholder="Enter city"
               placeholderTextColor="#9CA3AF"
             />
-          </StyledView>
+          </View>
 
-          <StyledView>
+          <View>
             <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
               Address
             </Text>
-            <StyledTextInput
+            <TextInput
               className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular min-h-20"
               value={otherLocationInputs.address}
               onChangeText={(text) => handleOtherLocationChange('address', text)}
@@ -288,10 +282,10 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               numberOfLines={3}
               textAlignVertical="top"
             />
-          </StyledView>
-        </StyledView>
+          </View>
+        </View>
       )}
-    </StyledView>
+    </View>
   );
 };
 
