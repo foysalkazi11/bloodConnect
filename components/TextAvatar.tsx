@@ -1,18 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { styled } from 'nativewind';
 
 interface TextAvatarProps {
   name: string;
   size?: number;
   backgroundColor?: string;
   textColor?: string;
+  className?: string;
 }
+
+const StyledView = styled(View);
+const StyledText = styled(Text);
 
 export const TextAvatar: React.FC<TextAvatarProps> = ({
   name,
   size = 100,
   backgroundColor,
   textColor = '#FFFFFF',
+  className = '',
 }) => {
   // Generate initials from name
   const getInitials = (fullName: string): string => {
@@ -31,16 +37,16 @@ export const TextAvatar: React.FC<TextAvatarProps> = ({
     if (backgroundColor) return backgroundColor;
     
     const colors = [
-      '#DC2626', // Red
-      '#EA580C', // Orange
-      '#D97706', // Amber
-      '#65A30D', // Lime
-      '#059669', // Emerald
-      '#0891B2', // Cyan
-      '#2563EB', // Blue
-      '#7C3AED', // Violet
-      '#C026D3', // Fuchsia
-      '#E11D48', // Rose
+      'bg-primary-600', // Red
+      'bg-orange-600', // Orange
+      'bg-amber-600', // Amber
+      'bg-lime-600', // Lime
+      'bg-emerald-600', // Emerald
+      'bg-cyan-600', // Cyan
+      'bg-blue-600', // Blue
+      'bg-violet-600', // Violet
+      'bg-fuchsia-600', // Fuchsia
+      'bg-rose-600', // Rose
     ];
     
     let hash = 0;
@@ -52,50 +58,29 @@ export const TextAvatar: React.FC<TextAvatarProps> = ({
   };
 
   const initials = getInitials(name);
-  const bgColor = getBackgroundColor(name);
+  const bgColorClass = getBackgroundColor(name);
   const fontSize = size * 0.4; // 40% of avatar size
 
   return (
-    <View
-      style={[
-        styles.avatar,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: bgColor,
-        },
-      ]}
+    <StyledView
+      className={`items-center justify-center shadow-sm ${bgColorClass} ${className}`}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+      }}
     >
-      <Text
-        style={[
-          styles.initials,
-          {
-            fontSize,
-            color: textColor,
-          },
-        ]}
+      <StyledText
+        className="font-inter-bold"
+        style={{
+          fontSize,
+          color: textColor,
+        }}
       >
         {initials}
-      </Text>
-    </View>
+      </StyledText>
+    </StyledView>
   );
 };
-
-const styles = StyleSheet.create({
-  avatar: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  initials: {
-    fontFamily: 'Inter-Bold',
-    fontWeight: '700',
-  },
-});
 
 export default TextAvatar;

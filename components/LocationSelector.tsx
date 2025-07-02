@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Modal } from 'react-native';
+import { View, TextInput, TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { styled } from 'nativewind';
 import { ChevronDown, Search, X } from 'lucide-react-native';
+import { Text } from './ui';
 
 // Import data
 import countriesData from '@/assets/data/countries.json';
@@ -45,6 +47,11 @@ interface DropdownProps {
   displayKey?: string;
 }
 
+const StyledView = styled(View);
+const StyledTextInput = styled(TextInput);
+const StyledTouchableOpacity = styled(TouchableOpacity);
+const StyledScrollView = styled(ScrollView);
+
 const SearchableDropdown: React.FC<DropdownProps> = ({
   label,
   value,
@@ -66,18 +73,28 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
   const displayValue = selectedItem ? selectedItem[displayKey] : '';
 
   return (
-    <View style={styles.dropdownContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
-        style={[styles.dropdown, disabled && styles.dropdownDisabled]}
+    <StyledView className="mb-5">
+      <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
+        {label}
+      </Text>
+      
+      <StyledTouchableOpacity
+        className={`
+          flex-row items-center justify-between
+          bg-neutral-50 border rounded-lg px-4 py-3
+          ${disabled ? 'border-neutral-200 bg-neutral-100' : 'border-neutral-300'}
+        `}
         onPress={() => !disabled && setIsVisible(true)}
         disabled={disabled}
+        activeOpacity={0.7}
       >
-        <Text style={[styles.dropdownText, !displayValue && styles.placeholderText]}>
+        <Text 
+          color={!displayValue ? 'text-neutral-400' : 'text-neutral-900'}
+        >
           {displayValue || placeholder}
         </Text>
         <ChevronDown size={20} color={disabled ? "#9CA3AF" : "#6B7280"} />
-      </TouchableOpacity>
+      </StyledTouchableOpacity>
 
       <Modal
         visible={isVisible}
@@ -85,58 +102,58 @@ const SearchableDropdown: React.FC<DropdownProps> = ({
         animationType="slide"
         onRequestClose={() => setIsVisible(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select {label}</Text>
-              <TouchableOpacity onPress={() => setIsVisible(false)}>
+        <StyledView className="flex-1 bg-black/50 justify-end">
+          <StyledView className="bg-white rounded-t-3xl pt-5">
+            <StyledView className="flex-row justify-between items-center px-5 pb-4 border-b border-neutral-200">
+              <Text variant="h5" weight="semibold">Select {label}</Text>
+              <StyledTouchableOpacity onPress={() => setIsVisible(false)}>
                 <X size={24} color="#374151" />
-              </TouchableOpacity>
-            </View>
+              </StyledTouchableOpacity>
+            </StyledView>
 
-            <View style={styles.searchContainer}>
+            <StyledView className="flex-row items-center bg-neutral-50 rounded-lg px-4 py-3 mx-5 my-5">
               <Search size={20} color="#6B7280" />
-              <TextInput
-                style={styles.searchInput}
+              <StyledTextInput
+                className="flex-1 ml-3 text-base text-neutral-900 font-inter-regular"
                 placeholder={`Search ${label.toLowerCase()}...`}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholderTextColor="#9CA3AF"
               />
-            </View>
+            </StyledView>
 
-            <ScrollView style={styles.optionsList}>
+            <StyledScrollView className="max-h-80" nestedScrollEnabled={true}>
               {filteredData.map((item, index) => (
-                <TouchableOpacity
+                <StyledTouchableOpacity
                   key={index}
-                  style={[
-                    styles.option,
-                    item[searchKey] === value && styles.selectedOption
-                  ]}
+                  className={`
+                    px-5 py-4 border-b border-neutral-100
+                    ${item[searchKey] === value ? 'bg-primary-50' : ''}
+                  `}
                   onPress={() => {
                     onSelect(item[searchKey]);
                     setIsVisible(false);
                     setSearchQuery('');
                   }}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    item[searchKey] === value && styles.selectedOptionText
-                  ]}>
+                  <Text 
+                    weight={item[searchKey] === value ? 'semibold' : 'regular'}
+                    color={item[searchKey] === value ? 'text-primary-600' : 'text-neutral-800'}
+                  >
                     {item[displayKey]}
                   </Text>
-                </TouchableOpacity>
+                </StyledTouchableOpacity>
               ))}
               {filteredData.length === 0 && (
-                <View style={styles.noResults}>
-                  <Text style={styles.noResultsText}>No results found</Text>
-                </View>
+                <StyledView className="py-12 items-center">
+                  <Text color="text-neutral-500">No results found</Text>
+                </StyledView>
               )}
-            </ScrollView>
-          </View>
-        </View>
+            </StyledScrollView>
+          </StyledView>
+        </StyledView>
       </Modal>
-    </View>
+    </StyledView>
   );
 };
 
@@ -189,7 +206,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <StyledView>
       {/* Country Selection */}
       <SearchableDropdown
         label="Country"
@@ -230,33 +247,39 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {/* Other countries location fields */}
       {!isBangladesh && selectedCountry && (
-        <View style={styles.otherLocationContainer}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>State/Province</Text>
-            <TextInput
-              style={styles.input}
+        <StyledView className="gap-5">
+          <StyledView>
+            <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
+              State/Province
+            </Text>
+            <StyledTextInput
+              className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular"
               value={otherLocationInputs.state}
               onChangeText={(text) => handleOtherLocationChange('state', text)}
               placeholder="Enter state or province"
               placeholderTextColor="#9CA3AF"
             />
-          </View>
+          </StyledView>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>City</Text>
-            <TextInput
-              style={styles.input}
+          <StyledView>
+            <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
+              City
+            </Text>
+            <StyledTextInput
+              className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular"
               value={otherLocationInputs.city}
               onChangeText={(text) => handleOtherLocationChange('city', text)}
               placeholder="Enter city"
               placeholderTextColor="#9CA3AF"
             />
-          </View>
+          </StyledView>
 
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Address</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
+          <StyledView>
+            <Text variant="body-sm" weight="medium" color="text-neutral-700" className="mb-1.5">
+              Address
+            </Text>
+            <StyledTextInput
+              className="bg-neutral-50 border border-neutral-300 rounded-lg px-4 py-3 text-base text-neutral-900 font-inter-regular min-h-20"
               value={otherLocationInputs.address}
               onChangeText={(text) => handleOtherLocationChange('address', text)}
               placeholder="Enter detailed address"
@@ -265,139 +288,11 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               numberOfLines={3}
               textAlignVertical="top"
             />
-          </View>
-        </View>
+          </StyledView>
+        </StyledView>
       )}
-    </View>
+    </StyledView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 20,
-  },
-  dropdownContainer: {
-    gap: 8,
-  },
-  label: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    color: '#374151',
-  },
-  dropdown: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dropdownDisabled: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#D1D5DB',
-  },
-  dropdownText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#111827',
-    flex: 1,
-  },
-  placeholderText: {
-    color: '#9CA3AF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    paddingTop: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  modalTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    color: '#111827',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    margin: 20,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#111827',
-  },
-  optionsList: {
-    flex: 1,
-  },
-  option: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  selectedOption: {
-    backgroundColor: '#FEE2E2',
-  },
-  optionText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#374151',
-  },
-  selectedOptionText: {
-    fontFamily: 'Inter-SemiBold',
-    color: '#DC2626',
-  },
-  noResults: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  noResultsText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  otherLocationContainer: {
-    gap: 20,
-  },
-  inputContainer: {
-    gap: 8,
-  },
-  input: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#111827',
-  },
-  textArea: {
-    minHeight: 80,
-  },
-});
+export default LocationSelector;
