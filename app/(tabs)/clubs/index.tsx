@@ -100,7 +100,7 @@ export default function ClubsScreen() {
         } catch (e) {
           console.error('Error checking memberships:', e);
         }
-      });
+      }
       
       // Calculate total stats
       const totalStats = {
@@ -461,7 +461,7 @@ export default function ClubsScreen() {
                       <View style={styles.locationRow}>
                         <MapPin size={14} color="#6B7280" />
                         <Text style={styles.locationText}>
-                          {club.location || 'Location not specified'}
+                          {getLocationDisplay(club) || 'Location not specified'}
                         </Text>
                       </View>
                       <Text style={styles.membersText}>
@@ -488,9 +488,9 @@ export default function ClubsScreen() {
                         ) : (
                           <Text style={[
                             styles.joinButtonText,
-                          <MapPin size={14} color="#6B7280" /> 
+                            (club.is_joined || club.is_pending) && styles.joinButtonTextActive
                           ]}>
-                            {getLocationDisplay(club) || 'Location not specified'}
+                            {club.is_joined ? 'Joined' : club.is_pending ? 'Pending' : 'Join'}
                           </Text>
                         )}
                       </TouchableOpacity>
