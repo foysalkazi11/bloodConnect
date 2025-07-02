@@ -12,11 +12,14 @@ import { useNotification } from '@/components/NotificationSystem';
 interface Club {
   id: string;
   name: string;
-  district?: string;
-  police_station?: string;
+  description?: string;
+  website?: string;
+  country?: string;
+  district?: string; 
+  police_station?: string; 
   state?: string;
   city?: string;
-  country: string;
+  address?: string;
   description?: string;
   total_members: number;
   total_donations: number;
@@ -49,92 +52,64 @@ export default function ClubsScreen() {
 
   useEffect(() => {
     loadClubs();
-  }, [user]);
+  }, []);
 
   const loadClubs = async () => {
     try {
       setLoading(true);
       
-      // Fetch clubs
-      const { data: clubsData, error: clubsError } = await supabase
+      // Fetch all clubs regardless of user type
+      const { data, error } = await supabase
         .from('user_profiles')
-        .select('id, name, district, police_station, state, city, country, description, website')
-        .eq('user_type', 'club');
+        .select('*')
+        .eq('user_type', 'club')
+        .order('created_at', { ascending: false });
       
-      if (clubsError) throw clubsError;
+      if (error) throw error;
       
-      // Get club stats
-      const { data: statsData, error: statsError } = await supabase
-        .from('clubs')
-        .select('id, total_members, total_donations, founded_year');
-      
-      if (statsError) throw statsError;
+      let clubsList = data || [];
       
       // If user is logged in, check which clubs they're a member of
-      let membershipData: any[] = [];
-      let pendingRequestsData: any[] = [];
-      
       if (user) {
-        const { data: memberships, error: membershipError } = await supabase
-          .from('club_members')
-          .select('club_id')
-          .eq('member_id', user.id)
-          .eq('is_active', true);
+        try {
+          // Get clubs the user is a member of
+          const { data: memberships, error: membershipError } = await supabase
+            .from('club_members')
+            .select('club_id')
+            .eq('member_id', user.id)
+            .eq('is_active', true);
         
-        if (!membershipError) {
-          membershipData = memberships || [];
+          // Get pending join requests
+          const { data: pendingRequests, error: requestsError } = await supabase
+            .from('club_join_requests')
+            .select('club_id')
+            .eq('user_id', user.id)
+            .eq('status', 'pending');
+        
+          // Mark clubs as joined or with pending requests
+          const memberClubIds = new Set(memberships?.map(m => m.club_id) || []);
+          const pendingClubIds = new Set(pendingRequests?.map(r => r.club_id) || []);
+          
+          clubsList = clubsList.map(club => ({
+            ...club,
+            is_joined: memberClubIds.has(club.id),
+            is_pending: pendingClubIds.has(club.id),
+            has_new_posts: Math.random() > 0.5, // Random for demo
+            last_activity: getRandomTimeAgo() // Random for demo
+          }));
+        } catch (e) {
+          console.error('Error checking memberships:', e);
         }
-        
-        // Check for pending join requests
-        const { data: pendingRequests, error: requestsError } = await supabase
-          .from('club_join_requests')
-          .select('club_id, status')
-          .eq('user_id', user.id)
-          .eq('status', 'pending');
-        
-        if (!requestsError) {
-          pendingRequestsData = pendingRequests || [];
-        }
-      }
-      
-      // Combine data
-      const clubsWithStats = clubsData.map(club => {
-        const clubStats = statsData.find(stat => stat.id === club.id) || { 
-          total_members: 0, 
-          total_donations: 0,
-          founded_year: new Date().getFullYear()
-        };
-        
-        const isJoined = membershipData.some(m => m.club_id === club.id);
-        const isPending = pendingRequestsData.some(r => r.club_id === club.id);
-        
-        // Calculate location display
-        let location = '';
-        if (club.country === 'BANGLADESH') {
-          location = [club.police_station, club.district].filter(Boolean).join(', ');
-        } else {
-          location = [club.city, club.state].filter(Boolean).join(', ');
-        }
-        
-        return {
-          ...club,
-          ...clubStats,
-          is_joined: isJoined,
-          is_pending: isPending,
-          location,
-          has_new_posts: Math.random() > 0.5, // Random for demo
-          last_activity: getRandomTimeAgo() // Random for demo
-        };
       });
       
       // Calculate total stats
       const totalStats = {
-        totalClubs: clubsWithStats.length,
-        totalMembers: clubsWithStats.reduce((sum, club) => sum + (club.total_members || 0), 0),
-        totalDonations: clubsWithStats.reduce((sum, club) => sum + (club.total_donations || 0), 0)
+        totalClubs: clubsList.length,
+        totalMembers: clubsList.reduce((sum, club) => sum + (club.total_members || 0), 0),
+        totalDonations: clubsList.reduce((sum, club) => sum + (club.total_donations || 0), 0)
       };
       
-      setClubs(clubsWithStats);
+      setClubs(clubsList);
       setStats(totalStats);
     } catch (error) {
       console.error('Error loading clubs:', error);
@@ -348,9 +323,18 @@ export default function ClubsScreen() {
 
   const filteredClubs = clubs.filter(club =>
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (club.location && club.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (getLocationDisplay(club) && getLocationDisplay(club).toLowerCase().includes(searchQuery.toLowerCase())) ||
     (club.description && club.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Get location display text for a club
+  const getLocationDisplay = (club: Club) => {
+    if (club.country === 'BANGLADESH') {
+      return [club.police_station, club.district].filter(Boolean).join(', ');
+    } else {
+      return [club.city, club.state].filter(Boolean).join(', ');
+    }
+  };
 
   // Fallback mock data
   const MOCK_CLUBS: Club[] = [
@@ -504,9 +488,9 @@ export default function ClubsScreen() {
                         ) : (
                           <Text style={[
                             styles.joinButtonText,
-                            (club.is_joined || club.is_pending) && styles.joinButtonTextActive
+                          <MapPin size={14} color="#6B7280" /> 
                           ]}>
-                            {club.is_joined ? 'Joined' : club.is_pending ? 'Pending' : 'Join'}
+                            {getLocationDisplay(club) || 'Location not specified'}
                           </Text>
                         )}
                       </TouchableOpacity>
