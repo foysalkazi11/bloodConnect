@@ -41,6 +41,12 @@ export default function ClubsScreen() {
   });
   const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(null);
 
+  // Check if current user is a donor (not a club)
+  const isDonor = profile?.user_type === 'donor';
+  
+  // Check if user is not signed in
+  const isNotSignedIn = !user;
+
   useEffect(() => {
     loadClubs();
   }, [user]);
@@ -396,12 +402,15 @@ export default function ClubsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('clubs.title')}</Text>
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={handleCreateClub}
-        >
-          <Plus size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        {/* Only show Add Club button if user is not signed in */}
+        {isNotSignedIn && (
+          <TouchableOpacity 
+            style={styles.createButton}
+            onPress={handleCreateClub}
+          >
+            <Plus size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -475,30 +484,33 @@ export default function ClubsScreen() {
                         {club.total_members} {t('clubs.members')} • Last activity: {club.last_activity}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.joinButton,
-                        club.is_joined && styles.joinButtonActive,
-                        club.is_pending && styles.joinButtonPending,
-                        joinRequestLoading === club.id && styles.joinButtonLoading
-                      ]}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleJoinClub(club.id);
-                      }}
-                      disabled={joinRequestLoading !== null}
-                    >
-                      {joinRequestLoading === club.id ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text style={[
-                          styles.joinButtonText,
-                          (club.is_joined || club.is_pending) && styles.joinButtonTextActive
-                        ]}>
-                          {club.is_joined ? 'Joined' : club.is_pending ? 'Pending' : 'Join'}
-                        </Text>
-                      )}
-                    </TouchableOpacity>
+                    {/* Only show Join button for donors, not for clubs */}
+                    {isDonor && (
+                      <TouchableOpacity
+                        style={[
+                          styles.joinButton,
+                          club.is_joined && styles.joinButtonActive,
+                          club.is_pending && styles.joinButtonPending,
+                          joinRequestLoading === club.id && styles.joinButtonLoading
+                        ]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleJoinClub(club.id);
+                        }}
+                        disabled={joinRequestLoading !== null}
+                      >
+                        {joinRequestLoading === club.id ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={[
+                            styles.joinButtonText,
+                            (club.is_joined || club.is_pending) && styles.joinButtonTextActive
+                          ]}>
+                            {club.is_joined ? 'Joined' : club.is_pending ? 'Pending' : 'Join'}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
 
                   {/* Club Description */}
@@ -532,24 +544,26 @@ export default function ClubsScreen() {
           )}
         </View>
 
-        {/* Create Club CTA */}
-        <View style={styles.createClubSection}>
-          <View style={styles.createClubCard}>
-            <Users size={32} color="#DC2626" />
-            <View style={styles.createClubText}>
-              <Text style={styles.createClubTitle}>Start Your Own Club</Text>
-              <Text style={styles.createClubSubtitle}>
-                Create a blood donation club in your community
-              </Text>
+        {/* Create Club CTA - Only show if user is not signed in */}
+        {isNotSignedIn && (
+          <View style={styles.createClubSection}>
+            <View style={styles.createClubCard}>
+              <Users size={32} color="#DC2626" />
+              <View style={styles.createClubText}>
+                <Text style={styles.createClubTitle}>Start Your Own Club</Text>
+                <Text style={styles.createClubSubtitle}>
+                  Create a blood donation club in your community
+                </Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.createClubButton}
+                onPress={handleCreateClub}
+              >
+                <Text style={styles.createClubButtonText}>{t('clubs.createClub')}</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.createClubButton}
-              onPress={handleCreateClub}
-            >
-              <Text style={styles.createClubButtonText}>{t('clubs.createClub')}</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
