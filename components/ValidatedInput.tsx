@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, TextInputProps } from 'react-native';
-import { styled } from 'nativewind';
 import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
 import { Input } from './ui';
 
-interface ValidatedInputProps extends Omit<TextInputProps, 'onChangeText' | 'onBlur'> {
+interface ValidatedInputProps
+  extends Omit<TextInputProps, 'onChangeText' | 'onBlur'> {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -15,8 +15,6 @@ interface ValidatedInputProps extends Omit<TextInputProps, 'onChangeText' | 'onB
   required?: boolean;
   helpText?: string;
 }
-
-const StyledView = styled(View);
 
 export const ValidatedInput: React.FC<ValidatedInputProps> = ({
   label,
@@ -34,7 +32,9 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
   const hasError = touched && error;
   const showSuccess = touched && !error && value.length > 0;
 
-  const rightIcon = hasError ? <AlertCircle size={20} color="#EF4444" /> : undefined;
+  const rightIcon = hasError ? (
+    <AlertCircle size={20} color="#EF4444" />
+  ) : undefined;
 
   return (
     <Input

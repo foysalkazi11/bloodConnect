@@ -1,7 +1,19 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react';
 import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
-import { styled } from 'nativewind';
-import { CircleCheck as CheckCircle, CircleAlert as AlertCircle, Info, X, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+// import { styled } from 'nativewind';
+import {
+  CircleCheck as CheckCircle,
+  CircleAlert as AlertCircle,
+  Info,
+  X,
+  TriangleAlert as AlertTriangle,
+} from 'lucide-react-native';
 import { Text } from './ui';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
@@ -24,27 +36,34 @@ interface NotificationContextType {
   clearAll: () => void;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined
+);
 
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotification must be used within a NotificationProvider');
+    throw new Error(
+      'useNotification must be used within a NotificationProvider'
+    );
   }
   return context;
 };
 
 const { width: screenWidth } = Dimensions.get('window');
 
-const StyledView = styled(View);
-const StyledTouchableOpacity = styled(TouchableOpacity);
+const StyledView = View;
+const StyledTouchableOpacity = TouchableOpacity;
 
 interface NotificationItemProps {
   notification: Notification;
   onHide: (id: string) => void;
 }
 
-const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onHide }) => {
+const NotificationItem: React.FC<NotificationItemProps> = ({
+  notification,
+  onHide,
+}) => {
   const [slideAnim] = useState(new Animated.Value(-screenWidth));
   const [opacityAnim] = useState(new Animated.Value(0));
 
@@ -167,30 +186,28 @@ const NotificationItem: React.FC<NotificationItemProps> = ({ notification, onHid
         `}
       >
         <StyledView className="flex-row p-4">
-          <StyledView className="mr-3 mt-0.5">
-            {getIcon()}
-          </StyledView>
-          
+          <StyledView className="mr-3 mt-0.5">{getIcon()}</StyledView>
+
           <StyledView className="flex-1">
             <Text variant="h6" weight="semibold" color="text-neutral-900">
               {notification.title}
             </Text>
-            
+
             {notification.message && (
               <Text variant="body-sm" color="text-neutral-600" className="mt-1">
                 {notification.message}
               </Text>
             )}
-            
+
             {notification.action && (
               <StyledTouchableOpacity
                 className="mt-2 self-start"
                 onPress={notification.action.onPress}
                 activeOpacity={0.7}
               >
-                <Text 
-                  variant="body-sm" 
-                  weight="semibold" 
+                <Text
+                  variant="body-sm"
+                  weight="semibold"
                   className={getActionTextColorClass()}
                 >
                   {notification.action.label}
@@ -216,22 +233,30 @@ interface NotificationProviderProps {
   children: React.ReactNode;
 }
 
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({
+  children,
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const showNotification = useCallback((notificationData: Omit<Notification, 'id'>) => {
-    const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-    const notification: Notification = {
-      id,
-      duration: 5000, // Default 5 seconds
-      ...notificationData,
-    };
+  const showNotification = useCallback(
+    (notificationData: Omit<Notification, 'id'>) => {
+      const id =
+        Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      const notification: Notification = {
+        id,
+        duration: 5000, // Default 5 seconds
+        ...notificationData,
+      };
 
-    setNotifications(prev => [notification, ...prev]);
-  }, []);
+      setNotifications((prev) => [notification, ...prev]);
+    },
+    []
+  );
 
   const hideNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+    setNotifications((prev) =>
+      prev.filter((notification) => notification.id !== id)
+    );
   }, []);
 
   const clearAll = useCallback(() => {
@@ -239,10 +264,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ showNotification, hideNotification, clearAll }}>
+    <NotificationContext.Provider
+      value={{ showNotification, hideNotification, clearAll }}
+    >
       {children}
       <StyledView className="absolute top-0 left-0 right-0 z-50 pt-14 pointer-events-none">
-        {notifications.map(notification => (
+        {notifications.map((notification) => (
           <NotificationItem
             key={notification.id}
             notification={notification}
