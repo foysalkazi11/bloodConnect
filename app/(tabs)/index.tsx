@@ -45,9 +45,19 @@ export default function HomeScreen() {
   }, [user]);
 
   const isCorsError = (error: any) => {
-    return error?.message?.includes('Failed to fetch') || 
-           error?.message?.includes('CORS') ||
-           error?.message?.includes('Network request failed');
+    const errorMessage = error?.message || '';
+    const errorName = error?.name || '';
+    const errorString = String(error);
+    
+    return errorMessage.includes('Failed to fetch') || 
+           errorMessage.includes('CORS') ||
+           errorMessage.includes('Network request failed') ||
+           errorMessage.includes('NetworkError') ||
+           errorMessage.includes('fetch') ||
+           errorName === 'TypeError' ||
+           errorName === 'NetworkError' ||
+           errorString.includes('Failed to fetch') ||
+           errorString.includes('TypeError: Failed to fetch');
   };
 
   const loadDashboardData = async () => {
@@ -59,6 +69,7 @@ export default function HomeScreen() {
       try {
         await supabase.from('user_profiles').select('id').limit(1);
       } catch (testError) {
+        console.log('Connection test error:', testError);
         if (isCorsError(testError)) {
           console.log('CORS error detected. Using fallback data.');
           setConnectionError(true);
@@ -156,6 +167,9 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      console.log('Error type:', typeof error);
+      console.log('Error name:', error?.name);
+      console.log('Error message:', error?.message);
       if (isCorsError(error)) {
         setConnectionError(true);
         // Set demo data for CORS error
