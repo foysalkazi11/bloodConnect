@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { UserProfile } from '@/lib/supabase';
@@ -369,7 +370,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [isSigningOut]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       await authService.signIn({ email, password });
@@ -377,9 +378,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
       throw error;
     }
-  };
+  }, []);
 
-  const signUp = async (data: any) => {
+  const signUp = useCallback(async (data: any) => {
     setLoading(true);
     try {
       const result = await authService.signUp(data);
@@ -396,9 +397,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
       throw error;
     }
-  };
+  }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
       await authService.signInWithGoogle();
@@ -406,9 +407,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
       throw error;
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     console.log('AuthProvider: signOut called');
     
     // Prevent multiple simultaneous sign out attempts
@@ -444,9 +445,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsSigningOut(false);
       setLoading(false);
     }
-  };
+  }, [isSigningOut]);
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
+  const updateProfile = useCallback(async (updates: Partial<UserProfile>) => {
     if (!user) {
       throw new Error('No user logged in');
     }
@@ -510,23 +511,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       throw error;
     }
-  };
+  }, [user, profile]);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     try {
       await authService.resetPassword(email);
     } catch (error) {
       throw error;
     }
-  };
+  }, []);
 
-  const resendEmailVerification = async (email: string) => {
+  const resendEmailVerification = useCallback(async (email: string) => {
     try {
       await authService.resendEmailVerification(email);
     } catch (error) {
       throw error;
     }
-  };
+  }, []);
 
   const value: AuthContextType = {
     user,
