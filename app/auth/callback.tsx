@@ -5,11 +5,9 @@ import { Heart, CircleCheck as CheckCircle, CircleAlert as AlertCircle, RefreshC
 import { router, useLocalSearchParams } from 'expo-router';
 import { authService } from '@/services/authService';
 import { useNotification } from '@/components/NotificationSystem';
-import { useAuth } from '@/providers/AuthProvider';
 
 export default function AuthCallbackScreen() {
   const { showNotification } = useNotification();
-  const { isEmailVerified } = useAuth();
   const params = useLocalSearchParams();
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = React.useState('');
@@ -80,7 +78,7 @@ export default function AuthCallbackScreen() {
       if (result.success) {
         console.log('AuthCallback: Verification successful');
         setStatus('success');
-        setMessage('Email verified successfully! Redirecting you...');
+        setMessage('Email verified successfully! Redirecting to complete your profile...');
         
         showNotification({
           type: 'success',
@@ -89,10 +87,10 @@ export default function AuthCallbackScreen() {
           duration: 4000,
         });
 
-        // Check if we already have the profile information before redirecting
+        // Redirect to profile completion after a short delay
         setTimeout(() => {
-          console.log('AuthCallback: Redirecting after verification');
-          router.replace('/(tabs)');
+          console.log('AuthCallback: Redirecting to complete-profile');
+          router.replace('/complete-profile');
         }, 2000);
       } else {
         throw new Error('Verification failed');
