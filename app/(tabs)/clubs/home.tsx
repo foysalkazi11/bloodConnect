@@ -333,7 +333,6 @@ export default function ClubsScreen() {
 
   const filteredClubs = clubs.filter(club =>
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    club.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (club.district && club.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (club.police_station && club.police_station.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (club.city && club.city.toLowerCase().includes(searchQuery.toLowerCase())) ||

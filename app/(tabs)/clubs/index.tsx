@@ -52,7 +52,7 @@ export default function ClubsScreen() {
 
   useEffect(() => {
     loadClubs();
-  }, []);
+  }, [user, profile]);
 
   const loadClubs = async () => {
     try {

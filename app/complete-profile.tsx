@@ -224,6 +224,35 @@ export default function CompleteProfileScreen() {
     setValidationRules(getValidationRules());
   }, [accountType]); // Only update when accountType changes
 
+  // Check if profile is complete to determine if we should redirect
+  const checkIfProfileIsComplete = () => {
+    if (!profile) return false;
+
+    // Basic required fields
+    if (!profile.name || profile.name === profile.email || !profile.phone)
+      return false;
+
+    // Location fields
+    if (profile.country === 'BANGLADESH') {
+      if (!profile.district || !profile.police_station) return false;
+    } else {
+      if (!profile.state || !profile.city) return false;
+    }
+
+    // Donor-specific fields
+    if (profile.user_type === 'donor' && !profile.blood_group) return false;
+
+    return true;
+  };
+
+  // Redirect to home if profile is already complete
+  useEffect(() => {
+    if (user && profile && checkIfProfileIsComplete()) {
+      console.log('Profile is already complete, redirecting to home');
+      router.replace('/(tabs)');
+    }
+  }, [user, profile]);
+
   // Prevent navigation away if profile is incomplete
   useEffect(() => {
    // Skip this effect if there's no user or if we're still loading
@@ -231,33 +260,12 @@ export default function CompleteProfileScreen() {
 
     const preventNavigation = (e: BeforeUnloadEvent) => {
       // Only prevent navigation if we're in the middle of completing a profile
-      if (user && !isProfileComplete()) {
+      if (user && !checkIfProfileIsComplete()) {
         e.preventDefault();
         e.returnValue =
           'You need to complete your profile before leaving this page. Are you sure you want to leave?';
         return e.returnValue;
       }
-    };
-
-    // Check if profile is complete
-    const isProfileComplete = () => {
-      if (!profile) return false;
-
-      // Basic required fields
-      if (!profile.name || profile.name === profile.email || !profile.phone)
-        return false;
-
-      // Location fields
-      if (profile.country === 'BANGLADESH') {
-        if (!profile.district || !profile.police_station) return false;
-      } else {
-        if (!profile.state || !profile.city) return false;
-      }
-
-      // Donor-specific fields
-      if (profile.user_type === 'donor' && !profile.blood_group) return false;
-
-      return true;
     };
 
     // Add event listener for beforeunload only on web platform
@@ -277,7 +285,6 @@ export default function CompleteProfileScreen() {
         window.removeEventListener
       ) {
        console.log('CompleteProfile: Removing beforeunload listener');
-       console.log('CompleteProfile: Adding beforeunload listener');
         window.removeEventListener('beforeunload', preventNavigation);
       }
     };
@@ -410,6 +417,13 @@ export default function CompleteProfileScreen() {
   if (!user) {
     console.log('No user, redirecting to auth');
     router.replace('/auth');
+    return null;
+  }
+
+  // If profile is already complete, redirect to home
+  if (profile && checkIfProfileIsComplete()) {
+    console.log('Profile is already complete, redirecting to home');
+    router.replace('/(tabs)');
     return null;
   }
 
