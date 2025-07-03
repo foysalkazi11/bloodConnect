@@ -25,22 +25,25 @@ export default function CompleteProfileScreen() {
   const { t } = useI18n();
   const { showNotification } = useNotification();
   const { user, profile, updateProfile, loading } = useAuth();
-  const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
-  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [accountType, setAccountType] = useState<'donor' | 'club'>(profile?.user_type || 'donor');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(true);
   const profileInitialized = useRef(false);
 
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
-    if (profile?.user_type) {
+    // First priority: use profile user_type if available
+    if (profile?.user_type && profile.user_type !== accountType) {
+      console.log('CompleteProfile: Setting account type from profile:', profile.user_type);
       setAccountType(profile.user_type);
-    } else if (
-      Platform.OS === 'web' &&
-      typeof window !== 'undefined' &&
-      window.sessionStorage
-    ) {
+      return;
+    }
+    
+    // Second priority: check session storage for OAuth sign-ins
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.sessionStorage) {
       const pendingType = sessionStorage.getItem('pendingAccountType');
       if (pendingType === 'donor' || pendingType === 'club') {
+        console.log('CompleteProfile: Setting account type from session storage:', pendingType);
         setAccountType(pendingType);
         sessionStorage.removeItem('pendingAccountType');
       }
@@ -50,20 +53,19 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-      // Skip if there's no user or if profile initialization was already attempted
-      if (!user || profileInitialized.current) {
+      // Skip if no user, no verified email, profile already exists, or initialization already attempted
+      if (!user || !user.email_confirmed_at || profile || profileInitialized.current) {
+        console.log('CompleteProfile: No need to initialize profile');
         setLocalLoading(false);
         return;
       }
 
-      // Only proceed if user has confirmed email but no profile
-      if (user.email_confirmed_at && !profile) {
+      if (!profileInitialized.current) {
         console.log(
-          'CompleteProfile: User authenticated but no profile, initializing...'
+          `CompleteProfile: Initializing profile for ${user.id}`
         );
         profileInitialized.current = true;
-        setLocalLoading(true);
-
+        
         try {
           // Check for pending signup data
           let pendingData = null;
@@ -116,18 +118,15 @@ export default function CompleteProfileScreen() {
             'CompleteProfile: Failed to initialize profile:',
             error
           );
-          // Continue to profile form despite the error
+          // We continue despite errors - user will need to fill the form manually
         } finally {
           setLocalLoading(false);
         }
-      } else {
-        // User either has a profile or hasn't verified email
-        setLocalLoading(false);
       }
     };
 
     initializeProfile();
-  }, [user, profile]); // Only depend on user and profile
+  }, [user, profile, updateProfile]);
 
   // Create validation rules based on account type
   const getValidationRules = () => {
@@ -241,8 +240,8 @@ export default function CompleteProfileScreen() {
 
   // Prevent navigation away if profile is incomplete
   useEffect(() => {
-    // Skip this effect if there's no user or if we're still loading
-    if (!user || loading || localLoading) return;
+    // Skip this effect if there's no user
+    if (!user) return;
 
     const preventNavigation = (e: BeforeUnloadEvent) => {
       // Only prevent navigation if we're in the middle of completing a profile
@@ -298,7 +297,6 @@ export default function CompleteProfileScreen() {
 
   const handleCompleteProfile = async () => {
     console.log('Starting profile completion...');
-
     if (isSubmitting) {
       console.log('Already submitting, preventing duplicate submission');
       return;
@@ -439,6 +437,17 @@ export default function CompleteProfileScreen() {
   }
 
   const isButtonDisabled = loading || isSubmitting;
+
+  // If profile is already complete, redirect to home
+  useEffect(() => {
+    if (profile && user && !loading && !localLoading) {
+      const isComplete = isProfileComplete(profile);
+      if (isComplete) {
+        console.log('CompleteProfile: Profile already complete, redirecting to home');
+        router.replace('/(tabs)');
+      }
+    }
+  }, [profile, user, loading, localLoading]);
 
   return (
     <SafeAreaView style={styles.container}>

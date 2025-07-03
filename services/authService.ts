@@ -665,10 +665,10 @@ class AuthService {
       // If we have tokens, set the session
       if (accessToken && refreshToken) {
         console.log('Setting session with tokens...');
-        const { data, error: sessionError } = await supabase.auth.setSession({
+        const { data, error: sessionError } = await this.withTimeout(supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
-        });
+        }), 10000);
 
         if (sessionError) {
           console.error('Session error:', sessionError);
@@ -685,7 +685,7 @@ class AuthService {
 
       // Check if user is already authenticated
       console.log('Checking existing session...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await this.withTimeout(supabase.auth.getSession(), 5000);
       
       if (sessionError) {
         console.error('Session check error:', sessionError);
