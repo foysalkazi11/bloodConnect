@@ -47,23 +47,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isProfileComplete = (profile: UserProfile | null): boolean => {
     if (!profile) return false;
     
-    // Check for required fields with proper validation
-    // For social sign-in users, we need to be more careful with validation
+    // For social sign-in users, they might already have a proper name
+    // Only check if name is empty or just whitespace
+    if (!profile.name || profile.name.trim().length === 0) return false;
     
-    // 1. Name check - for all users, name must exist and not be empty
-    if (!profile.name || profile.name.trim().length === 0) {
-      console.log('AuthProvider: Profile incomplete - name missing');
-      return false;
-    }
+    const requiredFields = ['name', 'phone', 'user_type', 'country'];
     
-    // 2. Required fields check
-    const requiredFields = ['phone', 'user_type', 'country'];
-    
-    // Check basic required fields (except name which was already checked)
+    // Check basic required fields
     for (const field of requiredFields) {
       const value = profile[field as keyof UserProfile];
       if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-        console.log(`AuthProvider: Profile incomplete - ${field} missing`);
         return false;
       }
     }
@@ -71,56 +64,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check location-specific requirements
     if (profile.country === 'BANGLADESH') {
       if (!profile.district || !profile.police_station) {
-        console.log('AuthProvider: Profile incomplete - Bangladesh location info missing');
         return false;
       }
     } else {
       if (!profile.state || !profile.city) {
-        console.log('AuthProvider: Profile incomplete - International location info missing');
         return false;
       }
     }
 
     // Check donor-specific requirements
     if (profile.user_type === 'donor' && !profile.blood_group) {
-      console.log('AuthProvider: Profile incomplete - blood group missing for donor');
       return false;
     }
 
-    console.log('AuthProvider: Profile is complete');
     return true;
   };
 
   const handleProfileRedirection = (userProfile: UserProfile | null, currentUser: User) => {
     // Only redirect if user is verified
     if (!currentUser.email_confirmed_at) {
-      console.log('AuthProvider: User email not confirmed, skipping profile redirect');
       return;
     }
 
-    // Check if we already have userProfile object
-    if (!userProfile) {
-      console.log('AuthProvider: No user profile found, skipping redirection');
-      return;
-    }
-    
-    // Check if profile is complete
-    const profileComplete = isProfileComplete(userProfile);
-    
-    // Only redirect if profile is incomplete and we're not already on complete-profile page
-    if (!profileComplete && typeof window !== 'undefined') {
-      console.log('AuthProvider: Profile is incomplete, checking current page');
+    // Only redirect if:
+    // 1. Profile exists
+    // 2. Profile is incomplete
+    // 3. We're not already on the complete-profile page
+    if (userProfile && !isProfileComplete(userProfile) && typeof window !== 'undefined') {
+      console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
       
       const currentPath = window.location.pathname;
       // Prevent redirect if already on complete-profile or auth pages
       if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
-        console.log('AuthProvider: Redirecting to complete-profile');
         router.replace('/complete-profile');
-      } else {
-        console.log('AuthProvider: Already on complete-profile or auth page, skipping redirect');
       }
-    } else {
-      console.log('AuthProvider: Profile is complete or window undefined, no redirect needed');
     }
   };
 
@@ -282,7 +259,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Only fetch/create profile if email is verified
           if (currentUser.email_confirmed_at) {
             const userProfile = await ensureProfileExists(currentUser);
-            console.log('AuthProvider: User profile after ensureProfileExists:', userProfile ? 'exists' : 'null');
             setProfile(userProfile);
             
             // Handle profile completion redirection
@@ -352,13 +328,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (!isProfileComplete(userProfile)) {
                   console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
                   
-                const currentPath = window.location.pathname;
-                // Prevent redirect if already on complete-profile or auth pages
-                if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
-                  console.log('AuthProvider: Redirecting from path:', currentPath);
-                  router.replace('/complete-profile');
-                } else {
-                  console.log('AuthProvider: Already on complete-profile or auth page, skipping redirect');
+                  if (typeof window !== 'undefined') {
+                    const currentPath = window.location.pathname;
+                    // Prevent redirect if already on complete-profile or auth pages
+                    if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
+                      router.replace('/complete-profile');
+                    }
                   }
                 } else {
                   // Activate donor availability after profile completion
