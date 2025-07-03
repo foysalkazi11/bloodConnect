@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
+  ActivityIndicator,
   Text,
   StyleSheet,
   TouchableOpacity,
@@ -25,8 +26,9 @@ export default function CompleteProfileScreen() {
   const { showNotification } = useNotification();
   const { user, profile, updateProfile, loading } = useAuth();
   const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const initializationAttempted = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  const [localLoading, setLocalLoading] = useState(true);
+  const profileInitialized = useRef(false);
 
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
@@ -48,12 +50,19 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-      // Check for profile existence AND initialization flag to prevent infinite loops
-      if (user && user.email_confirmed_at && !profile && !initializationAttempted.current) {
+      // Skip if there's no user or if profile initialization was already attempted
+      if (!user || profileInitialized.current) {
+        setLocalLoading(false);
+        return;
+      }
+
+      // Only proceed if user has confirmed email but no profile
+      if (user.email_confirmed_at && !profile) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
         );
-        initializationAttempted.current = true;
+        profileInitialized.current = true;
+        setLocalLoading(true);
 
         try {
           // Check for pending signup data
@@ -107,13 +116,18 @@ export default function CompleteProfileScreen() {
             'CompleteProfile: Failed to initialize profile:',
             error
           );
-          // Don't show error to user - they can still complete profile manually
+          // Continue to profile form despite the error
+        } finally {
+          setLocalLoading(false);
         }
+      } else {
+        // User either has a profile or hasn't verified email
+        setLocalLoading(false);
       }
     };
 
     initializeProfile();
-  }, [user, profile, accountType, updateProfile]);
+  }, [user, profile]); // Only depend on user and profile
 
   // Create validation rules based on account type
   const getValidationRules = () => {
@@ -221,13 +235,14 @@ export default function CompleteProfileScreen() {
 
   // Update validation rules when account type changes
   useEffect(() => {
+    if (!accountType) return;
     setValidationRules(getValidationRules());
-  }, [accountType]); // Only update when accountType changes
+  }, [accountType]);
 
   // Prevent navigation away if profile is incomplete
   useEffect(() => {
-   // Skip this effect if there's no user or if we're still loading
-   if (!user || loading) return;
+    // Skip this effect if there's no user or if we're still loading
+    if (!user || loading || localLoading) return;
 
     const preventNavigation = (e: BeforeUnloadEvent) => {
       // Only prevent navigation if we're in the middle of completing a profile
@@ -276,12 +291,10 @@ export default function CompleteProfileScreen() {
         typeof window !== 'undefined' &&
         window.removeEventListener
       ) {
-       console.log('CompleteProfile: Removing beforeunload listener');
-       console.log('CompleteProfile: Adding beforeunload listener');
         window.removeEventListener('beforeunload', preventNavigation);
       }
     };
-  }, [user, profile, loading]); // Add loading to dependency array
+  }, [user, profile, loading, localLoading]);
 
   const handleCompleteProfile = async () => {
     console.log('Starting profile completion...');
@@ -406,6 +419,18 @@ export default function CompleteProfileScreen() {
       ]
     );
   };
+
+  // Show loading indicator when still initializing
+  if (loading || localLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#DC2626" />
+          <Text style={styles.loadingText}>Preparing your profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!user) {
     console.log('No user, redirecting to auth');
@@ -628,8 +653,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginTop: 12,
+    textAlign: 'center',
+  },
   scrollView: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,
