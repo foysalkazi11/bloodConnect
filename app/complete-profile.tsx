@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,7 +27,7 @@ export default function CompleteProfileScreen() {
   const { user, profile, updateProfile, loading } = useAuth();
   const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [profileInitialized, setProfileInitialized] = useState(false);
+  const initializationAttempted = useRef(false);
 
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
@@ -48,12 +49,12 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-     // Check for profile existence AND initialization flag to prevent infinite loops
-     if (user && user.email_confirmed_at && !profile && !profileInitialized) {
+      // Check for profile existence AND initialization flag to prevent infinite loops
+      if (user && user.email_confirmed_at && !profile && !initializationAttempted.current) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
         );
-        setProfileInitialized(true);
+        initializationAttempted.current = true;
 
         try {
           // Check for pending signup data
@@ -113,7 +114,7 @@ export default function CompleteProfileScreen() {
     };
 
     initializeProfile();
-  }, [user, profile, profileInitialized, accountType, updateProfile]);
+  }, [user, profile, accountType, updateProfile]);
 
   // Create validation rules based on account type
   const getValidationRules = () => {
