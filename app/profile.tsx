@@ -1,5 +1,4 @@
-@@ .. @@
-   const performSignOut = async () => {
+const performSignOut = async () => {
      if (signOutLoading) {
        console.log('Sign out already in progress, ignoring duplicate request');
        return;
@@ -35,9 +34,17 @@
        console.log('Profile: Navigating to home...');
        setTimeout(() => {
          router.replace('/(tabs)');
--      }, 100);
-+      }, 250);
+      }, 250);
      } catch (error) {
        console.error('Profile: Sign out error:', error);
 
        showNotification({
+         type: 'error',
+         title: 'Sign Out Failed',
+         message: 'An error occurred while signing out.',
+         duration: 3000
+       });
+     } finally {
+       setSignOutLoading(false);
+     }
+   }
