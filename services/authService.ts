@@ -638,7 +638,7 @@ class AuthService {
   // Handle email verification callback
   async handleEmailVerification() {
     try {
-      console.log('AuthService: Handling email verification...');
+      console.log('AuthService: Handling email verification with timeout...');
       console.log('Current URL:', window.location.href);
       
       // Get the current URL parameters
@@ -663,12 +663,24 @@ class AuthService {
       }
 
       // If we have tokens, set the session
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Email verification timeout. Please try again.')), 20000);
+      });
+
       if (accessToken && refreshToken) {
         console.log('Setting session with tokens...');
-        const { data, error: sessionError } = await this.withTimeout(supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        }), 10000);
+        const sessionPromise = supabase.auth.setSession({
+          access_token: accessToken, 
+          refresh_token: refreshToken
+        });
+
+        // Race the session promise against a timeout
+        const { data, error: sessionError } = await Promise.race([
+          sessionPromise,
+          timeoutPromise.then(() => {
+            throw new Error('Email verification timeout. Please try again.');
+          })
+        ]);
 
         if (sessionError) {
           console.error('Session error:', sessionError);
@@ -685,7 +697,13 @@ class AuthService {
 
       // Check if user is already authenticated
       console.log('Checking existing session...');
-      const { data: { session }, error: sessionError } = await this.withTimeout(supabase.auth.getSession(), 5000);
+      const sessionPromise = supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await Promise.race([
+        sessionPromise,
+        timeoutPromise.then(() => {
+          throw new Error('Session check timeout. Please try again.');
+        })
+      ]);
       
       if (sessionError) {
         console.error('Session check error:', sessionError);
