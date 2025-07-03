@@ -48,7 +48,8 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-      if (user && user.email_confirmed_at && !profile && !profileInitialized) {
+     // Check for profile existence AND initialization flag to prevent infinite loops
+     if (user && user.email_confirmed_at && !profile && !profileInitialized) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
         );
@@ -221,10 +222,13 @@ export default function CompleteProfileScreen() {
   // Update validation rules when account type changes
   useEffect(() => {
     setValidationRules(getValidationRules());
-  }, [accountType]);
+  }, [accountType]); // Only update when accountType changes
 
   // Prevent navigation away if profile is incomplete
   useEffect(() => {
+   // Skip this effect if there's no user or if we're still loading
+   if (!user || loading) return;
+
     const preventNavigation = (e: BeforeUnloadEvent) => {
       // Only prevent navigation if we're in the middle of completing a profile
       if (user && !isProfileComplete()) {
@@ -272,10 +276,12 @@ export default function CompleteProfileScreen() {
         typeof window !== 'undefined' &&
         window.removeEventListener
       ) {
+       console.log('CompleteProfile: Removing beforeunload listener');
+       console.log('CompleteProfile: Adding beforeunload listener');
         window.removeEventListener('beforeunload', preventNavigation);
       }
     };
-  }, [user, profile]);
+  }, [user, profile, loading]); // Add loading to dependency array
 
   const handleCompleteProfile = async () => {
     console.log('Starting profile completion...');

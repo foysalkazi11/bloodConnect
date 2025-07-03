@@ -47,8 +47,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isProfileComplete = (profile: UserProfile | null): boolean => {
     if (!profile) return false;
     
-    // Check if name is still the email (temporary value) or empty
-    if (!profile.name || profile.name === profile.email || profile.name.trim().length === 0) return false;
+    // For social sign-in users, they might already have a proper name
+    // Only check if name is empty or just whitespace
+    if (!profile.name || profile.name.trim().length === 0) return false;
     
     const requiredFields = ['name', 'phone', 'user_type', 'country'];
     
@@ -85,16 +86,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
-    // Check if profile needs completion
-    if (userProfile && !isProfileComplete(userProfile)) {
+    // Only redirect if:
+    // 1. Profile exists
+    // 2. Profile is incomplete
+    // 3. We're not already on the complete-profile page
+    if (userProfile && !isProfileComplete(userProfile) && typeof window !== 'undefined') {
       console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
       
-      // Only redirect if not already on complete-profile page or auth pages
-      if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
-          router.replace('/complete-profile');
-        }
+      const currentPath = window.location.pathname;
+      // Prevent redirect if already on complete-profile or auth pages
+      if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
+        router.replace('/complete-profile');
       }
     }
   };
@@ -326,9 +328,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 if (!isProfileComplete(userProfile)) {
                   console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
                   
-                  // Only redirect if not already on complete-profile page or auth pages
                   if (typeof window !== 'undefined') {
                     const currentPath = window.location.pathname;
+                    // Prevent redirect if already on complete-profile or auth pages
                     if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
                       router.replace('/complete-profile');
                     }
