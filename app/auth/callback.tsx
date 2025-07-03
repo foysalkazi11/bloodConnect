@@ -91,9 +91,11 @@ export default function AuthCallbackScreen() {
 
         // Check if we already have the profile information before redirecting
         setTimeout(() => {
-          console.log('AuthCallback: Redirecting after verification');
+          console.log('AuthCallback: Redirecting to home after successful verification');
+          // Instead of going to complete-profile directly, redirect to home
+          // The AuthProvider will handle redirection to complete-profile if needed
           router.replace('/(tabs)');
-        }, 2000);
+        }, 2500);
       } else {
         throw new Error('Verification failed');
       }
