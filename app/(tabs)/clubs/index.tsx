@@ -5,7 +5,7 @@ import { Users, MapPin, Plus, Search, Award, Calendar } from 'lucide-react-nativ
 import { useI18n } from '@/providers/I18nProvider';
 import { router } from 'expo-router';
 import { TextAvatar } from '@/components/TextAvatar';
-import { supabase } from '@/lib/supabase';
+import { Club, supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 
@@ -40,13 +40,10 @@ export default function ClubsScreen() {
   const [stats, setStats] = useState({
     totalClubs: 0,
     totalMembers: 0,
-    totalDonations: 0,
+    totalDonations: 0
   });
   const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(null);
 
-  // Check if current user is a donor (not a club)
-  const isDonor = profile?.user_type === 'donor';
-  
   // Check if user is not signed in
   const isNotSignedIn = !user;
 
@@ -57,18 +54,18 @@ export default function ClubsScreen() {
   const loadClubs = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all clubs regardless of user type - this should always show all clubs
-      const { data, error } = await supabase
+
+      // Fetch all clubs - this should always show all clubs regardless of user type
+      const { data: clubsData, error: clubsError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_type', 'club')
         .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      let clubsList = data || [];
-      
+
+      if (clubsError) throw clubsError;
+
+      let clubsList = clubsData || [];
+
       // If user is logged in, check which clubs they're a member of but still show all clubs
       if (user) {
         try {
@@ -78,18 +75,18 @@ export default function ClubsScreen() {
             .select('club_id')
             .eq('member_id', user.id)
             .eq('is_active', true);
-        
+
           // Get pending join requests
           const { data: pendingRequests, error: requestsError } = await supabase
             .from('club_join_requests')
             .select('club_id')
             .eq('user_id', user.id)
             .eq('status', 'pending');
-        
+
           // Mark clubs as joined or with pending requests
           const memberClubIds = new Set(memberships?.map(m => m.club_id) || []);
           const pendingClubIds = new Set(pendingRequests?.map(r => r.club_id) || []);
-          
+
           clubsList = clubsList.map(club => ({
             ...club,
             is_joined: memberClubIds.has(club.id),
@@ -98,22 +95,22 @@ export default function ClubsScreen() {
             last_activity: getRandomTimeAgo() // Random for demo
           }));
         } catch (e) {
-          console.error('Error checking memberships:', e);
+          console.log('Error checking memberships:', e);
         }
       }
-      
+
       // Calculate total stats
       const totalStats = {
         totalClubs: clubsList.length,
         totalMembers: clubsList.reduce((sum, club) => sum + (club.total_members || 0), 0),
         totalDonations: clubsList.reduce((sum, club) => sum + (club.total_donations || 0), 0)
       };
-      
+
       setClubs(clubsList);
       setStats(totalStats);
     } catch (error) {
       console.error('Error loading clubs:', error);
-      
+
       // Fallback to mock data
       const mockClubs = getMockClubs();
       setClubs(mockClubs);
@@ -122,7 +119,7 @@ export default function ClubsScreen() {
         totalMembers: mockClubs.reduce((sum, club) => sum + club.total_members, 0),
         totalDonations: mockClubs.reduce((sum, club) => sum + club.total_donations, 0)
       });
-      
+
       showNotification({
         type: 'error',
         title: 'Error',
@@ -150,7 +147,7 @@ export default function ClubsScreen() {
       router.push('/auth');
       return;
     }
-    
+
     if (!profile) {
       showNotification({
         type: 'info',
@@ -161,7 +158,7 @@ export default function ClubsScreen() {
       router.push('/complete-profile');
       return;
     }
-    
+
     // Check if user is a club (clubs can't join other clubs)
     if (profile.user_type === 'club') {
       showNotification({
@@ -172,7 +169,7 @@ export default function ClubsScreen() {
       });
       return;
     }
-    
+
     // Check if already a member
     const club = clubs.find(c => c.id === clubId);
     if (club?.is_joined) {
@@ -191,7 +188,7 @@ export default function ClubsScreen() {
       );
       return;
     }
-    
+
     // Check if already has a pending request
     if (club?.is_pending) {
       showNotification({
@@ -202,10 +199,10 @@ export default function ClubsScreen() {
       });
       return;
     }
-    
+
     try {
       setJoinRequestLoading(clubId);
-      
+
       // Create join request
       const { error } = await supabase
         .from('club_join_requests')
@@ -215,7 +212,7 @@ export default function ClubsScreen() {
           message: `I would like to join this club. My blood group is ${profile.blood_group || 'not specified'}.`,
           status: 'pending'
         });
-      
+
       if (error) {
         if (error.code === '23505') { // Unique violation
           showNotification({
@@ -236,7 +233,7 @@ export default function ClubsScreen() {
               : club
           )
         );
-        
+
         showNotification({
           type: 'success',
           title: 'Request Sent',
@@ -256,20 +253,20 @@ export default function ClubsScreen() {
       setJoinRequestLoading(null);
     }
   };
-  
+
   const handleLeaveClub = async (clubId: string, clubName: string) => {
     try {
       setJoinRequestLoading(clubId);
-      
+
       // Set member as inactive
       const { error } = await supabase
         .from('club_members')
         .update({ is_active: false })
         .eq('club_id', clubId)
         .eq('member_id', user?.id);
-      
+
       if (error) throw error;
-      
+
       // Update local state
       setClubs(prevClubs => 
         prevClubs.map(club => 
@@ -278,7 +275,7 @@ export default function ClubsScreen() {
             : club
         )
       );
-      
+
       showNotification({
         type: 'success',
         title: 'Left Club',
@@ -301,7 +298,7 @@ export default function ClubsScreen() {
   const handleClubPress = (clubId: string) => {
     router.push(`/(tabs)/clubs/${clubId}`);
   };
-  
+
   const handleCreateClub = () => {
     if (!user) {
       showNotification({
@@ -313,7 +310,7 @@ export default function ClubsScreen() {
       router.push('/auth');
       return;
     }
-    
+
     showNotification({
       type: 'info',
       title: 'Coming Soon',
@@ -321,6 +318,9 @@ export default function ClubsScreen() {
       duration: 3000,
     });
   };
+
+  // Check if current user is a donor (not a club)
+  const isDonor = profile?.user_type === 'donor';
 
   const filteredClubs = clubs.filter(club =>
     club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -471,7 +471,7 @@ export default function ClubsScreen() {
                         {club.total_members} {t('clubs.members')} • Last activity: {club.last_activity}
                       </Text>
                     </View>
-                    {/* Only show Join button for donors, not for clubs */}
+                    {/* Show Join button for donors only */}
                     {isDonor && (
                       <TouchableOpacity
                         style={[
