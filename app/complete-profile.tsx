@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Heart, User, Users } from 'lucide-react-native';
@@ -19,6 +20,10 @@ import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const USER_TYPES = [
+  { label: 'Blood Donor', value: 'donor' },
+  { label: 'Blood Donation Club', value: 'club' }
+];
 
 export default function CompleteProfileScreen() {
   const { t } = useI18n();
@@ -27,6 +32,7 @@ export default function CompleteProfileScreen() {
   const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializationAttempted = useRef(false);
+  const [showUserTypeModal, setShowUserTypeModal] = useState(false);
 
   // Check if profile is complete to determine if we should redirect
   const checkIfProfileIsComplete = () => {
@@ -52,6 +58,7 @@ export default function CompleteProfileScreen() {
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
     if (profile?.user_type) {
+      console.log('Setting account type from profile:', profile.user_type);
       setAccountType(profile.user_type);
     } else if (
       Platform.OS === 'web' &&
@@ -60,6 +67,7 @@ export default function CompleteProfileScreen() {
     ) {
       const pendingType = sessionStorage.getItem('pendingAccountType');
       if (pendingType === 'donor' || pendingType === 'club') {
+        console.log('Setting account type from session storage:', pendingType);
         setAccountType(pendingType);
         sessionStorage.removeItem('pendingAccountType');
       }
@@ -69,7 +77,7 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-      // Check if user is authenticated but profile doesn't exist
+      // Check for profile existence AND initialization flag to prevent infinite loops
       if (user && user.email_confirmed_at && !profile && !initializationAttempted.current && !loading) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
@@ -89,6 +97,7 @@ export default function CompleteProfileScreen() {
               try {
                 pendingData = JSON.parse(pendingDataStr);
                 sessionStorage.removeItem('pendingSignupData');
+                console.log('Found pending signup data:', pendingData);
               } catch (e) {
                 console.error('Failed to parse pending signup data:', e);
               }
@@ -98,7 +107,7 @@ export default function CompleteProfileScreen() {
           // Create minimal profile to satisfy RLS
           const initialData: any = {
             email: user.email || '',
-            user_type: pendingData?.userType || accountType,
+            user_type: pendingData?.userType || accountType || 'donor',
             country: pendingData?.country || 'BANGLADESH',
             name: user.email || '', // Temporary name
             phone: pendingData?.phone || '',
@@ -123,6 +132,7 @@ export default function CompleteProfileScreen() {
           console.log('CompleteProfile: Creating initial profile...');
           await updateProfile(initialData);
           console.log('CompleteProfile: Initial profile created');
+          
         } catch (error) {
           console.error(
             'CompleteProfile: Failed to initialize profile:',
@@ -243,6 +253,7 @@ export default function CompleteProfileScreen() {
   // Update validation rules when account type changes
   useEffect(() => {
     setValidationRules(getValidationRules());
+    console.log('Updated validation rules for account type:', accountType);
   }, [accountType]); // Only update when accountType changes
 
   // Redirect to home if profile is already complete
@@ -253,7 +264,7 @@ export default function CompleteProfileScreen() {
     }
   }, [user, profile, loading]);
 
-  // Prevent navigation away if profile is incomplete
+  // Prevent navigation away if profile is incomplete (web only)
   useEffect(() => {
    // Skip this effect if there's no user or if we're still loading
    if (!user || loading) return;
@@ -291,6 +302,7 @@ export default function CompleteProfileScreen() {
   }, [user, profile, loading]); // Add loading to dependency array
 
   const handleCompleteProfile = async () => {
+    console.log('Starting profile completion with account type:', accountType);
     console.log('Starting profile completion...');
 
     if (isSubmitting) {
@@ -299,6 +311,7 @@ export default function CompleteProfileScreen() {
     }
 
     if (!validateProfile()) {
+      console.log('Validation failed with account type:', accountType);
       console.log('CompleteProfile: Validation failed:', profileErrors);
       showNotification({
         type: 'error',
@@ -325,6 +338,7 @@ export default function CompleteProfileScreen() {
     console.log('CompleteProfile: Submitting profile data...');
 
     try {
+      console.log('Creating profile with account type:', accountType);
       const updates: any = {
         email: user.email || '', // Ensure email is always included
         name: accountType === 'donor' ? profileData.name : profileData.clubName,
@@ -343,6 +357,7 @@ export default function CompleteProfileScreen() {
 
       // Add blood group only for donors
       if (accountType === 'donor' && profileData.bloodGroup) {
+        console.log('Adding blood group for donor:', profileData.bloodGroup);
         updates.blood_group = profileData.bloodGroup;
       }
 
@@ -350,6 +365,7 @@ export default function CompleteProfileScreen() {
       console.log('CompleteProfile: User ID:', user.id);
 
       // Call the updateProfile function from AuthProvider
+      console.log('Calling updateProfile with:', updates);
       await updateProfile(updates);
 
       console.log('Profile updated successfully');
@@ -361,6 +377,7 @@ export default function CompleteProfileScreen() {
         duration: 4000,
       });
 
+      console.log('Redirecting to home after successful profile completion');
       // Navigate to home screen
       router.replace('/(tabs)');
     } catch (error) {
@@ -385,6 +402,14 @@ export default function CompleteProfileScreen() {
 
   const handleLocationChange = (field: string, value: string) => {
     updateProfileField(field, value);
+  };
+
+  const handleUserTypeChange = (newType: 'donor' | 'club') => {
+    if (newType !== accountType) {
+      console.log('Changing account type from', accountType, 'to', newType);
+      setAccountType(newType);
+    }
+    setShowUserTypeModal(false);
   };
 
   // Attempt to go back - show warning if profile is incomplete
@@ -450,6 +475,7 @@ export default function CompleteProfileScreen() {
           <Text style={styles.headerSubtitle}>
             Help us set up your {accountType} profile
           </Text>
+          
         </View>
 
         {/* Account Type Selection (if not already set) */}
@@ -501,6 +527,82 @@ export default function CompleteProfileScreen() {
             </View>
           </View>
         )}
+
+        {/* Account Type Selector (if already set) */}
+        {profile?.user_type && (
+          <View style={styles.userTypeSelector}>
+            <Text style={styles.userTypeSelectorLabel}>Account Type</Text>
+            <TouchableOpacity 
+              style={styles.userTypeSelectorButton}
+              onPress={() => setShowUserTypeModal(true)}
+            >
+              <View style={styles.userTypeSelectorContent}>
+                {accountType === 'donor' ? (
+                  <>
+                    <User size={20} color="#DC2626" />
+                    <Text style={styles.userTypeSelectorText}>Blood Donor</Text>
+                  </>
+                ) : (
+                  <>
+                    <Users size={20} color="#DC2626" />
+                    <Text style={styles.userTypeSelectorText}>Blood Donation Club</Text>
+                  </>
+                )}
+              </View>
+              <Text style={styles.userTypeSelectorArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* User Type Modal */}
+        <Modal
+          visible={showUserTypeModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowUserTypeModal(false)}
+        >
+          <TouchableOpacity 
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowUserTypeModal(false)}
+          >
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Select Account Type</Text>
+              
+              <View style={styles.modalContent}>
+                {USER_TYPES.map((type) => (
+                  <TouchableOpacity
+                    key={type.value}
+                    style={[
+                      styles.modalOption,
+                      accountType === type.value && styles.modalOptionSelected
+                    ]}
+                    onPress={() => handleUserTypeChange(type.value as 'donor' | 'club')}
+                  >
+                    {type.value === 'donor' ? (
+                      <User size={24} color={accountType === type.value ? '#FFFFFF' : '#DC2626'} />
+                    ) : (
+                      <Users size={24} color={accountType === type.value ? '#FFFFFF' : '#DC2626'} />
+                    )}
+                    <Text style={[
+                      styles.modalOptionText,
+                      accountType === type.value && styles.modalOptionTextSelected
+                    ]}>
+                      {type.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowUserTypeModal(false)}
+              >
+                <Text style={styles.modalCloseButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         <View style={styles.form}>
           {accountType === 'donor' ? (
@@ -717,6 +819,100 @@ const styles = StyleSheet.create({
   },
   accountTypeTextActive: {
     color: '#FFFFFF',
+  },
+  userTypeSelector: {
+    paddingHorizontal: 24,
+    marginBottom: 24,
+  },
+  userTypeSelectorLabel: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 8,
+  },
+  userTypeSelectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  userTypeSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  userTypeSelectorText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#111827',
+  },
+  userTypeSelectorArrow: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 24,
+    color: '#9CA3AF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: '#111827',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modalContent: {
+    gap: 12,
+    marginBottom: 24,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+  },
+  modalOptionSelected: {
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
+  },
+  modalOptionText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#374151',
+  },
+  modalOptionTextSelected: {
+    color: '#FFFFFF',
+  },
+  modalCloseButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCloseButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#6B7280',
   },
   form: {
     paddingHorizontal: 24,
