@@ -17,7 +17,6 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
-import { Platform } from 'react-native';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
