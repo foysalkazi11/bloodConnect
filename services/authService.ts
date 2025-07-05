@@ -559,7 +559,7 @@ class AuthService {
   async updateProfile(userId: string, updates: Partial<UserProfile>) {
     try {
       console.log('Updating profile for user:', userId);
-      console.log('Profile updates:', updates);
+      console.log('Profile updates to send:', updates);
       
       // Ensure we have a valid user session
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -575,6 +575,11 @@ class AuthService {
       const updateData = {
         ...updates,
         updated_at: new Date().toISOString(),
+        // Ensure required fields are present
+        email: updates.email || '',
+        name: updates.name || '',
+        user_type: updates.user_type || 'donor',
+        country: updates.country || 'BANGLADESH'
       };
 
       console.log('Sending update request to Supabase...');
@@ -588,6 +593,8 @@ class AuthService {
       if (error) {
         console.error('Supabase update error:', error);
         throw new Error(`Failed to update profile: ${error.message}`);
+      } else {
+        console.log('Profile update successful');
       }
 
       if (!data) {

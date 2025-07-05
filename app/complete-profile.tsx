@@ -17,6 +17,7 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Platform } from 'react-native';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -27,6 +28,27 @@ export default function CompleteProfileScreen() {
   const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializationAttempted = useRef(false);
+
+  // Check if profile is complete to determine if we should redirect
+  const checkIfProfileIsComplete = () => {
+    if (!profile) return false;
+
+    // Basic required fields
+    if (!profile.name || profile.name === profile.email || !profile.phone)
+      return false;
+
+    // Location fields
+    if (profile.country === 'BANGLADESH') {
+      if (!profile.district || !profile.police_station) return false;
+    } else {
+      if (!profile.state || !profile.city) return false;
+    }
+
+    // Donor-specific fields
+    if (profile.user_type === 'donor' && !profile.blood_group) return false;
+
+    return true;
+  };
 
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
@@ -48,8 +70,8 @@ export default function CompleteProfileScreen() {
   // Initialize profile if user is authenticated but no profile exists
   useEffect(() => {
     const initializeProfile = async () => {
-      // Check for profile existence AND initialization flag to prevent infinite loops
-      if (user && user.email_confirmed_at && !profile && !initializationAttempted.current) {
+      // Check if user is authenticated but profile doesn't exist
+      if (user && user.email_confirmed_at && !profile && !initializationAttempted.current && !loading) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
         );
@@ -224,34 +246,13 @@ export default function CompleteProfileScreen() {
     setValidationRules(getValidationRules());
   }, [accountType]); // Only update when accountType changes
 
-  // Check if profile is complete to determine if we should redirect
-  const checkIfProfileIsComplete = () => {
-    if (!profile) return false;
-
-    // Basic required fields
-    if (!profile.name || profile.name === profile.email || !profile.phone)
-      return false;
-
-    // Location fields
-    if (profile.country === 'BANGLADESH') {
-      if (!profile.district || !profile.police_station) return false;
-    } else {
-      if (!profile.state || !profile.city) return false;
-    }
-
-    // Donor-specific fields
-    if (profile.user_type === 'donor' && !profile.blood_group) return false;
-
-    return true;
-  };
-
   // Redirect to home if profile is already complete
   useEffect(() => {
-    if (user && profile && checkIfProfileIsComplete()) {
+    if (user && profile && !loading && checkIfProfileIsComplete()) {
       console.log('Profile is already complete, redirecting to home');
       router.replace('/(tabs)');
     }
-  }, [user, profile]);
+  }, [user, profile, loading]);
 
   // Prevent navigation away if profile is incomplete
   useEffect(() => {
@@ -294,12 +295,12 @@ export default function CompleteProfileScreen() {
     console.log('Starting profile completion...');
 
     if (isSubmitting) {
-      console.log('Already submitting, preventing duplicate submission');
+      console.log('CompleteProfile: Already submitting, preventing duplicate submission');
       return;
     }
 
     if (!validateProfile()) {
-      console.log('Validation failed:', profileErrors);
+      console.log('CompleteProfile: Validation failed:', profileErrors);
       showNotification({
         type: 'error',
         title: 'Validation Error',
@@ -310,7 +311,7 @@ export default function CompleteProfileScreen() {
     }
 
     if (!user) {
-      console.log('No user found');
+      console.log('CompleteProfile: No user found');
       showNotification({
         type: 'error',
         title: 'Authentication Error',
@@ -322,7 +323,7 @@ export default function CompleteProfileScreen() {
     }
 
     setIsSubmitting(true);
-    console.log('Submitting profile data...');
+    console.log('CompleteProfile: Submitting profile data...');
 
     try {
       const updates: any = {
@@ -346,8 +347,8 @@ export default function CompleteProfileScreen() {
         updates.blood_group = profileData.bloodGroup;
       }
 
-      console.log('Profile updates to send:', updates);
-      console.log('User ID:', user.id);
+      console.log('CompleteProfile: Profile updates to send:', updates);
+      console.log('CompleteProfile: User ID:', user.id);
 
       // Call the updateProfile function from AuthProvider
       await updateProfile(updates);
@@ -364,7 +365,7 @@ export default function CompleteProfileScreen() {
       // Navigate to home screen
       router.replace('/(tabs)');
     } catch (error) {
-      console.error('Profile update error:', error);
+      console.error('CompleteProfile: Profile update error:', error);
 
       let errorMessage = 'Something went wrong. Please try again.';
       if (error instanceof Error) {
@@ -380,6 +381,7 @@ export default function CompleteProfileScreen() {
     } finally {
       setIsSubmitting(false);
     }
+    return true;
   };
 
   const handleLocationChange = (field: string, value: string) => {

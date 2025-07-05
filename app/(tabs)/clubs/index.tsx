@@ -40,7 +40,7 @@ export default function ClubsScreen() {
   const [stats, setStats] = useState({
     totalClubs: 0,
     totalMembers: 0,
-    totalDonations: 0
+    totalDonations: 0,
   });
   const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(null);
 
@@ -52,13 +52,13 @@ export default function ClubsScreen() {
 
   useEffect(() => {
     loadClubs();
-  }, [user, profile]);
+  }, [user]);
 
   const loadClubs = async () => {
     try {
       setLoading(true);
       
-      // Fetch all clubs regardless of user type
+      // Fetch all clubs regardless of user type - this should always show all clubs
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -69,7 +69,7 @@ export default function ClubsScreen() {
       
       let clubsList = data || [];
       
-      // If user is logged in, check which clubs they're a member of
+      // If user is logged in, check which clubs they're a member of but still show all clubs
       if (user) {
         try {
           // Get clubs the user is a member of
@@ -115,11 +115,12 @@ export default function ClubsScreen() {
       console.error('Error loading clubs:', error);
       
       // Fallback to mock data
-      setClubs(MOCK_CLUBS);
+      const mockClubs = getMockClubs();
+      setClubs(mockClubs);
       setStats({
-        totalClubs: MOCK_CLUBS.length,
-        totalMembers: MOCK_CLUBS.reduce((sum, club) => sum + club.total_members, 0),
-        totalDonations: MOCK_CLUBS.reduce((sum, club) => sum + club.total_donations, 0)
+        totalClubs: mockClubs.length,
+        totalMembers: mockClubs.reduce((sum, club) => sum + club.total_members, 0),
+        totalDonations: mockClubs.reduce((sum, club) => sum + club.total_donations, 0)
       });
       
       showNotification({
@@ -336,51 +337,53 @@ export default function ClubsScreen() {
     }
   };
 
-  // Fallback mock data
-  const MOCK_CLUBS: Club[] = [
-    {
-      id: '1',
-      name: 'Dhaka Blood Heroes',
-      district: 'DHAKA',
-      police_station: 'DHANMONDI',
-      country: 'BANGLADESH',
-      description: 'Dedicated to saving lives through regular blood donation drives and awareness campaigns.',
-      total_members: 245,
-      total_donations: 1250,
-      founded_year: 2019,
-      is_joined: false,
-      has_new_posts: true,
-      last_activity: '2 hours ago',
-    },
-    {
-      id: '2',
-      name: 'Life Savers Club',
-      district: 'CHATTOGRAM',
-      police_station: 'KOTWALI',
-      country: 'BANGLADESH',
-      description: 'A community-driven club focused on emergency blood supply and donor awareness.',
-      total_members: 189,
-      total_donations: 890,
-      founded_year: 2020,
-      is_joined: true,
-      has_new_posts: false,
-      last_activity: '1 day ago',
-    },
-    {
-      id: '3',
-      name: 'Red Cross Youth',
-      district: 'SYLHET',
-      police_station: 'KOTWALI',
-      country: 'BANGLADESH',
-      description: 'Young volunteers committed to building a strong blood donation network.',
-      total_members: 156,
-      total_donations: 2100,
-      founded_year: 2018,
-      is_joined: false,
-      has_new_posts: true,
-      last_activity: '5 hours ago',
-    },
-  ];
+  // Get mock clubs function for fallback data
+  const getMockClubs = (): Club[] => {
+    return [
+      {
+        id: '1',
+        name: 'Dhaka Blood Heroes',
+        district: 'DHAKA',
+        police_station: 'DHANMONDI',
+        country: 'BANGLADESH',
+        description: 'Dedicated to saving lives through regular blood donation drives and awareness campaigns.',
+        total_members: 245,
+        total_donations: 1250,
+        founded_year: 2019,
+        is_joined: false,
+        has_new_posts: true,
+        last_activity: '2 hours ago',
+      },
+      {
+        id: '2',
+        name: 'Life Savers Club',
+        district: 'CHATTOGRAM',
+        police_station: 'KOTWALI',
+        country: 'BANGLADESH',
+        description: 'A community-driven club focused on emergency blood supply and donor awareness.',
+        total_members: 189,
+        total_donations: 890,
+        founded_year: 2020,
+        is_joined: true,
+        has_new_posts: false,
+        last_activity: '1 day ago',
+      },
+      {
+        id: '3',
+        name: 'Red Cross Youth',
+        district: 'SYLHET',
+        police_station: 'KOTWALI',
+        country: 'BANGLADESH',
+        description: 'Young volunteers committed to building a strong blood donation network.',
+        total_members: 156,
+        total_donations: 2100,
+        founded_year: 2018,
+        is_joined: false,
+        has_new_posts: true,
+        last_activity: '5 hours ago',
+      },
+    ];
+  };
 
   return (
     <SafeAreaView style={styles.container}>

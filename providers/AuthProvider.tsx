@@ -47,9 +47,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isProfileComplete = (profile: UserProfile | null): boolean => {
     if (!profile) return false;
     
-    // For social sign-in users, they might already have a proper name
-    // Only check if name is empty or just whitespace
-    if (!profile.name || profile.name.trim().length === 0) return false;
+    // Check if name is empty, just whitespace, or same as email (temporary name)
+    if (!profile.name || profile.name.trim().length === 0 || profile.name === profile.email) {
+      return false;
+    }
     
     const requiredFields = ['name', 'phone', 'user_type', 'country'];
     
@@ -84,7 +85,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Only redirect if user is verified
     if (!currentUser.email_confirmed_at) {
       return;
-    }
+    } 
 
     // Only redirect if:
     // 1. Profile exists
@@ -92,13 +93,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 3. We're not already on the complete-profile page
     if (userProfile && !isProfileComplete(userProfile) && typeof window !== 'undefined') {
       console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
-      
+
       const currentPath = window.location.pathname;
       // Prevent redirect if already on complete-profile or auth pages
       if (currentPath !== '/complete-profile' && !currentPath.startsWith('/auth/')) {
         router.replace('/complete-profile');
       }
     }
+  };
+  
+  const isCompletingProfile = () => {
+    return typeof window !== 'undefined' && window.location.pathname === '/complete-profile';
   };
 
   const clearAuthState = () => {
@@ -321,10 +326,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (session.user.email_confirmed_at) {
             try {
               const userProfile = await ensureProfileExists(session.user);
-              setProfile(userProfile);
-              
-              // Force profile completion redirection
               if (userProfile) {
+                setProfile(userProfile);
+              
+                // Force profile completion redirection
                 if (!isProfileComplete(userProfile)) {
                   console.log('AuthProvider: Profile incomplete, redirecting to complete-profile');
                   
@@ -467,7 +472,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Ensure all required non-nullable fields are preserved during partial updates
       const updatesWithRequiredFields = {
         ...updates,
-        // Preserve email - prioritize updates, then current user, then existing profile
+        // Preserve email - prioritize updates, then current user email, then existing profile email
         email: updates.email || user.email || profile?.email,
         // Preserve name - prioritize updates, then existing profile, then user email as fallback
         name: updates.name || profile?.name || user.email,
@@ -498,8 +503,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       console.log('AuthProvider: Updating profile with required fields preserved:', updatesWithRequiredFields);
-      
-      const updatedProfile = await authService.updateProfile(user.id, updatesWithRequiredFields);
+
+      // Make sure we're sending a valid update request
+      let updatedProfile;
+      try {
+        updatedProfile = await authService.updateProfile(user.id, updatesWithRequiredFields);
+      } catch (updateError) {
+        console.error('AuthProvider: First update attempt failed:', updateError);
+        
+        // Try again with minimal required fields if first attempt fails
+        const minimalUpdates = {
+          email: updates.email || user.email || profile?.email || '',
+          name: updates.name || profile?.name || user.email || '',
+          user_type: updates.user_type || profile?.user_type || 'donor',
+          country: updates.country || profile?.country || 'BANGLADESH',
+          phone: updates.phone || profile?.phone || '',
+        };
+        
+        if (updates.blood_group) {
+          minimalUpdates.blood_group = updates.blood_group;
+        }
+        
+        console.log('AuthProvider: Trying with minimal updates:', minimalUpdates);
+        updatedProfile = await authService.updateProfile(user.id, minimalUpdates);
+      }
+
       console.log('AuthProvider: Profile updated successfully:', updatedProfile);
       setProfile(updatedProfile);
       return updatedProfile;
