@@ -187,12 +187,12 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       onDistrictChange('');
       onPoliceStationChange('');
     }
-  }, [selectedCountry, onDistrictChange, onPoliceStationChange]);
+  }, [selectedCountry]);
 
   // Reset police station when district changes
   useEffect(() => {
     onPoliceStationChange('');
-  }, [selectedDistrict, onPoliceStationChange]);
+  }, [selectedDistrict]);
 
   const handleOtherLocationChange = (field: string, value: string) => {
     setOtherLocationInputs(prev => ({ ...prev, [field]: value }));
