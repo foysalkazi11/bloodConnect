@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Platform,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +17,7 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Platform } from 'react-native';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const USER_TYPES = [
@@ -30,6 +30,7 @@ export default function CompleteProfileScreen() {
   const { showNotification } = useNotification();
   const { user, profile, updateProfile, loading } = useAuth();
   const [accountType, setAccountType] = useState<'donor' | 'club'>('donor');
+  const [originalAccountType, setOriginalAccountType] = useState<'donor' | 'club'>('donor');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializationAttempted = useRef(false);
   const [showUserTypeModal, setShowUserTypeModal] = useState(false);
@@ -58,8 +59,9 @@ export default function CompleteProfileScreen() {
   // Get account type from session storage (for OAuth users) or profile
   useEffect(() => {
     if (profile?.user_type) {
-      console.log('Setting account type from profile:', profile.user_type);
+      console.log('Setting account type and original account type from profile:', profile.user_type);
       setAccountType(profile.user_type);
+      setOriginalAccountType(profile.user_type);
     } else if (
       Platform.OS === 'web' &&
       typeof window !== 'undefined' &&
@@ -69,6 +71,7 @@ export default function CompleteProfileScreen() {
       if (pendingType === 'donor' || pendingType === 'club') {
         console.log('Setting account type from session storage:', pendingType);
         setAccountType(pendingType);
+        setOriginalAccountType(pendingType);
         sessionStorage.removeItem('pendingAccountType');
       }
     }
@@ -341,7 +344,9 @@ export default function CompleteProfileScreen() {
       console.log('Creating profile with account type:', accountType);
       const updates: any = {
         email: user.email || '', // Ensure email is always included
-        name: accountType === 'donor' ? profileData.name : profileData.clubName,
+        name: accountType === 'donor' ? 
+          profileData.name : 
+          (profileData.clubName || (profile?.user_type === 'club' ? profile.name : '')),
         phone: profileData.phone,
         user_type: accountType,
         country: profileData.country,
@@ -359,6 +364,9 @@ export default function CompleteProfileScreen() {
       if (accountType === 'donor' && profileData.bloodGroup) {
         console.log('Adding blood group for donor:', profileData.bloodGroup);
         updates.blood_group = profileData.bloodGroup;
+      } else if (accountType === 'club') {
+        // Explicitly set blood_group to null for clubs
+        updates.blood_group = null;
       }
 
       console.log('CompleteProfile: Profile updates to send:', updates);
@@ -407,6 +415,12 @@ export default function CompleteProfileScreen() {
   const handleUserTypeChange = (newType: 'donor' | 'club') => {
     if (newType !== accountType) {
       console.log('Changing account type from', accountType, 'to', newType);
+      
+      // If changing from donor to club, clear blood group
+      if (accountType === 'donor' && newType === 'club') {
+        updateProfileField('bloodGroup', '');
+      }
+      
       setAccountType(newType);
     }
     setShowUserTypeModal(false);
@@ -460,7 +474,7 @@ export default function CompleteProfileScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
@@ -475,84 +489,31 @@ export default function CompleteProfileScreen() {
           <Text style={styles.headerSubtitle}>
             Help us set up your {accountType} profile
           </Text>
-          
         </View>
 
-        {/* Account Type Selection (if not already set) */}
-        {!profile?.user_type && (
-          <View style={styles.accountTypeSection}>
-            <Text style={styles.sectionTitle}>Account Type</Text>
-            <View style={styles.accountTypeContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.accountTypeCard,
-                  accountType === 'donor' && styles.accountTypeCardActive,
-                ]}
-                onPress={() => setAccountType('donor')}
-              >
-                <User
-                  size={24}
-                  color={accountType === 'donor' ? '#FFFFFF' : '#DC2626'}
-                />
-                <Text
-                  style={[
-                    styles.accountTypeText,
-                    accountType === 'donor' && styles.accountTypeTextActive,
-                  ]}
-                >
-                  Blood Donor
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.accountTypeCard,
-                  accountType === 'club' && styles.accountTypeCardActive,
-                ]}
-                onPress={() => setAccountType('club')}
-              >
-                <Users
-                  size={24}
-                  color={accountType === 'club' ? '#FFFFFF' : '#DC2626'}
-                />
-                <Text
-                  style={[
-                    styles.accountTypeText,
-                    accountType === 'club' && styles.accountTypeTextActive,
-                  ]}
-                >
-                  Blood Donation Club
-                </Text>
-              </TouchableOpacity>
+        {/* Account Type Selector - always visible */}
+        <View style={styles.userTypeSelector}>
+          <Text style={styles.userTypeSelectorLabel}>Account Type</Text>
+          <TouchableOpacity 
+            style={styles.userTypeSelectorButton}
+            onPress={() => setShowUserTypeModal(true)}
+          >
+            <View style={styles.userTypeSelectorContent}>
+              {accountType === 'donor' ? (
+                <>
+                  <User size={20} color="#DC2626" />
+                  <Text style={styles.userTypeSelectorText}>Blood Donor</Text>
+                </>
+              ) : (
+                <>
+                  <Users size={20} color="#DC2626" />
+                  <Text style={styles.userTypeSelectorText}>Blood Donation Club</Text>
+                </>
+              )}
             </View>
-          </View>
-        )}
-
-        {/* Account Type Selector (if already set) */}
-        {profile?.user_type && (
-          <View style={styles.userTypeSelector}>
-            <Text style={styles.userTypeSelectorLabel}>Account Type</Text>
-            <TouchableOpacity 
-              style={styles.userTypeSelectorButton}
-              onPress={() => setShowUserTypeModal(true)}
-            >
-              <View style={styles.userTypeSelectorContent}>
-                {accountType === 'donor' ? (
-                  <>
-                    <User size={20} color="#DC2626" />
-                    <Text style={styles.userTypeSelectorText}>Blood Donor</Text>
-                  </>
-                ) : (
-                  <>
-                    <Users size={20} color="#DC2626" />
-                    <Text style={styles.userTypeSelectorText}>Blood Donation Club</Text>
-                  </>
-                )}
-              </View>
-              <Text style={styles.userTypeSelectorArrow}>›</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            <Text style={styles.userTypeSelectorArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* User Type Modal */}
         <Modal
@@ -607,7 +568,7 @@ export default function CompleteProfileScreen() {
         <View style={styles.form}>
           {accountType === 'donor' ? (
             <ValidatedInput
-              label="Full Name"
+              label="Full Name *"
               value={profileData.name}
               onChangeText={(text) => updateProfileField('name', text)}
               onBlur={() => touchProfileField('name')}
@@ -618,7 +579,7 @@ export default function CompleteProfileScreen() {
             />
           ) : (
             <ValidatedInput
-              label="Club Name"
+              label="Club Name *"
               value={profileData.clubName}
               onChangeText={(text) => updateProfileField('clubName', text)}
               onBlur={() => touchProfileField('clubName')}
@@ -630,7 +591,7 @@ export default function CompleteProfileScreen() {
           )}
 
           <ValidatedInput
-            label="Phone Number"
+            label="Phone Number *"
             value={profileData.phone}
             onChangeText={(text) => updateProfileField('phone', text)}
             onBlur={() => touchProfileField('phone')}
@@ -718,7 +679,7 @@ export default function CompleteProfileScreen() {
         <View style={styles.footer}>
           <TouchableOpacity
             style={[
-              styles.completeButton,
+              styles.completeButton, 
               isButtonDisabled && styles.completeButtonDisabled,
             ]}
             onPress={handleCompleteProfile}
@@ -730,9 +691,16 @@ export default function CompleteProfileScreen() {
           </TouchableOpacity>
 
           <View style={styles.warningContainer}>
-            <Text style={styles.warningText}>
-              You must complete your profile before you can use the app.
-            </Text>
+            {originalAccountType !== accountType ? (
+              <Text style={styles.warningText}>
+                You are changing your account type from {originalAccountType} to {accountType}. 
+                This will update your profile type and may affect your existing data.
+              </Text>
+            ) : (
+              <Text style={styles.warningText}>
+                You must complete your profile before you can use the app.
+              </Text>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -823,6 +791,7 @@ const styles = StyleSheet.create({
   userTypeSelector: {
     paddingHorizontal: 24,
     marginBottom: 24,
+    marginTop: 16,
   },
   userTypeSelectorLabel: {
     fontFamily: 'Inter-Medium',
@@ -987,14 +956,14 @@ const styles = StyleSheet.create({
   warningContainer: {
     backgroundColor: '#FEF2F2',
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     marginTop: 16,
     borderLeftWidth: 4,
     borderLeftColor: '#DC2626',
   },
   warningText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 14,
+    fontSize: 13,
     color: '#B91C1C',
     lineHeight: 20,
   },
