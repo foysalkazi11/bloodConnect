@@ -35,10 +35,10 @@ import {
   ToggleLeft,
   ToggleRight,
   UserPlus,
-  Bell,
   Megaphone,
   CircleCheck,
   CircleX,
+  MessageCircle,
 } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
