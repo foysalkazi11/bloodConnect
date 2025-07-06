@@ -1,7 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Users, MessageCircle, Heart, Send, Plus, MoveVertical as MoreVertical, Pin, Bell, BellOff, Calendar, Megaphone, UserPlus, Phone, Mail, Settings, Zap, Radio, Mic, MicOff } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Users,
+  MessageCircle,
+  Heart,
+  Send,
+  Plus,
+  MoveVertical as MoreVertical,
+  Pin,
+  Bell,
+  BellOff,
+  Calendar,
+  Megaphone,
+  UserPlus,
+  Phone,
+  Mail,
+  Settings,
+  Zap,
+  Radio,
+  Mic,
+  MicOff,
+  MapPin,
+  Video,
+} from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
@@ -31,7 +65,7 @@ export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
   const [joinLoading, setJoinLoading] = useState(false);
@@ -41,7 +75,9 @@ export default function ClubDetailScreen() {
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [requestsLoading, setRequestsLoading] = useState(true);
-  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     loadClubData();
@@ -56,29 +92,31 @@ export default function ClubDetailScreen() {
   const loadClubData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch club profile
       const { data: clubData, error: clubError } = await supabase
         .from('user_profiles')
-        .select('id, name, email, phone, description, website, country, district, police_station, state, city')
+        .select(
+          'id, name, email, phone, description, website, country, district, police_station, state, city'
+        )
         .eq('id', id)
         .eq('user_type', 'club')
         .single();
-      
+
       if (clubError) throw clubError;
-      
+
       // Fetch club stats
       const { data: statsData, error: statsError } = await supabase
         .from('clubs')
         .select('total_members, total_donations, founded_year')
         .eq('id', id)
         .single();
-      
+
       // Check if user is a member
       let isMember = false;
       let isAdmin = false;
       let isPending = false;
-      
+
       if (user) {
         // Check membership
         const { data: memberData, error: memberError } = await supabase
@@ -88,12 +126,12 @@ export default function ClubDetailScreen() {
           .eq('member_id', user.id)
           .eq('is_active', true)
           .single();
-        
+
         if (!memberError && memberData) {
           isMember = true;
           isAdmin = ['admin', 'moderator'].includes(memberData.role);
         }
-        
+
         // Check pending requests
         if (!isMember) {
           const { data: requestData, error: requestError } = await supabase
@@ -103,21 +141,23 @@ export default function ClubDetailScreen() {
             .eq('user_id', user.id)
             .eq('status', 'pending')
             .single();
-          
+
           if (!requestError && requestData) {
             isPending = true;
           }
         }
       }
-      
+
       // Format location
       let location = '';
       if (clubData.country === 'BANGLADESH') {
-        location = [clubData.police_station, clubData.district].filter(Boolean).join(', ');
+        location = [clubData.police_station, clubData.district]
+          .filter(Boolean)
+          .join(', ');
       } else {
         location = [clubData.city, clubData.state].filter(Boolean).join(', ');
       }
-      
+
       // Combine data
       const clubInfo: Club = {
         id: clubData.id,
@@ -137,11 +177,11 @@ export default function ClubDetailScreen() {
         voice_channel_active: Math.random() > 0.5, // Random for demo
         voice_participants: Math.floor(Math.random() * 5) + 1, // Random for demo
       };
-      
+
       setClub(clubInfo);
     } catch (error) {
       console.error('Error loading club data:', error);
-      
+
       // Fallback to mock data
       const mockClub: Club = {
         id: id as string,
@@ -160,9 +200,9 @@ export default function ClubDetailScreen() {
         voice_channel_active: true,
         voice_participants: 3,
       };
-      
+
       setClub(mockClub);
-      
+
       showNotification({
         type: 'error',
         title: 'Error',
@@ -177,11 +217,12 @@ export default function ClubDetailScreen() {
   const loadJoinRequests = async () => {
     try {
       setRequestsLoading(true);
-      
+
       // Fetch pending join requests
       const { data, error } = await supabase
         .from('club_join_requests')
-        .select(`
+        .select(
+          `
           id,
           user_id,
           message,
@@ -191,23 +232,24 @@ export default function ClubDetailScreen() {
             email,
             blood_group
           )
-        `)
+        `
+        )
         .eq('club_id', id)
         .eq('status', 'pending');
-      
+
       if (error) throw error;
-      
+
       // Format request data
-      const formattedRequests = data.map(request => ({
+      const formattedRequests = data.map((request) => ({
         id: request.id,
         user_id: request.user_id,
-        user_name: request.user_profiles.name,
-        user_email: request.user_profiles.email,
-        blood_group: request.user_profiles.blood_group,
+        user_name: request.user_profiles[0]?.name || '',
+        user_email: request.user_profiles[0]?.email || '',
+        blood_group: request.user_profiles[0]?.blood_group || 'A+',
         message: request.message,
         created_at: request.created_at,
       }));
-      
+
       setJoinRequests(formattedRequests);
       console.log('Loaded join requests:', formattedRequests.length);
     } catch (error) {
@@ -234,7 +276,7 @@ export default function ClubDetailScreen() {
       router.push('/auth');
       return;
     }
-    
+
     if (!profile) {
       showNotification({
         type: 'info',
@@ -245,7 +287,7 @@ export default function ClubDetailScreen() {
       router.push('/complete-profile');
       return;
     }
-    
+
     // Check if user is a club (clubs can't join other clubs)
     if (profile.user_type === 'club') {
       showNotification({
@@ -256,35 +298,43 @@ export default function ClubDetailScreen() {
       });
       return;
     }
-    
+
     // Show join request modal
     setShowJoinRequestModal(true);
   };
-  
-  const handleJoinRequest = async (requestId: string, userId: string, approved: boolean) => {
+
+  const handleJoinRequest = async (
+    requestId: string,
+    userId: string,
+    approved: boolean
+  ) => {
     if (processingRequestId) return;
-    
+
     try {
       setProcessingRequestId(requestId);
-      
+
       // Update request status
       const { error } = await supabase
         .from('club_join_requests')
         .update({ status: approved ? 'approved' : 'rejected' })
         .eq('id', requestId);
-      
+
       if (error) throw error;
-      
+
       // Update local state
-      setJoinRequests(joinRequests.filter(request => request.id !== requestId));
-      
+      setJoinRequests(
+        joinRequests.filter((request) => request.id !== requestId)
+      );
+
       showNotification({
         type: 'success',
         title: approved ? 'Request Approved' : 'Request Rejected',
-        message: approved ? 'User has been added to the club' : 'Join request has been rejected',
+        message: approved
+          ? 'User has been added to the club'
+          : 'Join request has been rejected',
         duration: 3000,
       });
-      
+
       // Reload club data to update member count if approved
       if (approved) {
         loadClubData();
@@ -304,22 +354,25 @@ export default function ClubDetailScreen() {
 
   const submitJoinRequest = async () => {
     if (!club || !user) return;
-    
+
     try {
       setJoinLoading(true);
-      
+
       // Create join request
-      const { error } = await supabase
-        .from('club_join_requests')
-        .insert({
-          club_id: club.id,
-          user_id: user.id,
-          message: joinMessage || `I would like to join ${club.name}. My blood group is ${profile?.blood_group || 'not specified'}.`,
-          status: 'pending'
-        });
-      
+      const { error } = await supabase.from('club_join_requests').insert({
+        club_id: club.id,
+        user_id: user.id,
+        message:
+          joinMessage ||
+          `I would like to join ${club.name}. My blood group is ${
+            profile?.blood_group || 'not specified'
+          }.`,
+        status: 'pending',
+      });
+
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
+          // Unique violation
           showNotification({
             type: 'info',
             title: 'Already Requested',
@@ -333,16 +386,16 @@ export default function ClubDetailScreen() {
         // Update local state
         setClub({
           ...club,
-          is_pending: true
+          is_pending: true,
         });
-        
+
         showNotification({
           type: 'success',
           title: 'Request Sent',
           message: 'Your request to join the club has been sent',
           duration: 3000,
         });
-        
+
         setShowJoinRequestModal(false);
         setJoinMessage('');
       }
@@ -362,56 +415,52 @@ export default function ClubDetailScreen() {
   const handleLeaveClub = () => {
     if (!club) return;
 
-    Alert.alert(
-      'Leave Club',
-      `Are you sure you want to leave ${club.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setJoinLoading(true);
-              
-              // Set member as inactive
-              const { error } = await supabase
-                .from('club_members')
-                .update({ is_active: false })
-                .eq('club_id', club.id)
-                .eq('member_id', user?.id);
-              
-              if (error) throw error;
-              
-              // Update local state
-              setClub({
-                ...club,
-                is_member: false,
-                is_admin: false,
-                total_members: Math.max(0, club.total_members - 1)
-              });
-              
-              showNotification({
-                type: 'success',
-                title: 'Left Club',
-                message: `You have left ${club.name}`,
-                duration: 3000,
-              });
-            } catch (error) {
-              console.error('Error leaving club:', error);
-              showNotification({
-                type: 'error',
-                title: 'Error',
-                message: 'Failed to leave club',
-                duration: 4000,
-              });
-            } finally {
-              setJoinLoading(false);
-            }
-          },
+    Alert.alert('Leave Club', `Are you sure you want to leave ${club.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setJoinLoading(true);
+
+            // Set member as inactive
+            const { error } = await supabase
+              .from('club_members')
+              .update({ is_active: false })
+              .eq('club_id', club.id)
+              .eq('member_id', user?.id);
+
+            if (error) throw error;
+
+            // Update local state
+            setClub({
+              ...club,
+              is_member: false,
+              is_admin: false,
+              total_members: Math.max(0, club.total_members - 1),
+            });
+
+            showNotification({
+              type: 'success',
+              title: 'Left Club',
+              message: `You have left ${club.name}`,
+              duration: 3000,
+            });
+          } catch (error) {
+            console.error('Error leaving club:', error);
+            showNotification({
+              type: 'error',
+              title: 'Error',
+              message: 'Failed to leave club',
+              duration: 4000,
+            });
+          } finally {
+            setJoinLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const navigateToSection = (section: string) => {
@@ -420,7 +469,7 @@ export default function ClubDetailScreen() {
 
   const handleCommunicationAction = (action: string) => {
     if (!club) return;
-    
+
     switch (action) {
       case 'chat':
         navigateToSection('chat');
@@ -484,7 +533,7 @@ export default function ClubDetailScreen() {
         navigateToSection('members');
         break;
     }
-    
+
     setShowCommunicationModal(false);
   };
 
@@ -497,133 +546,20 @@ export default function ClubDetailScreen() {
         </View>
       </SafeAreaView>
     );
-  },
-  noRequests: {
-    alignItems: 'center',
-    paddingVertical: 48,
-    gap: 12,
-  },
-  noRequestsText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  requestCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    position: 'relative',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  requestHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  requestInfo: {
-    flex: 1,
-  },
-  requestName: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: '#111827',
-  },
-  requestEmail: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  bloodGroupBadge: {
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  bloodGroupText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 12,
-    color: '#FFFFFF',
-  },
-  requestMessage: {
-    backgroundColor: '#EFF6FF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  requestMessageText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#1E40AF',
-    lineHeight: 20,
-  },
-  requestTime: {
-    marginBottom: 12,
-  },
-  requestTimeText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  requestActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  rejectButton: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#EF4444',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  rejectButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#EF4444',
-  },
-  approveButton: {
-    flex: 1,
-    backgroundColor: '#DC2626',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  approveButtonText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#FFFFFF',
-  },
-  actionButtonDisabled: {
-    opacity: 0.5,
   }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{club.name}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.emailButton}
           onPress={() => handleCommunicationAction('email')}
         >
@@ -640,9 +576,9 @@ export default function ClubDetailScreen() {
               <Text style={styles.clubBadgeText}>Club</Text>
             </View>
           </View>
-          
+
           <Text style={styles.clubName}>{club.name}</Text>
-          
+
           <View style={styles.contactInfo}>
             {club.email && (
               <View style={styles.contactRow}>
@@ -666,8 +602,11 @@ export default function ClubDetailScreen() {
 
           {/* Join/Leave Button */}
           {!club.is_member && !club.is_pending && (
-            <TouchableOpacity 
-              style={[styles.joinButton, joinLoading && styles.joinButtonLoading]}
+            <TouchableOpacity
+              style={[
+                styles.joinButton,
+                joinLoading && styles.joinButtonLoading,
+              ]}
               onPress={handleJoinClub}
               disabled={joinLoading}
             >
@@ -681,16 +620,19 @@ export default function ClubDetailScreen() {
               )}
             </TouchableOpacity>
           )}
-          
+
           {club.is_pending && (
             <View style={styles.pendingBadge}>
               <Text style={styles.pendingText}>Join Request Pending</Text>
             </View>
           )}
-          
+
           {club.is_member && (
-            <TouchableOpacity 
-              style={[styles.leaveButton, joinLoading && styles.joinButtonLoading]}
+            <TouchableOpacity
+              style={[
+                styles.leaveButton,
+                joinLoading && styles.joinButtonLoading,
+              ]}
               onPress={handleLeaveClub}
               disabled={joinLoading}
             >
@@ -706,7 +648,9 @@ export default function ClubDetailScreen() {
         {/* About Section */}
         <View style={styles.aboutSection}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.aboutText}>{club.description || 'No description provided.'}</Text>
+          <Text style={styles.aboutText}>
+            {club.description || 'No description provided.'}
+          </Text>
         </View>
 
         {/* Stats Section */}
@@ -724,7 +668,9 @@ export default function ClubDetailScreen() {
           <View style={styles.statCard}>
             <Calendar size={24} color="#DC2626" />
             <Text style={styles.statValue}>
-              {club.founded_year ? (new Date().getFullYear() - club.founded_year) : 'New'}
+              {club.founded_year
+                ? new Date().getFullYear() - club.founded_year
+                : 'New'}
             </Text>
             <Text style={styles.statLabel}>Years Active</Text>
           </View>
@@ -737,7 +683,7 @@ export default function ClubDetailScreen() {
             <View style={styles.communicationHubSection}>
               <View style={styles.communicationHubHeader}>
                 <Text style={styles.sectionTitle}>Communication Hub</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.expandButton}
                   onPress={() => setShowCommunicationModal(true)}
                 >
@@ -748,7 +694,7 @@ export default function ClubDetailScreen() {
               {/* Primary Communication Actions */}
               <View style={styles.primaryCommunicationGrid}>
                 {/* Real-time Chat */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.primaryCommunicationCard, styles.chatCard]}
                   onPress={() => handleCommunicationAction('chat')}
                 >
@@ -761,7 +707,9 @@ export default function ClubDetailScreen() {
                     </View>
                     {club.unread_messages > 0 && (
                       <View style={styles.unreadBadge}>
-                        <Text style={styles.unreadText}>{club.unread_messages}</Text>
+                        <Text style={styles.unreadText}>
+                          {club.unread_messages}
+                        </Text>
                       </View>
                     )}
                   </View>
@@ -772,7 +720,7 @@ export default function ClubDetailScreen() {
                 </TouchableOpacity>
 
                 {/* Voice Channel */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.primaryCommunicationCard, styles.voiceCard]}
                   onPress={() => handleCommunicationAction('voice')}
                 >
@@ -787,36 +735,46 @@ export default function ClubDetailScreen() {
                     </View>
                     {club.voice_channel_active && (
                       <View style={styles.voiceParticipantsBadge}>
-                        <Text style={styles.voiceParticipantsText}>{club.voice_participants}</Text>
+                        <Text style={styles.voiceParticipantsText}>
+                          {club.voice_participants}
+                        </Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.communicationCardTitle}>Voice Channel</Text>
+                  <Text style={styles.communicationCardTitle}>
+                    Voice Channel
+                  </Text>
                   <Text style={styles.communicationCardSubtitle}>
-                    {club.voice_channel_active ? `${club.voice_participants} talking` : 'Start voice chat'}
+                    {club.voice_channel_active
+                      ? `${club.voice_participants} talking`
+                      : 'Start voice chat'}
                   </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Secondary Communication Options */}
               <View style={styles.secondaryCommunicationGrid}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.secondaryCommunicationCard}
                   onPress={() => handleCommunicationAction('video')}
                 >
                   <Video size={20} color="#DC2626" />
-                  <Text style={styles.secondaryCommunicationText}>Video Call</Text>
+                  <Text style={styles.secondaryCommunicationText}>
+                    Video Call
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.secondaryCommunicationCard}
                   onPress={() => handleCommunicationAction('call')}
                 >
                   <Phone size={20} color="#DC2626" />
-                  <Text style={styles.secondaryCommunicationText}>Phone Call</Text>
+                  <Text style={styles.secondaryCommunicationText}>
+                    Phone Call
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.secondaryCommunicationCard}
                   onPress={() => handleCommunicationAction('email')}
                 >
@@ -829,9 +787,9 @@ export default function ClubDetailScreen() {
             {/* Club Features */}
             <View style={styles.featuresSection}>
               <Text style={styles.sectionTitle}>Club Features</Text>
-              
+
               <View style={styles.featureGrid}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.featureCard}
                   onPress={() => handleCommunicationAction('announcements')}
                 >
@@ -840,16 +798,18 @@ export default function ClubDetailScreen() {
                   <Text style={styles.featureSubtext}>Important updates</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.featureCard}
                   onPress={() => handleCommunicationAction('events')}
                 >
                   <Calendar size={28} color="#DC2626" />
                   <Text style={styles.featureLabel}>Events</Text>
-                  <Text style={styles.featureSubtext}>Blood drives & meetings</Text>
+                  <Text style={styles.featureSubtext}>
+                    Blood drives & meetings
+                  </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.featureCard}
                   onPress={() => handleCommunicationAction('members')}
                 >
@@ -858,14 +818,16 @@ export default function ClubDetailScreen() {
                   <Text style={styles.featureSubtext}>View all members</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.featureCard}
-                  onPress={() => showNotification({
-                    type: 'info',
-                    title: 'Coming Soon',
-                    message: 'Advanced features coming soon!',
-                    duration: 3000,
-                  })}
+                  onPress={() =>
+                    showNotification({
+                      type: 'info',
+                      title: 'Coming Soon',
+                      message: 'Advanced features coming soon!',
+                      duration: 3000,
+                    })
+                  }
                 >
                   <Settings size={28} color="#DC2626" />
                   <Text style={styles.featureLabel}>Settings</Text>
@@ -875,26 +837,30 @@ export default function ClubDetailScreen() {
             </View>
           </>
         )}
-        
+
         {/* Non-member view */}
         {!club.is_member && (
           <View style={styles.nonMemberSection}>
             <View style={styles.nonMemberCard}>
               <Users size={32} color="#DC2626" />
               <Text style={styles.nonMemberTitle}>
-                {club.is_pending 
-                  ? 'Your join request is pending approval' 
+                {club.is_pending
+                  ? 'Your join request is pending approval'
                   : 'Join this club to access all features'}
               </Text>
               <Text style={styles.nonMemberDescription}>
-                {club.is_pending 
-                  ? 'Club administrators will review your request soon. You\'ll be notified when your request is approved.'
+                {club.is_pending
+                  ? "Club administrators will review your request soon. You'll be notified when your request is approved."
                   : 'Members can participate in discussions, attend events, and connect with other blood donors.'}
               </Text>
-              
+
               {!club.is_pending && !club.is_member && (
-                <TouchableOpacity 
-                  style={[styles.joinButton, joinLoading && styles.joinButtonLoading, styles.fullWidthButton]}
+                <TouchableOpacity
+                  style={[
+                    styles.joinButton,
+                    joinLoading && styles.joinButtonLoading,
+                    styles.fullWidthButton,
+                  ]}
                   onPress={handleJoinClub}
                   disabled={joinLoading}
                 >
@@ -914,42 +880,48 @@ export default function ClubDetailScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quickActionItem}
-            onPress={() => showNotification({
-              type: 'info',
-              title: 'Coming Soon',
-              message: 'Notification settings will be available soon',
-              duration: 3000,
-            })}
+            onPress={() =>
+              showNotification({
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'Notification settings will be available soon',
+                duration: 3000,
+              })
+            }
           >
             <Bell size={20} color="#374151" />
             <Text style={styles.quickActionText}>Notifications</Text>
             <Text style={styles.quickActionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quickActionItem}
-            onPress={() => showNotification({
-              type: 'info',
-              title: 'Coming Soon',
-              message: 'Privacy settings will be available soon',
-              duration: 3000,
-            })}
+            onPress={() =>
+              showNotification({
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'Privacy settings will be available soon',
+                duration: 3000,
+              })
+            }
           >
             <Users size={20} color="#374151" />
             <Text style={styles.quickActionText}>Privacy</Text>
             <Text style={styles.quickActionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quickActionItem}
-            onPress={() => showNotification({
-              type: 'info',
-              title: 'Coming Soon',
-              message: 'Language settings will be available soon',
-              duration: 3000,
-            })}
+            onPress={() =>
+              showNotification({
+                type: 'info',
+                title: 'Coming Soon',
+                message: 'Language settings will be available soon',
+                duration: 3000,
+              })
+            }
           >
             <Users size={20} color="#374151" />
             <Text style={styles.quickActionText}>Language</Text>
@@ -959,15 +931,8 @@ export default function ClubDetailScreen() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quickActionItem}
-            onPress={() => showNotification({
-              type: 'info',
-              title: 'Coming Soon',
-              message: 'Settings will be available soon',
-              duration: 3000,
-            })}
-          >
             onPress={() => {
               if (club.is_admin && joinRequests.length > 0) {
                 setShowRequestsModal(true);
@@ -975,6 +940,7 @@ export default function ClubDetailScreen() {
                 handleCommunicationAction('email');
               }
             }}
+          >
             <Text style={styles.quickActionText}>Settings</Text>
             {club.is_admin && joinRequests.length > 0 ? (
               <View style={styles.notificationBadge}>
@@ -1008,9 +974,11 @@ export default function ClubDetailScreen() {
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.modalSection}>
-              <Text style={styles.modalSectionTitle}>Real-time Communication</Text>
-              
-              <TouchableOpacity 
+              <Text style={styles.modalSectionTitle}>
+                Real-time Communication
+              </Text>
+
+              <TouchableOpacity
                 style={styles.modalCommunicationItem}
                 onPress={() => {
                   setShowCommunicationModal(false);
@@ -1018,24 +986,32 @@ export default function ClubDetailScreen() {
                 }}
               >
                 <View style={styles.modalItemLeft}>
-                  <View style={[styles.modalItemIcon, { backgroundColor: '#DC2626' }]}>
+                  <View
+                    style={[
+                      styles.modalItemIcon,
+                      { backgroundColor: '#DC2626' },
+                    ]}
+                  >
                     <MessageCircle size={24} color="#FFFFFF" />
                   </View>
                   <View style={styles.modalItemInfo}>
                     <Text style={styles.modalItemTitle}>Live Chat</Text>
                     <Text style={styles.modalItemSubtitle}>
-                      Real-time messaging with {club.online_members} members online
+                      Real-time messaging with {club.online_members} members
+                      online
                     </Text>
                   </View>
                 </View>
                 {club.unread_messages > 0 && (
                   <View style={styles.modalUnreadBadge}>
-                    <Text style={styles.modalUnreadText}>{club.unread_messages}</Text>
+                    <Text style={styles.modalUnreadText}>
+                      {club.unread_messages}
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCommunicationItem}
                 onPress={() => {
                   setShowCommunicationModal(false);
@@ -1043,16 +1019,20 @@ export default function ClubDetailScreen() {
                 }}
               >
                 <View style={styles.modalItemLeft}>
-                  <View style={[styles.modalItemIcon, { backgroundColor: '#7C3AED' }]}>
+                  <View
+                    style={[
+                      styles.modalItemIcon,
+                      { backgroundColor: '#7C3AED' },
+                    ]}
+                  >
                     <Mic size={24} color="#FFFFFF" />
                   </View>
                   <View style={styles.modalItemInfo}>
                     <Text style={styles.modalItemTitle}>Voice Channel</Text>
                     <Text style={styles.modalItemSubtitle}>
-                      {club.voice_channel_active 
+                      {club.voice_channel_active
                         ? `Join ${club.voice_participants} members in voice chat`
-                        : 'Start a voice conversation with club members'
-                      }
+                        : 'Start a voice conversation with club members'}
                     </Text>
                   </View>
                 </View>
@@ -1066,8 +1046,8 @@ export default function ClubDetailScreen() {
 
             <View style={styles.modalSection}>
               <Text style={styles.modalSectionTitle}>Direct Communication</Text>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalCommunicationItem}
                 onPress={() => {
                   setShowCommunicationModal(false);
@@ -1075,17 +1055,24 @@ export default function ClubDetailScreen() {
                 }}
               >
                 <View style={styles.modalItemLeft}>
-                  <View style={[styles.modalItemIcon, { backgroundColor: '#059669' }]}>
+                  <View
+                    style={[
+                      styles.modalItemIcon,
+                      { backgroundColor: '#059669' },
+                    ]}
+                  >
                     <Video size={24} color="#FFFFFF" />
                   </View>
                   <View style={styles.modalItemInfo}>
                     <Text style={styles.modalItemTitle}>Video Conference</Text>
-                    <Text style={styles.modalItemSubtitle}>Start a video call with club members</Text>
+                    <Text style={styles.modalItemSubtitle}>
+                      Start a video call with club members
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCommunicationItem}
                 onPress={() => {
                   setShowCommunicationModal(false);
@@ -1093,17 +1080,24 @@ export default function ClubDetailScreen() {
                 }}
               >
                 <View style={styles.modalItemLeft}>
-                  <View style={[styles.modalItemIcon, { backgroundColor: '#2563EB' }]}>
+                  <View
+                    style={[
+                      styles.modalItemIcon,
+                      { backgroundColor: '#2563EB' },
+                    ]}
+                  >
                     <Phone size={24} color="#FFFFFF" />
                   </View>
                   <View style={styles.modalItemInfo}>
                     <Text style={styles.modalItemTitle}>Phone Call</Text>
-                    <Text style={styles.modalItemSubtitle}>Call the club directly at {club.phone || 'N/A'}</Text>
+                    <Text style={styles.modalItemSubtitle}>
+                      Call the club directly at {club.phone || 'N/A'}
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCommunicationItem}
                 onPress={() => {
                   setShowCommunicationModal(false);
@@ -1111,12 +1105,19 @@ export default function ClubDetailScreen() {
                 }}
               >
                 <View style={styles.modalItemLeft}>
-                  <View style={[styles.modalItemIcon, { backgroundColor: '#EA580C' }]}>
+                  <View
+                    style={[
+                      styles.modalItemIcon,
+                      { backgroundColor: '#EA580C' },
+                    ]}
+                  >
                     <Mail size={24} color="#FFFFFF" />
                   </View>
                   <View style={styles.modalItemInfo}>
                     <Text style={styles.modalItemTitle}>Email</Text>
-                    <Text style={styles.modalItemSubtitle}>Send an email to {club.email || 'N/A'}</Text>
+                    <Text style={styles.modalItemSubtitle}>
+                      Send an email to {club.email || 'N/A'}
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1124,7 +1125,7 @@ export default function ClubDetailScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-      
+
       {/* Join Request Modal */}
       <Modal
         visible={showJoinRequestModal}
@@ -1138,35 +1139,43 @@ export default function ClubDetailScreen() {
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Join Request</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={submitJoinRequest}
               disabled={joinLoading}
             >
-              <Text style={[
-                styles.modalSendText,
-                joinLoading && styles.modalSendTextDisabled
-              ]}>
+              <Text
+                style={[
+                  styles.modalSendText,
+                  joinLoading && styles.modalSendTextDisabled,
+                ]}
+              >
                 {joinLoading ? 'Sending...' : 'Send'}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.modalContent}>
-            <Text style={styles.joinRequestTitle}>Request to join {club.name}</Text>
-            
+            <Text style={styles.joinRequestTitle}>
+              Request to join {club.name}
+            </Text>
+
             <View style={styles.joinRequestInfo}>
               <TextAvatar name={profile?.name || 'User'} size={48} />
               <View style={styles.joinRequestUserInfo}>
                 <Text style={styles.joinRequestUserName}>{profile?.name}</Text>
-                <Text style={styles.joinRequestUserEmail}>{profile?.email}</Text>
+                <Text style={styles.joinRequestUserEmail}>
+                  {profile?.email}
+                </Text>
                 {profile?.blood_group && (
                   <View style={styles.bloodGroupBadge}>
-                    <Text style={styles.bloodGroupText}>{profile.blood_group}</Text>
+                    <Text style={styles.bloodGroupText}>
+                      {profile.blood_group}
+                    </Text>
                   </View>
                 )}
               </View>
             </View>
-            
+
             <Text style={styles.inputLabel}>Message (Optional)</Text>
             <TextInput
               style={styles.messageInput}
@@ -1178,14 +1187,15 @@ export default function ClubDetailScreen() {
               numberOfLines={4}
               textAlignVertical="top"
             />
-            
+
             <Text style={styles.joinRequestNote}>
-              Your request will be reviewed by club administrators. You'll be notified when your request is approved.
+              Your request will be reviewed by club administrators. You'll be
+              notified when your request is approved.
             </Text>
           </View>
         </SafeAreaView>
       </Modal>
-      
+
       {/* Join Requests Modal */}
       <Modal
         visible={showRequestsModal}
@@ -1199,7 +1209,7 @@ export default function ClubDetailScreen() {
               <Text style={styles.modalCancelText}>Close</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Join Requests</Text>
-            <View style={styles.headerRight} />
+            <View />
           </View>
 
           <ScrollView style={styles.modalContent}>
@@ -1211,53 +1221,75 @@ export default function ClubDetailScreen() {
             ) : joinRequests.length === 0 ? (
               <View style={styles.noRequests}>
                 <UserPlus size={48} color="#D1D5DB" />
-                <Text style={styles.noRequestsText}>No pending join requests</Text>
+                <Text style={styles.noRequestsText}>
+                  No pending join requests
+                </Text>
               </View>
             ) : (
-              joinRequests.map(request => (
+              joinRequests.map((request) => (
                 <View key={request.id} style={styles.requestCard}>
                   {processingRequestId === request.id ? (
                     <View style={styles.loadingOverlay}>
                       <ActivityIndicator size="small" color="#DC2626" />
                     </View>
                   ) : null}
-                  
+
                   <View style={styles.requestHeader}>
                     <TextAvatar name={request.user_name} size={48} />
                     <View style={styles.requestInfo}>
-                      <Text style={styles.requestName}>{request.user_name}</Text>
-                      <Text style={styles.requestEmail}>{request.user_email}</Text>
+                      <Text style={styles.requestName}>
+                        {request.user_name}
+                      </Text>
+                      <Text style={styles.requestEmail}>
+                        {request.user_email}
+                      </Text>
                       {request.blood_group && (
                         <View style={styles.bloodGroupBadge}>
-                          <Text style={styles.bloodGroupText}>{request.blood_group}</Text>
+                          <Text style={styles.bloodGroupText}>
+                            {request.blood_group}
+                          </Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  
+
                   {request.message && (
                     <View style={styles.requestMessage}>
-                      <Text style={styles.requestMessageText}>{request.message}</Text>
+                      <Text style={styles.requestMessageText}>
+                        {request.message}
+                      </Text>
                     </View>
                   )}
-                  
+
                   <View style={styles.requestTime}>
                     <Text style={styles.requestTimeText}>
                       Requested {formatTimeAgo(request.created_at)}
                     </Text>
                   </View>
-                  
+
                   <View style={styles.requestActions}>
-                    <TouchableOpacity 
-                      style={[styles.rejectButton, processingRequestId !== null && styles.actionButtonDisabled]}
-                      onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                    <TouchableOpacity
+                      style={[
+                        styles.rejectButton,
+                        processingRequestId !== null &&
+                          styles.actionButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        handleJoinRequest(request.id, request.user_id, false)
+                      }
                       disabled={processingRequestId !== null}
                     >
                       <Text style={styles.rejectButtonText}>Reject</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.approveButton, processingRequestId !== null && styles.actionButtonDisabled]}
-                      onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                    <TouchableOpacity
+                      style={[
+                        styles.approveButton,
+                        processingRequestId !== null &&
+                          styles.actionButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        handleJoinRequest(request.id, request.user_id, true)
+                      }
                       disabled={processingRequestId !== null}
                     >
                       <Text style={styles.approveButtonText}>Approve</Text>
@@ -1271,6 +1303,26 @@ export default function ClubDetailScreen() {
       </Modal>
     </SafeAreaView>
   );
+}
+
+// Helper function to format time ago
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return 'just now';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  } else {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
 }
 
 const styles = StyleSheet.create({
@@ -1317,7 +1369,7 @@ const styles = StyleSheet.create({
   emailButton: {
     width: 40,
     height: 40,
-    borderRadius: 20, 
+    borderRadius: 20,
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1874,5 +1926,121 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#3B82F6',
+  },
+  noRequests: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  noRequestsText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  requestCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    position: 'relative',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  requestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestName: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  requestEmail: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  // bloodGroupBadge: {
+  //   backgroundColor: '#DC2626',
+  //   paddingHorizontal: 8,
+  //   paddingVertical: 2,
+  //   borderRadius: 8,
+  //   alignSelf: 'flex-start',
+  // },
+  // bloodGroupText: {
+  //   fontFamily: 'Inter-SemiBold',
+  //   fontSize: 12,
+  //   color: '#FFFFFF',
+  // },
+  requestMessage: {
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  requestMessageText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
+  requestTime: {
+    marginBottom: 12,
+  },
+  requestTimeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  requestActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  rejectButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  approveButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  approveButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
   },
 });
