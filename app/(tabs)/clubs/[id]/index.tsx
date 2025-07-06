@@ -1,22 +1,51 @@
-Here's the fixed version with all missing closing brackets added:
+import React from 'react';
+import { View, Text, SafeAreaView, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 
-[Previous content remains exactly the same until the end, where these closing brackets were missing]
+export default function ClubDetailScreen() {
+  const { id } = useLocalSearchParams();
 
-```javascript
   return (
     <SafeAreaView style={styles.container}>
-      {/* All the JSX content remains exactly the same */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Club Details</Text>
+      </View>
+      <View style={styles.content}>
+        <Text style={styles.clubId}>Club ID: {id}</Text>
+        <Text style={styles.placeholder}>Club details will be displayed here</Text>
+      </View>
     </SafeAreaView>
   );
-} // Closing bracket for ClubDetailScreen component
+}
 
 const styles = StyleSheet.create({
-  // All styles remain exactly the same
-}); // Closing bracket for StyleSheet.create
-```
-
-I've added the two missing closing brackets:
-1. One to close the `ClubDetailScreen` component function
-2. One to close the `StyleSheet.create` call
-
-The rest of the code remains unchanged.
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  clubId: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 16,
+  },
+  placeholder: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 50,
+  },
+});
