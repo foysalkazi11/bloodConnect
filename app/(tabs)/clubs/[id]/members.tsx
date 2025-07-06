@@ -219,17 +219,13 @@ export default function ClubMembersScreen() {
         .eq('club_id', id)
         .eq('member_id', user?.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
       if (error) {
-        if (error.code !== 'PGRST116') { // Not found error
-          throw error;
-        }
-        setIsAdmin(false);
-        return;
+        throw error;
       }
       
-      setIsAdmin(['admin', 'moderator'].includes(data.role));
+      setIsAdmin(data ? ['admin', 'moderator'].includes(data.role) : false);
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
