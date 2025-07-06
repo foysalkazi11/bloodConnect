@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text as RNText,
-  StyleSheet, 
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Image,
@@ -242,12 +242,12 @@ export default function ProfileScreen() {
   const { t, currentLanguage, changeLanguage } = useI18n();
   const { user, profile, signOut, updateProfile } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [userStats, setUserStats] = useState<UserStats>({
     totalDonations: 0,
     joinedClubs: 0,
   });
-  
+
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [events, setEvents] = useState<ClubEvent[]>([]);
@@ -268,7 +268,7 @@ export default function ProfileScreen() {
   const [imageError, setImageError] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  
+
   // Club-specific states
   const [clubMembers, setClubMembers] = useState<ClubMember[]>([]);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
@@ -278,7 +278,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (user && profile) {
       loadUserStats();
-      
+
       // Load club-specific data if user is a club
       if (profile.user_type === 'club') {
         loadJoinRequests();
@@ -342,12 +342,13 @@ export default function ProfileScreen() {
 
   const loadClubData = async () => {
     if (!user || profile?.user_type !== 'club') return;
-    
+
     try {
       // Load pending join requests
       const { data: requestsData, error: requestsError } = await supabase
         .from('club_join_requests')
-        .select(`
+        .select(
+          `
           id,
           user_id,
           message,
@@ -357,30 +358,34 @@ export default function ProfileScreen() {
             email,
             blood_group
           )
-        `)
+        `
+        )
         .eq('club_id', user.id)
         .eq('status', 'pending');
-      
+
       if (requestsError) throw requestsError;
-      
+
       // Format request data
-      const formattedRequests: JoinRequest[] = (requestsData || []).map(request => ({
-        id: request.id,
-        user_id: request.user_id,
-        user_name: request.user_profiles?.name || 'Unknown User',
-        user_email: request.user_profiles?.email || '',
-        blood_group: request.user_profiles?.blood_group,
-        message: request.message,
-        created_at: request.created_at,
-      }));
-      
+      const formattedRequests: JoinRequest[] = (requestsData || []).map(
+        (request) => ({
+          id: request.id,
+          user_id: request.user_id,
+          user_name: request.user_profiles[0]?.name || 'Unknown User',
+          user_email: request.user_profiles[0]?.email || '',
+          blood_group: request.user_profiles[0]?.blood_group || 'A+',
+          message: request.message,
+          created_at: request.created_at,
+        })
+      );
+
       setJoinRequests(formattedRequests);
       setPendingRequestsCount(formattedRequests.length);
-      
+
       // Load club members
       const { data: membersData, error: membersError } = await supabase
         .from('club_members')
-        .select(`
+        .select(
+          `
           id,
           role,
           joined_at,
@@ -390,32 +395,37 @@ export default function ProfileScreen() {
             email,
             blood_group
           )
-        `)
+        `
+        )
         .eq('club_id', user.id)
         .eq('is_active', true);
-      
+
       if (membersError) throw membersError;
-      
+
       // Format member data
-      const formattedMembers: ClubMember[] = (membersData || []).map(member => ({
-        id: member.user_profiles.id,
-        name: member.user_profiles.name,
-        email: member.user_profiles.email,
-        blood_group: member.user_profiles.blood_group,
-        role: member.role,
-        joined_date: member.joined_at,
-        is_online: Math.random() > 0.7, // Random for demo
-      }));
-      
+      const formattedMembers: ClubMember[] = (membersData || []).map(
+        (member) => ({
+          id: member.user_profiles[0]?.id,
+          name: member.user_profiles[0]?.name,
+          email: member.user_profiles[0]?.email,
+          blood_group: member.user_profiles[0]?.blood_group,
+          role: member.role,
+          joined_date: member.joined_at,
+          is_online: Math.random() > 0.7, // Random for demo
+        })
+      );
+
       setClubMembers(formattedMembers);
-      
+
       // Check if current user is admin
-      const isUserAdmin = membersData?.some(
-        member => member.user_profiles.id === user.id && ['admin', 'moderator'].includes(member.role)
-      ) || true; // Default to true for now since club owner should be admin
-      
+      const isUserAdmin =
+        membersData?.some(
+          (member) =>
+            member.user_profiles[0]?.id === user.id &&
+            ['admin', 'moderator'].includes(member.role)
+        ) || true; // Default to true for now since club owner should be admin
+
       setIsAdmin(isUserAdmin);
-      
     } catch (error) {
       console.error('Error loading club data:', error);
       showNotification({
@@ -429,14 +439,15 @@ export default function ProfileScreen() {
 
   const loadJoinRequests = async () => {
     if (!user || profile?.user_type !== 'club') return;
-    
+
     try {
       setLoadingRequests(true);
-      
+
       // Fetch pending join requests
       const { data, error } = await supabase
         .from('club_join_requests')
-        .select(`
+        .select(
+          `
           id,
           user_id,
           message,
@@ -446,27 +457,28 @@ export default function ProfileScreen() {
             email,
             blood_group
           )
-        `)
+        `
+        )
         .eq('club_id', user.id)
         .eq('status', 'pending');
-      
+
       if (error) throw error;
-      
+
       // Format request data
-      const formattedRequests: JoinRequest[] = data.map(request => ({
+      const formattedRequests: JoinRequest[] = data.map((request) => ({
         id: request.id,
         user_id: request.user_id,
-        user_name: request.user_profiles.name,
-        user_email: request.user_profiles.email,
-        blood_group: request.user_profiles.blood_group,
+        user_name: request.user_profiles[0]?.name,
+        user_email: request.user_profiles[0]?.email,
+        blood_group: request.user_profiles[0]?.blood_group,
         message: request.message,
         created_at: request.created_at,
       }));
-      
+
       setJoinRequests(formattedRequests);
     } catch (error) {
       console.error('Error loading join requests:', error);
-      
+
       // Use mock data as fallback
       const mockRequests: JoinRequest[] = [
         {
@@ -475,7 +487,8 @@ export default function ProfileScreen() {
           user_name: 'Ahmed Rahman',
           user_email: 'ahmed@example.com',
           blood_group: 'O+',
-          message: 'I would like to join your club to help with blood donation drives.',
+          message:
+            'I would like to join your club to help with blood donation drives.',
           created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         },
         {
@@ -484,11 +497,12 @@ export default function ProfileScreen() {
           user_name: 'Fatima Khan',
           user_email: 'fatima@example.com',
           blood_group: 'A+',
-          message: 'I am a regular donor and would like to be part of your community.',
+          message:
+            'I am a regular donor and would like to be part of your community.',
           created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         },
       ];
-      
+
       setJoinRequests(mockRequests);
     } finally {
       setLoadingRequests(false);
@@ -497,14 +511,15 @@ export default function ProfileScreen() {
 
   const loadClubMembers = async () => {
     if (!user || profile?.user_type !== 'club') return;
-    
+
     try {
       setLoadingMembers(true);
-      
+
       // Fetch club members
       const { data, error } = await supabase
         .from('club_members')
-        .select(`
+        .select(
+          `
           id,
           role,
           joined_at,
@@ -514,27 +529,28 @@ export default function ProfileScreen() {
             email,
             blood_group
           )
-        `)
+        `
+        )
         .eq('club_id', user.id)
         .eq('is_active', true);
-      
+
       if (error) throw error;
-      
+
       // Format member data
-      const formattedMembers: ClubMember[] = data.map(member => ({
-        id: member.user_profiles.id,
-        name: member.user_profiles.name,
-        email: member.user_profiles.email,
-        blood_group: member.user_profiles.blood_group,
+      const formattedMembers: ClubMember[] = data.map((member) => ({
+        id: member.user_profiles[0]?.id || '',
+        name: member.user_profiles[0]?.name,
+        email: member.user_profiles[0]?.email,
+        blood_group: member.user_profiles[0]?.blood_group,
         role: member.role,
         joined_date: member.joined_at,
         is_online: Math.random() > 0.7, // Random for demo
       }));
-      
+
       setMembers(formattedMembers);
     } catch (error) {
       console.error('Error loading members:', error);
-      
+
       // Use mock data as fallback
       const mockMembers: ClubMember[] = [
         {
@@ -543,7 +559,9 @@ export default function ProfileScreen() {
           email: 'rahul@example.com',
           blood_group: 'B+',
           role: 'admin',
-          joined_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          joined_date: new Date(
+            Date.now() - 30 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           is_online: true,
         },
         {
@@ -552,11 +570,13 @@ export default function ProfileScreen() {
           email: 'nusrat@example.com',
           blood_group: 'AB-',
           role: 'member',
-          joined_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          joined_date: new Date(
+            Date.now() - 15 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           is_online: false,
         },
       ];
-      
+
       setMembers(mockMembers);
     } finally {
       setLoadingMembers(false);
@@ -565,10 +585,10 @@ export default function ProfileScreen() {
 
   const loadClubEvents = async () => {
     if (!user || profile?.user_type !== 'club') return;
-    
+
     try {
       setLoadingEvents(true);
-      
+
       // Fetch club events
       const { data, error } = await supabase
         .from('club_events')
@@ -576,57 +596,60 @@ export default function ProfileScreen() {
         .eq('club_id', user.id)
         .order('start_time', { ascending: true })
         .limit(5);
-      
+
       if (error) throw error;
-      
+
       // Get attendee counts for each event
-      const eventIds = data.map(event => event.id);
+      const eventIds = data.map((event) => event.id);
       const { data: attendeesData, error: attendeesError } = await supabase
         .from('club_event_attendees')
         .select('event_id, count')
         .in('event_id', eventIds)
-        .eq('status', 'going')
-        .group('event_id');
-      
+        .eq('status', 'going');
+
       if (attendeesError) throw attendeesError;
-      
+
       // Create a map of event ID to attendee count
       const attendeeCounts: Record<string, number> = {};
-      attendeesData?.forEach(item => {
-        attendeeCounts[item.event_id] = parseInt(item.count);
+      attendeesData?.forEach((item) => {
+        attendeeCounts[item.event_id] = parseInt(item.count.toString());
       });
-      
+
       // Format event data
-      const formattedEvents: ClubEvent[] = data.map(event => ({
+      const formattedEvents: ClubEvent[] = data.map((event) => ({
         id: event.id,
         title: event.title,
         start_time: event.start_time,
         location: event.location,
         attendees_count: attendeeCounts[event.id] || 0,
       }));
-      
+
       setEvents(formattedEvents);
     } catch (error) {
       console.error('Error loading events:', error);
-      
+
       // Use mock data as fallback
       const mockEvents: ClubEvent[] = [
         {
           id: 'evt1',
           title: 'Emergency Blood Drive',
-          start_time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          start_time: new Date(
+            Date.now() + 2 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           location: 'Dhaka Medical College',
           attendees_count: 15,
         },
         {
           id: 'evt2',
           title: 'Monthly Club Meeting',
-          start_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          start_time: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           location: 'Club Office',
           attendees_count: 8,
         },
       ];
-      
+
       setEvents(mockEvents);
     } finally {
       setLoadingEvents(false);
@@ -635,10 +658,10 @@ export default function ProfileScreen() {
 
   const loadClubAnnouncements = async () => {
     if (!user || profile?.user_type !== 'club') return;
-    
+
     try {
       setLoadingAnnouncements(true);
-      
+
       // Fetch club announcements
       const { data, error } = await supabase
         .from('club_announcements')
@@ -646,70 +669,84 @@ export default function ProfileScreen() {
         .eq('club_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
-      
+
       if (error) throw error;
-      
+
       // Format announcement data
-      const formattedAnnouncements: ClubAnnouncement[] = data.map(announcement => ({
-        id: announcement.id,
-        title: announcement.title,
-        created_at: announcement.created_at,
-        priority: announcement.priority,
-      }));
-      
+      const formattedAnnouncements: ClubAnnouncement[] = data.map(
+        (announcement) => ({
+          id: announcement.id,
+          title: announcement.title,
+          created_at: announcement.created_at,
+          priority: announcement.priority,
+        })
+      );
+
       setAnnouncements(formattedAnnouncements);
     } catch (error) {
       console.error('Error loading announcements:', error);
-      
+
       // Use mock data as fallback
       const mockAnnouncements: ClubAnnouncement[] = [
         {
           id: 'ann1',
           title: 'Urgent: Blood Needed for Surgery',
-          created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date(
+            Date.now() - 1 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           priority: 'urgent',
         },
         {
           id: 'ann2',
           title: 'New Donation Guidelines',
-          created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date(
+            Date.now() - 3 * 24 * 60 * 60 * 1000
+          ).toISOString(),
           priority: 'medium',
         },
       ];
-      
+
       setAnnouncements(mockAnnouncements);
     } finally {
       setLoadingAnnouncements(false);
     }
   };
 
-  const handleJoinRequest = async (requestId: string, userId: string, approved: boolean) => {
+  const handleJoinRequest = async (
+    requestId: string,
+    userId: string,
+    approved: boolean
+  ) => {
     try {
       setActionLoading(requestId);
-      
+
       // Update request status
       const { error } = await supabase
         .from('club_join_requests')
         .update({ status: approved ? 'approved' : 'rejected' })
         .eq('id', requestId);
-      
+
       if (error) throw error;
-      
+
       // Update local state
-      setJoinRequests(joinRequests.filter(request => request.id !== requestId));
-      setPendingRequestsCount(prev => prev - 1);
-      
+      setJoinRequests(
+        joinRequests.filter((request) => request.id !== requestId)
+      );
+      setPendingRequestsCount((prev) => prev - 1);
+
       // If approved, add to members list
       if (approved) {
         // The trigger will handle adding the member to club_members
         // We'll reload the members list to show the new member
         await loadClubData();
       }
-      
+
       showNotification({
         type: 'success',
         title: approved ? 'Request Approved' : 'Request Rejected',
-        message: approved ? 'User has been added to the club' : 'Join request has been rejected',
+        message: approved
+          ? 'User has been added to the club'
+          : 'Join request has been rejected',
         duration: 3000,
       });
     } catch (error) {
@@ -737,19 +774,19 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               setActionLoading(memberId);
-              
+
               // Set member as inactive
               const { error } = await supabase
                 .from('club_members')
                 .update({ is_active: false })
                 .eq('club_id', user?.id)
                 .eq('member_id', memberId);
-              
+
               if (error) throw error;
-              
+
               // Update local state
-              setMembers(members.filter(member => member.id !== memberId));
-              
+              setMembers(members.filter((member) => member.id !== memberId));
+
               showNotification({
                 type: 'success',
                 title: 'Member Removed',
@@ -776,23 +813,25 @@ export default function ProfileScreen() {
   const handlePromoteMember = async (memberId: string, memberName: string) => {
     try {
       setActionLoading(memberId);
-      
+
       // Update member role
       const { error } = await supabase
         .from('club_members')
         .update({ role: 'moderator' })
         .eq('club_id', user?.id)
         .eq('member_id', memberId);
-      
+
       if (error) throw error;
-      
+
       // Update local state
-      setMembers(members.map(member => 
-        member.id === memberId 
-          ? { ...member, role: 'moderator' as const }
-          : member
-      ));
-      
+      setMembers(
+        members.map((member) =>
+          member.id === memberId
+            ? { ...member, role: 'moderator' as const }
+            : member
+        )
+      );
+
       showNotification({
         type: 'success',
         title: 'Member Promoted',
@@ -814,7 +853,7 @@ export default function ProfileScreen() {
 
   const navigateToSection = (section: string) => {
     if (!user) return;
-    
+
     router.push(`/(tabs)/clubs/${user.id}/${section}`);
   };
 
@@ -1020,25 +1059,32 @@ export default function ProfileScreen() {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60)
+    );
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays}d ago`;
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return '#EF4444';
-      case 'high': return '#F59E0B';
-      case 'medium': return '#3B82F6';
-      case 'low': return '#10B981';
-      default: return '#6B7280';
+      case 'urgent':
+        return '#EF4444';
+      case 'high':
+        return '#F59E0B';
+      case 'medium':
+        return '#3B82F6';
+      case 'low':
+        return '#10B981';
+      default:
+        return '#6B7280';
     }
   };
 
@@ -1091,13 +1137,15 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
-          <RNText style={styles.headerTitle}>{profile.name.split(' ')[0]}</RNText>
+          <RNText style={styles.headerTitle}>
+            {profile.name.split(' ')[0]}
+          </RNText>
           <TouchableOpacity style={styles.headerButton}>
             <Mail size={24} color="#DC2626" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
+        <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -1131,7 +1179,9 @@ export default function ProfileScreen() {
                 )}
                 <View style={styles.contactRow}>
                   <MapPin size={14} color="#6B7280" />
-                  <RNText style={styles.contactText}>{getLocationDisplay()}</RNText>
+                  <RNText style={styles.contactText}>
+                    {getLocationDisplay()}
+                  </RNText>
                 </View>
               </View>
             </View>
@@ -1141,7 +1191,9 @@ export default function ProfileScreen() {
           {profile.description && (
             <View style={styles.descriptionSection}>
               <RNText style={styles.descriptionTitle}>About</RNText>
-              <RNText style={styles.descriptionText}>{profile.description}</RNText>
+              <RNText style={styles.descriptionText}>
+                {profile.description}
+              </RNText>
               {profile.website && (
                 <TouchableOpacity style={styles.websiteButton}>
                   <Globe size={16} color="#DC2626" />
@@ -1166,7 +1218,9 @@ export default function ProfileScreen() {
               <>
                 <View style={styles.statCard}>
                   <Heart size={24} color="#DC2626" />
-                  <RNText style={styles.statValue}>{userStats.totalDonations}</RNText>
+                  <RNText style={styles.statValue}>
+                    {userStats.totalDonations}
+                  </RNText>
                   <RNText style={styles.statLabel}>Total Drives</RNText>
                 </View>
                 <View style={styles.statCard}>
@@ -1193,42 +1247,64 @@ export default function ProfileScreen() {
           {pendingRequestsCount > 0 && (
             <View style={styles.joinRequestsSection}>
               <View style={styles.sectionHeader}>
-                <RNText style={styles.sectionTitle}>Pending Join Requests</RNText>
-                <TouchableOpacity 
+                <RNText style={styles.sectionTitle}>
+                  Pending Join Requests
+                </RNText>
+                <TouchableOpacity
                   style={styles.viewAllButton}
                   onPress={() => setShowJoinRequestsModal(true)}
                 >
-                  <RNText style={styles.viewAllText}>View All ({pendingRequestsCount})</RNText>
+                  <RNText style={styles.viewAllText}>
+                    View All ({pendingRequestsCount})
+                  </RNText>
                 </TouchableOpacity>
               </View>
-              
+
               {joinRequests.slice(0, 2).map((request) => (
                 <View key={request.id} style={styles.requestCard}>
                   <View style={styles.requestHeader}>
                     <TextAvatar name={request.user_name} size={40} />
                     <View style={styles.requestInfo}>
-                      <RNText style={styles.requestName}>{request.user_name}</RNText>
-                      <RNText style={styles.requestTime}>Requested {formatTimeAgo(request.created_at)}</RNText>
+                      <RNText style={styles.requestName}>
+                        {request.user_name}
+                      </RNText>
+                      <RNText style={styles.requestTime}>
+                        Requested {formatTimeAgo(request.created_at)}
+                      </RNText>
                     </View>
                     {request.blood_group && (
                       <View style={styles.bloodGroupBadge}>
-                        <RNText style={styles.bloodGroupText}>{request.blood_group}</RNText>
+                        <RNText style={styles.bloodGroupText}>
+                          {request.blood_group}
+                        </RNText>
                       </View>
                     )}
                   </View>
-                  
+
                   <View style={styles.requestActions}>
-                    <TouchableOpacity 
-                      style={[styles.rejectButton, actionLoading === request.id && styles.actionButtonDisabled]}
-                      onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                    <TouchableOpacity
+                      style={[
+                        styles.rejectButton,
+                        actionLoading === request.id &&
+                          styles.actionButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        handleJoinRequest(request.id, request.user_id, false)
+                      }
                       disabled={actionLoading !== null}
                     >
                       <CircleX size={16} color="#EF4444" />
                       <RNText style={styles.rejectButtonText}>Reject</RNText>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.approveButton, actionLoading === request.id && styles.actionButtonDisabled]}
-                      onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                    <TouchableOpacity
+                      style={[
+                        styles.approveButton,
+                        actionLoading === request.id &&
+                          styles.actionButtonDisabled,
+                      ]}
+                      onPress={() =>
+                        handleJoinRequest(request.id, request.user_id, true)
+                      }
                       disabled={actionLoading !== null}
                     >
                       <CircleCheck size={16} color="#FFFFFF" />
@@ -1237,13 +1313,15 @@ export default function ProfileScreen() {
                   </View>
                 </View>
               ))}
-              
+
               {pendingRequestsCount > 2 && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.viewMoreButton}
                   onPress={() => setShowJoinRequestsModal(true)}
                 >
-                  <RNText style={styles.viewMoreText}>View {pendingRequestsCount - 2} more requests</RNText>
+                  <RNText style={styles.viewMoreText}>
+                    View {pendingRequestsCount - 2} more requests
+                  </RNText>
                 </TouchableOpacity>
               )}
             </View>
@@ -1252,49 +1330,62 @@ export default function ProfileScreen() {
           {/* Club Management Section */}
           <View style={styles.clubManagementSection}>
             <RNText style={styles.sectionTitle}>Club Management</RNText>
-            
+
             <View style={styles.managementGrid}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('members')}
               >
                 <UsersIcon size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Members</RNText>
-                <RNText style={styles.managementCardSubtitle}>{clubMembers.length} active</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  {clubMembers.length} active
+                </RNText>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('announcements')}
               >
                 <Megaphone size={24} color="#DC2626" />
-                <RNText style={styles.managementCardTitle}>Announcements</RNText>
-                <RNText style={styles.managementCardSubtitle}>Post updates</RNText>
+                <RNText style={styles.managementCardTitle}>
+                  Announcements
+                </RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Post updates
+                </RNText>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('events')}
               >
                 <CalendarIcon size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Events</RNText>
-                <RNText style={styles.managementCardSubtitle}>Manage drives</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Manage drives
+                </RNText>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('chat')}
               >
                 <MessageCircle size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Chat</RNText>
-                <RNText style={styles.managementCardSubtitle}>Communicate</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Communicate
+                </RNText>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Menu Options */}
           <View style={styles.menuSection}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleEditProfile}
+            >
               <View style={styles.menuItemLeft}>
                 <Edit3 size={20} color="#374151" />
                 <RNText style={styles.menuItemText}>Edit Profile</RNText>
@@ -1353,7 +1444,10 @@ export default function ProfileScreen() {
               onPress={performSignOut}
               disabled={signOutLoading}
             >
-              <LogOut size={20} color={signOutLoading ? '#9CA3AF' : '#EF4444'} />
+              <LogOut
+                size={20}
+                color={signOutLoading ? '#9CA3AF' : '#EF4444'}
+              />
               <RNText
                 style={[
                   styles.signOutText,
@@ -1394,56 +1488,78 @@ export default function ProfileScreen() {
               {joinRequests.length === 0 ? (
                 <View style={styles.noRequests}>
                   <UserPlus size={48} color="#D1D5DB" />
-                  <RNText style={styles.noRequestsText}>No pending join requests</RNText>
+                  <RNText style={styles.noRequestsText}>
+                    No pending join requests
+                  </RNText>
                 </View>
               ) : (
-                joinRequests.map(request => (
+                joinRequests.map((request) => (
                   <View key={request.id} style={styles.requestCard}>
                     {actionLoading === request.id ? (
                       <View style={styles.loadingOverlay}>
                         <ActivityIndicator size="small" color="#DC2626" />
                       </View>
                     ) : null}
-                    
+
                     <View style={styles.requestHeader}>
                       <TextAvatar name={request.user_name} size={48} />
                       <View style={styles.requestInfo}>
-                        <RNText style={styles.requestName}>{request.user_name}</RNText>
-                        <RNText style={styles.requestEmail}>{request.user_email}</RNText>
+                        <RNText style={styles.requestName}>
+                          {request.user_name}
+                        </RNText>
+                        <RNText style={styles.requestEmail}>
+                          {request.user_email}
+                        </RNText>
                         {request.blood_group && (
                           <View style={styles.bloodGroupBadge}>
-                            <RNText style={styles.bloodGroupText}>{request.blood_group}</RNText>
+                            <RNText style={styles.bloodGroupText}>
+                              {request.blood_group}
+                            </RNText>
                           </View>
                         )}
                       </View>
                     </View>
-                    
+
                     {request.message && (
                       <View style={styles.requestMessage}>
-                        <RNText style={styles.requestMessageText}>{request.message}</RNText>
+                        <RNText style={styles.requestMessageText}>
+                          {request.message}
+                        </RNText>
                       </View>
                     )}
-                    
+
                     <View style={styles.requestTime}>
                       <RNText style={styles.requestTimeText}>
                         Requested {formatTimeAgo(request.created_at)}
                       </RNText>
                     </View>
-                    
+
                     <View style={styles.requestActions}>
-                      <TouchableOpacity 
-                        style={[styles.rejectButton, actionLoading !== null && styles.actionButtonDisabled]}
-                        onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                      <TouchableOpacity
+                        style={[
+                          styles.rejectButton,
+                          actionLoading !== null && styles.actionButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          handleJoinRequest(request.id, request.user_id, false)
+                        }
                         disabled={actionLoading !== null}
                       >
                         <RNText style={styles.rejectButtonText}>Reject</RNText>
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.approveButton, actionLoading !== null && styles.actionButtonDisabled]}
-                        onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                      <TouchableOpacity
+                        style={[
+                          styles.approveButton,
+                          actionLoading !== null && styles.actionButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          handleJoinRequest(request.id, request.user_id, true)
+                        }
                         disabled={actionLoading !== null}
                       >
-                        <RNText style={styles.approveButtonText}>Approve</RNText>
+                        <RNText style={styles.approveButtonText}>
+                          Approve
+                        </RNText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1478,7 +1594,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -1497,7 +1613,9 @@ export default function ProfileScreen() {
             <RNText style={styles.profileName}>{profile.name}</RNText>
             {profile.blood_group && (
               <View style={styles.bloodGroupContainer}>
-                <RNText style={styles.bloodGroupText}>{profile.blood_group}</RNText>
+                <RNText style={styles.bloodGroupText}>
+                  {profile.blood_group}
+                </RNText>
               </View>
             )}
             <View style={styles.contactInfo}>
@@ -1513,8 +1631,10 @@ export default function ProfileScreen() {
               )}
               <View style={styles.contactRow}>
                 <MapPin size={14} color="#6B7280" />
-                <RNText style={styles.contactText}>{getLocationDisplay()}</RNText>
-              </View>              
+                <RNText style={styles.contactText}>
+                  {getLocationDisplay()}
+                </RNText>
+              </View>
               <View style={styles.userTypeBadge}>
                 <User size={12} color="#FFFFFF" />
                 <RNText style={styles.userTypeText}>Donor</RNText>
@@ -1527,7 +1647,9 @@ export default function ProfileScreen() {
         {profile.user_type === 'club' && profile.description && (
           <View style={styles.descriptionSection}>
             <RNText style={styles.descriptionTitle}>About</RNText>
-            <RNText style={styles.descriptionText}>{profile.description}</RNText>
+            <RNText style={styles.descriptionText}>
+              {profile.description}
+            </RNText>
             {profile.website && (
               <TouchableOpacity style={styles.websiteButton}>
                 <Globe size={16} color="#DC2626" />
@@ -1581,7 +1703,9 @@ export default function ProfileScreen() {
             <>
               <View style={styles.statCard}>
                 <Heart size={24} color="#DC2626" />
-                <RNText style={styles.statValue}>{userStats.totalDonations}</RNText>
+                <RNText style={styles.statValue}>
+                  {userStats.totalDonations}
+                </RNText>
                 <RNText style={styles.statLabel}>
                   {profile.user_type === 'donor'
                     ? 'Total Donations'
@@ -1590,7 +1714,9 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.statCard}>
                 <Award size={24} color="#DC2626" />
-                <RNText style={styles.statValue}>{userStats.joinedClubs}</RNText>
+                <RNText style={styles.statValue}>
+                  {userStats.joinedClubs}
+                </RNText>
                 <RNText style={styles.statLabel}>
                   {profile.user_type === 'donor'
                     ? 'Clubs Joined'
@@ -1616,88 +1742,120 @@ export default function ProfileScreen() {
         {profile.user_type === 'club' && (
           <View style={styles.clubManagementSection}>
             <RNText style={styles.sectionTitle}>Club Management</RNText>
-            
+
             <View style={styles.managementGrid}>
               {/* Members Management */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => setShowMembersModal(true)}
               >
                 <Users size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Members</RNText>
-                <RNText style={styles.managementCardSubtitle}>{members.length} active</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  {members.length} active
+                </RNText>
               </TouchableOpacity>
-              
+
               {/* Announcements */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => setShowAnnouncementsModal(true)}
               >
                 <Megaphone size={24} color="#DC2626" />
-                <RNText style={styles.managementCardTitle}>Announcements</RNText>
-                <RNText style={styles.managementCardSubtitle}>Post updates</RNText>
+                <RNText style={styles.managementCardTitle}>
+                  Announcements
+                </RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Post updates
+                </RNText>
               </TouchableOpacity>
-              
+
               {/* Events */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => setShowEventsModal(true)}
               >
                 <CalendarIcon size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Events</RNText>
-                <RNText style={styles.managementCardSubtitle}>Manage drives</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Manage drives
+                </RNText>
               </TouchableOpacity>
-              
+
               {/* Chat */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('chat')}
               >
                 <MessageCircle size={24} color="#DC2626" />
                 <RNText style={styles.managementCardTitle}>Chat</RNText>
-                <RNText style={styles.managementCardSubtitle}>Communicate</RNText>
+                <RNText style={styles.managementCardSubtitle}>
+                  Communicate
+                </RNText>
               </TouchableOpacity>
             </View>
-            
+
             {/* Join Requests Section */}
             {joinRequests.length > 0 && (
               <View style={styles.joinRequestsSection}>
                 <View style={styles.joinRequestsHeader}>
-                  <RNText style={styles.joinRequestsTitle}>Join Requests</RNText>
-                  <TouchableOpacity 
+                  <RNText style={styles.joinRequestsTitle}>
+                    Join Requests
+                  </RNText>
+                  <TouchableOpacity
                     style={styles.viewAllButton}
                     onPress={() => setShowRequestsModal(true)}
                   >
-                    <RNText style={styles.viewAllButtonText}>View All ({joinRequests.length})</RNText>
+                    <RNText style={styles.viewAllButtonText}>
+                      View All ({joinRequests.length})
+                    </RNText>
                   </TouchableOpacity>
                 </View>
-                
+
                 {joinRequests.slice(0, 2).map((request) => (
                   <View key={request.id} style={styles.joinRequestItem}>
                     <View style={styles.joinRequestInfo}>
                       <TextAvatar name={request.user_name} size={40} />
                       <View style={styles.joinRequestDetails}>
-                        <RNText style={styles.joinRequestName}>{request.user_name}</RNText>
-                        <RNText style={styles.joinRequestEmail}>{request.user_email}</RNText>
+                        <RNText style={styles.joinRequestName}>
+                          {request.user_name}
+                        </RNText>
+                        <RNText style={styles.joinRequestEmail}>
+                          {request.user_email}
+                        </RNText>
                         {request.blood_group && (
                           <View style={styles.bloodGroupBadge}>
-                            <RNText style={styles.bloodGroupText}>{request.blood_group}</RNText>
+                            <RNText style={styles.bloodGroupText}>
+                              {request.blood_group}
+                            </RNText>
                           </View>
                         )}
                       </View>
                     </View>
-                    
+
                     <View style={styles.joinRequestActions}>
-                      <TouchableOpacity 
-                        style={[styles.rejectButton, actionLoading === request.id && styles.actionButtonDisabled]}
-                        onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                      <TouchableOpacity
+                        style={[
+                          styles.rejectButton,
+                          actionLoading === request.id &&
+                            styles.actionButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          handleJoinRequest(request.id, request.user_id, false)
+                        }
                         disabled={actionLoading !== null}
                       >
                         <CircleX size={20} color="#EF4444" />
                       </TouchableOpacity>
-                      <TouchableOpacity 
-                        style={[styles.approveButton, actionLoading === request.id && styles.actionButtonDisabled]}
-                        onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                      <TouchableOpacity
+                        style={[
+                          styles.approveButton,
+                          actionLoading === request.id &&
+                            styles.actionButtonDisabled,
+                        ]}
+                        onPress={() =>
+                          handleJoinRequest(request.id, request.user_id, true)
+                        }
                         disabled={actionLoading !== null}
                       >
                         <CircleCheck size={20} color="#FFFFFF" />
@@ -1753,7 +1911,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuItemLeft}> 
+            <View style={styles.menuItemLeft}>
               <BellIcon size={20} color="#374151" />
               <RNText style={styles.menuItemText}>Notifications</RNText>
             </View>
@@ -1832,7 +1990,7 @@ export default function ProfileScreen() {
         onSave={handleSaveProfile}
         loading={profileUpdateLoading}
       />
-      
+
       {/* Join Requests Modal */}
       <Modal
         visible={showRequestsModal}
@@ -1856,8 +2014,12 @@ export default function ProfileScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <UserPlus size={48} color="#D1D5DB" />
-                <RNText style={styles.emptyStateTitle}>No pending join requests</RNText>
-                <RNText style={styles.emptyStateSubtitle}>When users request to join your club, they'll appear here</RNText>
+                <RNText style={styles.emptyStateTitle}>
+                  No pending join requests
+                </RNText>
+                <RNText style={styles.emptyStateSubtitle}>
+                  When users request to join your club, they'll appear here
+                </RNText>
               </View>
             }
             renderItem={({ item }) => (
@@ -1867,43 +2029,61 @@ export default function ProfileScreen() {
                     <ActivityIndicator size="small" color="#DC2626" />
                   </View>
                 ) : null}
-                
+
                 <View style={styles.requestHeader}>
                   <TextAvatar name={item.user_name} size={48} />
                   <View style={styles.requestInfo}>
                     <RNText style={styles.requestName}>{item.user_name}</RNText>
-                    <RNText style={styles.requestEmail}>{item.user_email}</RNText>
+                    <RNText style={styles.requestEmail}>
+                      {item.user_email}
+                    </RNText>
                     {item.blood_group && (
                       <View style={styles.bloodGroupBadge}>
-                        <RNText style={styles.bloodGroupText}>{item.blood_group}</RNText>
+                        <RNText style={styles.bloodGroupText}>
+                          {item.blood_group}
+                        </RNText>
                       </View>
                     )}
                   </View>
                 </View>
-                
+
                 {item.message && (
                   <View style={styles.requestMessage}>
-                    <RNText style={styles.requestMessageText}>{item.message}</RNText>
+                    <RNText style={styles.requestMessageText}>
+                      {item.message}
+                    </RNText>
                   </View>
                 )}
-                
+
                 <View style={styles.requestTime}>
                   <RNText style={styles.requestTimeText}>
                     Requested {formatTimeAgo(item.created_at)}
                   </RNText>
                 </View>
-                
+
                 <View style={styles.requestActions}>
-                  <TouchableOpacity 
-                    style={[styles.rejectButton, styles.fullRejectButton, actionLoading !== null && styles.actionButtonDisabled]}
-                    onPress={() => handleJoinRequest(item.id, item.user_id, false)}
+                  <TouchableOpacity
+                    style={[
+                      styles.rejectButton,
+                      styles.fullRejectButton,
+                      actionLoading !== null && styles.actionButtonDisabled,
+                    ]}
+                    onPress={() =>
+                      handleJoinRequest(item.id, item.user_id, false)
+                    }
                     disabled={actionLoading !== null}
                   >
                     <RNText style={styles.rejectButtonText}>Reject</RNText>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.approveButton, styles.fullApproveButton, actionLoading !== null && styles.actionButtonDisabled]}
-                    onPress={() => handleJoinRequest(item.id, item.user_id, true)}
+                  <TouchableOpacity
+                    style={[
+                      styles.approveButton,
+                      styles.fullApproveButton,
+                      actionLoading !== null && styles.actionButtonDisabled,
+                    ]}
+                    onPress={() =>
+                      handleJoinRequest(item.id, item.user_id, true)
+                    }
                     disabled={actionLoading !== null}
                   >
                     <RNText style={styles.approveButtonText}>Approve</RNText>
@@ -1914,7 +2094,7 @@ export default function ProfileScreen() {
           />
         </SafeAreaView>
       </Modal>
-      
+
       {/* Members Modal */}
       <Modal
         visible={showMembersModal}
@@ -1939,7 +2119,9 @@ export default function ProfileScreen() {
               <View style={styles.emptyState}>
                 <Users size={48} color="#D1D5DB" />
                 <RNText style={styles.emptyStateTitle}>No members yet</RNText>
-                <RNText style={styles.emptyStateSubtitle}>Approve join requests to add members to your club</RNText>
+                <RNText style={styles.emptyStateSubtitle}>
+                  Approve join requests to add members to your club
+                </RNText>
               </View>
             }
             renderItem={({ item }) => (
@@ -1949,52 +2131,60 @@ export default function ProfileScreen() {
                     <ActivityIndicator size="small" color="#DC2626" />
                   </View>
                 ) : null}
-                
+
                 <View style={styles.memberInfo}>
                   <View style={styles.avatarContainer}>
                     <TextAvatar name={item.name} size={48} />
                     {item.is_online && <View style={styles.onlineIndicator} />}
                   </View>
-                  
+
                   <View style={styles.memberDetails}>
                     <View style={styles.memberNameRow}>
                       <RNText style={styles.memberName}>{item.name}</RNText>
-                      <View style={[
-                        styles.roleBadge, 
-                        { 
-                          backgroundColor: 
-                            item.role === 'admin' ? '#F59E0B' : 
-                            item.role === 'moderator' ? '#3B82F6' : 
-                            '#6B7280' 
-                        }
-                      ]}>
+                      <View
+                        style={[
+                          styles.roleBadge,
+                          {
+                            backgroundColor:
+                              item.role === 'admin'
+                                ? '#F59E0B'
+                                : item.role === 'moderator'
+                                ? '#3B82F6'
+                                : '#6B7280',
+                          },
+                        ]}
+                      >
                         <RNText style={styles.roleText}>{item.role}</RNText>
                       </View>
                     </View>
-                    
+
                     <RNText style={styles.memberEmail}>{item.email}</RNText>
-                    
+
                     {item.blood_group && (
                       <View style={styles.memberBloodGroup}>
-                        <RNText style={styles.memberBloodGroupText}>{item.blood_group}</RNText>
+                        <RNText style={styles.memberBloodGroupText}>
+                          {item.blood_group}
+                        </RNText>
                       </View>
                     )}
                   </View>
                 </View>
-                
+
                 {/* Actions - only show for non-admin members */}
                 {item.role !== 'admin' && (
                   <View style={styles.memberActions}>
                     {item.role === 'member' && (
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.promoteButton}
                         onPress={() => handlePromoteMember(item.id, item.name)}
                         disabled={actionLoading !== null}
                       >
-                        <RNText style={styles.promoteButtonText}>Promote</RNText>
+                        <RNText style={styles.promoteButtonText}>
+                          Promote
+                        </RNText>
                       </TouchableOpacity>
                     )}
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.removeButton}
                       onPress={() => handleRemoveMember(item.id, item.name)}
                       disabled={actionLoading !== null}
@@ -2008,7 +2198,7 @@ export default function ProfileScreen() {
           />
         </SafeAreaView>
       </Modal>
-      
+
       {/* Events Modal */}
       <Modal
         visible={showEventsModal}
@@ -2034,31 +2224,41 @@ export default function ProfileScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <CalendarIcon size={48} color="#D1D5DB" />
-                <RNText style={styles.emptyStateTitle}>No upcoming events</RNText>
-                <RNText style={styles.emptyStateSubtitle}>Create events to organize blood drives and meetings</RNText>
+                <RNText style={styles.emptyStateTitle}>
+                  No upcoming events
+                </RNText>
+                <RNText style={styles.emptyStateSubtitle}>
+                  Create events to organize blood drives and meetings
+                </RNText>
               </View>
             }
             renderItem={({ item }) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.eventCard}
                 onPress={() => navigateToSection('events')}
               >
                 <View style={styles.eventHeader}>
                   <CalendarIcon size={20} color="#DC2626" />
-                  <RNText style={styles.eventDate}>{formatEventDate(item.start_time)}</RNText>
+                  <RNText style={styles.eventDate}>
+                    {formatEventDate(item.start_time)}
+                  </RNText>
                 </View>
-                
+
                 <RNText style={styles.eventTitle}>{item.title}</RNText>
-                
+
                 <View style={styles.eventDetails}>
                   <View style={styles.eventLocation}>
                     <MapPin size={16} color="#6B7280" />
-                    <RNText style={styles.eventLocationText}>{item.location}</RNText>
+                    <RNText style={styles.eventLocationText}>
+                      {item.location}
+                    </RNText>
                   </View>
-                  
+
                   <View style={styles.eventAttendees}>
                     <Users size={16} color="#6B7280" />
-                    <RNText style={styles.eventAttendeesText}>{item.attendees_count} attending</RNText>
+                    <RNText style={styles.eventAttendeesText}>
+                      {item.attendees_count} attending
+                    </RNText>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -2066,7 +2266,7 @@ export default function ProfileScreen() {
           />
         </SafeAreaView>
       </Modal>
-      
+
       {/* Announcements Modal */}
       <Modal
         visible={showAnnouncementsModal}
@@ -2080,7 +2280,9 @@ export default function ProfileScreen() {
               <RNText style={styles.modalCancelText}>Close</RNText>
             </TouchableOpacity>
             <RNText style={styles.modalTitle}>Announcements</RNText>
-            <TouchableOpacity onPress={() => navigateToSection('announcements')}>
+            <TouchableOpacity
+              onPress={() => navigateToSection('announcements')}
+            >
               <RNText style={styles.modalActionText}>Manage</RNText>
             </TouchableOpacity>
           </View>
@@ -2093,24 +2295,32 @@ export default function ProfileScreen() {
               <View style={styles.emptyState}>
                 <Megaphone size={48} color="#D1D5DB" />
                 <RNText style={styles.emptyStateTitle}>No announcements</RNText>
-                <RNText style={styles.emptyStateSubtitle}>Create announcements to keep your members informed</RNText>
+                <RNText style={styles.emptyStateSubtitle}>
+                  Create announcements to keep your members informed
+                </RNText>
               </View>
             }
             renderItem={({ item }) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.announcementCard}
                 onPress={() => navigateToSection('announcements')}
               >
                 <View style={styles.announcementHeader}>
-                  <View style={[
-                    styles.priorityBadge,
-                    { backgroundColor: getPriorityColor(item.priority) }
-                  ]}>
-                    <RNText style={styles.priorityText}>{item.priority.toUpperCase()}</RNText>
+                  <View
+                    style={[
+                      styles.priorityBadge,
+                      { backgroundColor: getPriorityColor(item.priority) },
+                    ]}
+                  >
+                    <RNText style={styles.priorityText}>
+                      {item.priority.toUpperCase()}
+                    </RNText>
                   </View>
-                  <RNText style={styles.announcementTime}>{formatTimeAgo(item.created_at)}</RNText>
+                  <RNText style={styles.announcementTime}>
+                    {formatTimeAgo(item.created_at)}
+                  </RNText>
                 </View>
-                
+
                 <RNText style={styles.announcementTitle}>{item.title}</RNText>
               </TouchableOpacity>
             )}
@@ -2279,7 +2489,7 @@ const styles = StyleSheet.create({
   },
   userTypeBadge: {
     flexDirection: 'row',
-    alignItems: 'center', 
+    alignItems: 'center',
     backgroundColor: '#DC2626',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -2714,7 +2924,7 @@ const styles = StyleSheet.create({
   modalNoteText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
-    color: '#1E40AF', 
+    color: '#1E40AF',
     textAlign: 'center',
     lineHeight: 20,
   },
