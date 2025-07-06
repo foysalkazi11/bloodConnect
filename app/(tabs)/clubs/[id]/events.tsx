@@ -6,6 +6,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { supabase } from '@/lib/supabase';
 
 interface ClubEvent {
   id: string;
@@ -51,7 +52,102 @@ export default function ClubEventsScreen() {
 
   const loadEvents = async () => {
     try {
-      // Mock events data - replace with actual Supabase query
+      setLoading(true);
+      
+      // First, fetch the main event data
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('club_events')
+        .select(`
+          id,
+          title,
+          description,
+          event_type,
+          start_time,
+          end_time,
+          location,
+          is_virtual,
+          meeting_link,
+          max_attendees,
+          organizer_id,
+          user_profiles!club_events_organizer_id_fkey(name)
+        `)
+        .eq('club_id', id)
+        .order('start_time', { ascending: true });
+
+      if (eventsError) {
+        throw eventsError;
+      }
+
+      if (!eventsData || eventsData.length === 0) {
+        setEvents([]);
+        return;
+      }
+
+      // Get event IDs for attendee queries
+      const eventIds = eventsData.map(event => event.id);
+
+      // Fetch attendee counts for each event (only if we have events)
+      const { data: attendeeCounts, error: attendeeError } = await supabase
+        .from('club_event_attendees')
+        .select('event_id')
+        .in('event_id', eventIds)
+        .eq('status', 'going');
+
+      if (attendeeError) {
+        console.warn('Error loading attendee counts:', attendeeError);
+      }
+
+      // Count attendees per event
+      const attendeeCountMap = (attendeeCounts || []).reduce((acc, attendee) => {
+        acc[attendee.event_id] = (acc[attendee.event_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Fetch current user's attendance status for each event
+      const { data: userAttendance, error: userAttendanceError } = await supabase
+        .from('club_event_attendees')
+        .select('event_id, status')
+        .in('event_id', eventIds)
+        .eq('user_id', user?.id);
+
+      if (userAttendanceError) {
+        console.warn('Error loading user attendance:', userAttendanceError);
+      }
+
+      // Create user attendance map
+      const userAttendanceMap = (userAttendance || []).reduce((acc, attendance) => {
+        acc[attendance.event_id] = attendance.status;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // Combine all data
+      const formattedEvents: ClubEvent[] = eventsData.map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || '',
+        event_type: event.event_type,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        location: event.location,
+        is_virtual: event.is_virtual,
+        meeting_link: event.meeting_link,
+        max_attendees: event.max_attendees,
+        organizer_id: event.organizer_id,
+        organizer_name: event.user_profiles?.name || 'Unknown',
+        attendees_count: attendeeCountMap[event.id] || 0,
+        user_status: userAttendanceMap[event.id] || null,
+      }));
+
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Error loading events:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load events',
+        duration: 4000,
+      });
+      // Fallback to mock data for development
       const mockEvents: ClubEvent[] = [
         {
           id: '1',
@@ -99,16 +195,7 @@ export default function ClubEventsScreen() {
           user_status: null,
         },
       ];
-      
       setEvents(mockEvents);
-    } catch (error) {
-      console.error('Error loading events:', error);
-      showNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load events',
-        duration: 4000,
-      });
     } finally {
       setLoading(false);
     }
