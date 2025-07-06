@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
+  StyleSheet, 
   ScrollView,
   TouchableOpacity,
   Image,
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -21,16 +23,22 @@ import {
   LogOut,
   Heart,
   Award,
+  Users as UsersIcon,
   Calendar,
   Phone,
   Mail,
   MapPin,
-  Users,
+  Users as UsersMultiple,
   ArrowLeft,
   Camera,
   ChevronRight,
   ToggleLeft,
   ToggleRight,
+  UserPlus,
+  Bell,
+  Megaphone,
+  CircleCheck,
+  CircleX,
 } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
@@ -38,11 +46,32 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { colors } from '@/components/theme';
 
 interface UserStats {
   totalDonations: number;
   joinedClubs: number;
   lastDonation?: string;
+}
+
+interface JoinRequest {
+  id: string;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  blood_group?: string;
+  message?: string;
+  created_at: string;
+}
+
+interface ClubMember {
+  id: string;
+  name: string;
+  email: string;
+  blood_group?: string;
+  role: 'admin' | 'moderator' | 'member';
+  joined_date: string;
+  is_online: boolean;
 }
 
 interface EditProfileModalProps {
@@ -195,23 +224,50 @@ export default function ProfileScreen() {
   const { t, currentLanguage, changeLanguage } = useI18n();
   const { user, profile, signOut, updateProfile } = useAuth();
   const { showNotification } = useNotification();
+  
   const [userStats, setUserStats] = useState<UserStats>({
     totalDonations: 0,
     joinedClubs: 0,
   });
+  
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  
+  // Club-specific states
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [clubMembers, setClubMembers] = useState<ClubMember[]>([]);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [showJoinRequestsModal, setShowJoinRequestsModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (user && profile) {
       loadUserStats();
+      
+      // If user is a club, load club-specific data
+      if (profile.user_type === 'club') {
+        loadClubData();
+      }
     } else {
       setLoading(false);
     }
+  }, [user, profile]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    if (user && profile) {
+      loadUserStats();
+      if (profile.user_type === 'club') {
+        loadClubData();
+      }
+    }
+    setRefreshing(false);
   }, [user, profile]);
 
   const loadUserStats = async () => {
@@ -244,6 +300,135 @@ export default function ProfileScreen() {
       console.error('Error loading user stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadClubData = async () => {
+    if (!user || profile?.user_type !== 'club') return;
+    
+    try {
+      // Load pending join requests
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('club_join_requests')
+        .select(`
+          id,
+          user_id,
+          message,
+          created_at,
+          user_profiles:user_id(
+            name,
+            email,
+            blood_group
+          )
+        `)
+        .eq('club_id', user.id)
+        .eq('status', 'pending');
+      
+      if (requestsError) throw requestsError;
+      
+      // Format request data
+      const formattedRequests: JoinRequest[] = (requestsData || []).map(request => ({
+        id: request.id,
+        user_id: request.user_id,
+        user_name: request.user_profiles?.name || 'Unknown User',
+        user_email: request.user_profiles?.email || '',
+        blood_group: request.user_profiles?.blood_group,
+        message: request.message,
+        created_at: request.created_at,
+      }));
+      
+      setJoinRequests(formattedRequests);
+      setPendingRequestsCount(formattedRequests.length);
+      
+      // Load club members
+      const { data: membersData, error: membersError } = await supabase
+        .from('club_members')
+        .select(`
+          id,
+          role,
+          joined_at,
+          user_profiles:member_id(
+            id,
+            name,
+            email,
+            blood_group
+          )
+        `)
+        .eq('club_id', user.id)
+        .eq('is_active', true);
+      
+      if (membersError) throw membersError;
+      
+      // Format member data
+      const formattedMembers: ClubMember[] = (membersData || []).map(member => ({
+        id: member.user_profiles.id,
+        name: member.user_profiles.name,
+        email: member.user_profiles.email,
+        blood_group: member.user_profiles.blood_group,
+        role: member.role,
+        joined_date: member.joined_at,
+        is_online: Math.random() > 0.7, // Random for demo
+      }));
+      
+      setClubMembers(formattedMembers);
+      
+      // Check if current user is admin
+      const isUserAdmin = membersData?.some(
+        member => member.user_profiles.id === user.id && ['admin', 'moderator'].includes(member.role)
+      ) || true; // Default to true for now since club owner should be admin
+      
+      setIsAdmin(isUserAdmin);
+      
+    } catch (error) {
+      console.error('Error loading club data:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load club data',
+        duration: 4000,
+      });
+    }
+  };
+
+  const handleJoinRequest = async (requestId: string, userId: string, approved: boolean) => {
+    try {
+      setActionLoading(requestId);
+      
+      // Update request status
+      const { error } = await supabase
+        .from('club_join_requests')
+        .update({ status: approved ? 'approved' : 'rejected' })
+        .eq('id', requestId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setJoinRequests(joinRequests.filter(request => request.id !== requestId));
+      setPendingRequestsCount(prev => prev - 1);
+      
+      // If approved, add to members list
+      if (approved) {
+        // The trigger will handle adding the member to club_members
+        // We'll reload the members list to show the new member
+        await loadClubData();
+      }
+      
+      showNotification({
+        type: 'success',
+        title: approved ? 'Request Approved' : 'Request Rejected',
+        message: approved ? 'User has been added to the club' : 'Join request has been rejected',
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error handling join request:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to process join request',
+        duration: 4000,
+      });
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -391,6 +576,21 @@ export default function ProfileScreen() {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
     const diffInMonths = Math.floor(
       (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 30)
     );
@@ -446,6 +646,10 @@ export default function ProfileScreen() {
     return <TextAvatar name={profile?.name || 'User'} size={100} />;
   };
 
+  const navigateToSection = (section: string) => {
+    router.push(`/(tabs)/clubs/${user?.id}/${section}`);
+  };
+
   if (!user || !profile) {
     return (
       <SafeAreaView style={styles.container}>
@@ -477,6 +681,389 @@ export default function ProfileScreen() {
     );
   }
 
+  // Render club profile
+  if (profile.user_type === 'club') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <ArrowLeft size={24} color="#111827" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{profile.name.split(' ')[0]}</Text>
+          <TouchableOpacity style={styles.headerButton}>
+            <Mail size={24} color="#DC2626" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Profile Header */}
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarContainer}>
+              {renderAvatar()}
+              <TouchableOpacity style={styles.cameraButton}>
+                <Camera size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{profile.name}</Text>
+              <View style={styles.userTypeBadge}>
+                <UsersMultiple size={12} color="#FFFFFF" />
+                <Text style={styles.userTypeText}>Club</Text>
+              </View>
+              <View style={styles.contactInfo}>
+                <View style={styles.contactRow}>
+                  <Mail size={14} color="#6B7280" />
+                  <Text style={styles.contactText}>{profile.email}</Text>
+                </View>
+                {profile.phone && (
+                  <View style={styles.contactRow}>
+                    <Phone size={14} color="#6B7280" />
+                    <Text style={styles.contactText}>{profile.phone}</Text>
+                  </View>
+                )}
+                <View style={styles.contactRow}>
+                  <MapPin size={14} color="#6B7280" />
+                  <Text style={styles.contactText}>{getLocationDisplay()}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Club Description */}
+          {profile.description && (
+            <View style={styles.descriptionSection}>
+              <Text style={styles.descriptionTitle}>About</Text>
+              <Text style={styles.descriptionText}>{profile.description}</Text>
+              {profile.website && (
+                <TouchableOpacity style={styles.websiteButton}>
+                  <Globe size={16} color="#DC2626" />
+                  <Text style={styles.websiteText}>Visit Website</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Stats Section */}
+          <View style={styles.statsSection}>
+            {loading ? (
+              // Loading placeholders
+              [1, 2, 3].map((_, index) => (
+                <View key={index} style={[styles.statCard, styles.loadingCard]}>
+                  <View style={styles.loadingIcon} />
+                  <View style={styles.loadingValue} />
+                  <View style={styles.loadingLabel} />
+                </View>
+              ))
+            ) : (
+              <>
+                <View style={styles.statCard}>
+                  <Heart size={24} color="#DC2626" />
+                  <Text style={styles.statValue}>{userStats.totalDonations}</Text>
+                  <Text style={styles.statLabel}>Total Drives</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <UsersIcon size={24} color="#DC2626" />
+                  <Text style={styles.statValue}>{clubMembers.length}</Text>
+                  <Text style={styles.statLabel}>Active Members</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Calendar size={24} color="#DC2626" />
+                  <Text style={styles.statValue}>
+                    {userStats.lastDonation
+                      ? formatTimeAgo(userStats.lastDonation).split(' ')[0]
+                      : 'Never'}
+                  </Text>
+                  <Text style={styles.statLabel}>
+                    {userStats.lastDonation ? 'Last Drive' : 'No Drives'}
+                  </Text>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Pending Join Requests Section */}
+          {pendingRequestsCount > 0 && (
+            <View style={styles.joinRequestsSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Pending Join Requests</Text>
+                <TouchableOpacity 
+                  style={styles.viewAllButton}
+                  onPress={() => setShowJoinRequestsModal(true)}
+                >
+                  <Text style={styles.viewAllText}>View All ({pendingRequestsCount})</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {joinRequests.slice(0, 2).map((request) => (
+                <View key={request.id} style={styles.requestCard}>
+                  <View style={styles.requestHeader}>
+                    <TextAvatar name={request.user_name} size={40} />
+                    <View style={styles.requestInfo}>
+                      <Text style={styles.requestName}>{request.user_name}</Text>
+                      <Text style={styles.requestTime}>Requested {formatTimeAgo(request.created_at)}</Text>
+                    </View>
+                    {request.blood_group && (
+                      <View style={styles.bloodGroupBadge}>
+                        <Text style={styles.bloodGroupText}>{request.blood_group}</Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.requestActions}>
+                    <TouchableOpacity 
+                      style={[styles.rejectButton, actionLoading === request.id && styles.actionButtonDisabled]}
+                      onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                      disabled={actionLoading !== null}
+                    >
+                      <CircleX size={16} color="#EF4444" />
+                      <Text style={styles.rejectButtonText}>Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.approveButton, actionLoading === request.id && styles.actionButtonDisabled]}
+                      onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                      disabled={actionLoading !== null}
+                    >
+                      <CircleCheck size={16} color="#FFFFFF" />
+                      <Text style={styles.approveButtonText}>Approve</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+              
+              {pendingRequestsCount > 2 && (
+                <TouchableOpacity 
+                  style={styles.viewMoreButton}
+                  onPress={() => setShowJoinRequestsModal(true)}
+                >
+                  <Text style={styles.viewMoreText}>View {pendingRequestsCount - 2} more requests</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Club Management Section */}
+          <View style={styles.clubManagementSection}>
+            <Text style={styles.sectionTitle}>Club Management</Text>
+            
+            <View style={styles.managementGrid}>
+              <TouchableOpacity 
+                style={styles.managementCard}
+                onPress={() => navigateToSection('members')}
+              >
+                <UsersIcon size={24} color="#DC2626" />
+                <Text style={styles.managementCardTitle}>Members</Text>
+                <Text style={styles.managementCardSubtitle}>{clubMembers.length} active</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.managementCard}
+                onPress={() => navigateToSection('announcements')}
+              >
+                <Megaphone size={24} color="#DC2626" />
+                <Text style={styles.managementCardTitle}>Announcements</Text>
+                <Text style={styles.managementCardSubtitle}>Post updates</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.managementCard}
+                onPress={() => navigateToSection('events')}
+              >
+                <Calendar size={24} color="#DC2626" />
+                <Text style={styles.managementCardTitle}>Events</Text>
+                <Text style={styles.managementCardSubtitle}>Manage drives</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.managementCard}
+                onPress={() => navigateToSection('chat')}
+              >
+                <MessageCircle size={24} color="#DC2626" />
+                <Text style={styles.managementCardTitle}>Chat</Text>
+                <Text style={styles.managementCardSubtitle}>Communicate</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Menu Options */}
+          <View style={styles.menuSection}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
+              <View style={styles.menuItemLeft}>
+                <Edit3 size={20} color="#374151" />
+                <Text style={styles.menuItemText}>Edit Profile</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Bell size={20} color="#374151" />
+                <Text style={styles.menuItemText}>Notifications</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Shield size={20} color="#374151" />
+                <Text style={styles.menuItemText}>Privacy</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleLanguageToggle}
+            >
+              <View style={styles.menuItemLeft}>
+                <Globe size={20} color="#374151" />
+                <Text style={styles.menuItemText}>Language</Text>
+              </View>
+              <View style={styles.languageToggle}>
+                <Text style={styles.languageText}>
+                  {currentLanguage === 'en' ? 'English' : 'বাংলা'}
+                </Text>
+                <ChevronRight size={20} color="#9CA3AF" />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuItem}>
+              <View style={styles.menuItemLeft}>
+                <Settings size={20} color="#374151" />
+                <Text style={styles.menuItemText}>Settings</Text>
+              </View>
+              <ChevronRight size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Sign Out */}
+          <View style={styles.signOutSection}>
+            <TouchableOpacity
+              style={[
+                styles.signOutButton,
+                signOutLoading && styles.signOutButtonDisabled,
+              ]}
+              onPress={performSignOut}
+              disabled={signOutLoading}
+            >
+              <LogOut size={20} color={signOutLoading ? '#9CA3AF' : '#EF4444'} />
+              <Text
+                style={[
+                  styles.signOutText,
+                  signOutLoading && styles.signOutTextDisabled,
+                ]}
+              >
+                {signOutLoading ? 'Signing Out...' : 'Sign Out'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* App Info */}
+          <View style={styles.appInfoSection}>
+            <Text style={styles.appInfoText}>BloodConnect v1.0.0</Text>
+            <Text style={styles.appInfoSubtext}>
+              Connecting hearts, saving lives
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Join Requests Modal */}
+        <Modal
+          visible={showJoinRequestsModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowJoinRequestsModal(false)}
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setShowJoinRequestsModal(false)}>
+                <Text style={styles.modalCancelText}>Close</Text>
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Join Requests</Text>
+              <View style={styles.headerRight} />
+            </View>
+
+            <ScrollView style={styles.modalContent}>
+              {joinRequests.length === 0 ? (
+                <View style={styles.noRequests}>
+                  <UserPlus size={48} color="#D1D5DB" />
+                  <Text style={styles.noRequestsText}>No pending join requests</Text>
+                </View>
+              ) : (
+                joinRequests.map(request => (
+                  <View key={request.id} style={styles.requestCard}>
+                    {actionLoading === request.id ? (
+                      <View style={styles.loadingOverlay}>
+                        <ActivityIndicator size="small" color="#DC2626" />
+                      </View>
+                    ) : null}
+                    
+                    <View style={styles.requestHeader}>
+                      <TextAvatar name={request.user_name} size={48} />
+                      <View style={styles.requestInfo}>
+                        <Text style={styles.requestName}>{request.user_name}</Text>
+                        <Text style={styles.requestEmail}>{request.user_email}</Text>
+                        {request.blood_group && (
+                          <View style={styles.bloodGroupBadge}>
+                            <Text style={styles.bloodGroupText}>{request.blood_group}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    
+                    {request.message && (
+                      <View style={styles.requestMessage}>
+                        <Text style={styles.requestMessageText}>{request.message}</Text>
+                      </View>
+                    )}
+                    
+                    <View style={styles.requestTime}>
+                      <Text style={styles.requestTimeText}>
+                        Requested {formatTimeAgo(request.created_at)}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.requestActions}>
+                      <TouchableOpacity 
+                        style={[styles.rejectButton, actionLoading !== null && styles.actionButtonDisabled]}
+                        onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                        disabled={actionLoading !== null}
+                      >
+                        <Text style={styles.rejectButtonText}>Reject</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.approveButton, actionLoading !== null && styles.actionButtonDisabled]}
+                        onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                        disabled={actionLoading !== null}
+                      >
+                        <Text style={styles.approveButtonText}>Approve</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Edit Profile Modal */}
+        <EditProfileModal
+          visible={editModalVisible}
+          onClose={() => setEditModalVisible(false)}
+          profile={profile}
+          onSave={handleSaveProfile}
+          loading={profileUpdateLoading}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // Render donor profile (default)
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -489,7 +1076,12 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
@@ -520,13 +1112,11 @@ export default function ProfileScreen() {
               <View style={styles.contactRow}>
                 <MapPin size={14} color="#6B7280" />
                 <Text style={styles.contactText}>{getLocationDisplay()}</Text>
+              </View>              
+              <View style={styles.userTypeBadge}>
+                <User size={12} color="#FFFFFF" />
+                <Text style={styles.userTypeText}>Donor</Text>
               </View>
-              {profile.user_type === 'club' && (
-                <View style={styles.userTypeBadge}>
-                  <Users size={12} color="#FFFFFF" />
-                  <Text style={styles.userTypeText}>Club</Text>
-                </View>
-              )}
             </View>
           </View>
         </View>
@@ -872,8 +1462,8 @@ const styles = StyleSheet.create({
   },
   userTypeBadge: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#3B82F6',
+    alignItems: 'center', 
+    backgroundColor: '#DC2626',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -1142,8 +1732,202 @@ const styles = StyleSheet.create({
   modalNoteText: {
     fontFamily: 'Inter-Regular',
     fontSize: 14,
-    color: '#1E40AF',
+    color: '#1E40AF', 
     textAlign: 'center',
     lineHeight: 20,
+  },
+  // Join Requests Section
+  joinRequestsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    color: '#111827',
+  },
+  viewAllButton: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  viewAllText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: '#374151',
+  },
+  requestCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    position: 'relative',
+  },
+  requestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestName: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  requestEmail: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  requestTime: {
+    marginBottom: 12,
+  },
+  requestTimeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  requestMessage: {
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  requestMessageText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
+  requestActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  rejectButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  approveButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  approveButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
+  },
+  viewMoreButton: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  viewMoreText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: '#374151',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  noRequests: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  noRequestsText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  bloodGroupBadge: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  bloodGroupText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  // Club Management Section
+  clubManagementSection: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  managementGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 16,
+  },
+  managementCard: {
+    width: '48%',
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  managementCardTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  managementCardSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });
