@@ -247,14 +247,6 @@ export default function ClubsScreen() {
           message: 'Your request to join the club has been sent',
           duration: 3000,
         });
-      } else {
-        console.log('No user logged in, showing all clubs without membership info');
-        setClubs(clubsList);
-        setStats({
-          totalClubs: clubsList.length,
-          totalMembers: clubsList.reduce((sum, club) => sum + (club.total_members || 0), 0),
-          totalDonations: clubsList.reduce((sum, club) => sum + (club.total_donations || 0), 0)
-        });
       }
     } catch (error) {
       console.error('Error joining club:', error);
