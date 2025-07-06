@@ -93,17 +93,21 @@ export default function GalleryScreen() {
         }
         
         // Check if user liked each post
-        const { data: userLikesData } = await supabase
-          .from('gallery_post_likes')
-          .select('post_id')
-          .in('post_id', postIds)
-          .eq('user_id', user?.id);
-          
         const userLikes: Record<string, boolean> = {};
-        if (userLikesData) {
-          userLikesData.forEach(item => {
-            userLikes[item.post_id] = true;
-          });
+        
+        // Only fetch user likes if user is logged in
+        if (user?.id) {
+          const { data: userLikesData } = await supabase
+            .from('gallery_post_likes')
+            .select('post_id')
+            .in('post_id', postIds)
+            .eq('user_id', user.id);
+            
+          if (userLikesData) {
+            userLikesData.forEach(item => {
+              userLikes[item.post_id] = true;
+            });
+          }
         }
         
         // Get all comments for these posts
