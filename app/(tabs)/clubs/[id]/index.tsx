@@ -110,7 +110,7 @@ export default function ClubDetailScreen() {
         .from('clubs')
         .select('total_members, total_donations, founded_year')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       // Check if user is a member
       let isMember = false;
@@ -125,7 +125,7 @@ export default function ClubDetailScreen() {
           .eq('club_id', id)
           .eq('member_id', user.id)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         if (!memberError && memberData) {
           isMember = true;
@@ -140,7 +140,7 @@ export default function ClubDetailScreen() {
             .eq('club_id', id)
             .eq('user_id', user.id)
             .eq('status', 'pending')
-            .single();
+            .maybeSingle();
 
           if (!requestError && requestData) {
             isPending = true;
