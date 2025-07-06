@@ -497,6 +497,598 @@ export default function ClubDetailScreen() {
         </View>
       </SafeAreaView>
     );
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    marginTop: 12,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F9FAFB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: '#111827',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
+  },
+  emailButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20, 
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationBadge: {
+    position: 'relative',
+  },
+  badgeCount: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  badgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    color: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+  },
+  profileHeader: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 24,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  clubBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#DC2626',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  clubBadgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    color: '#FFFFFF',
+  },
+  clubName: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+    color: '#111827',
+    marginBottom: 16,
+  },
+  contactInfo: {
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  contactText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  joinButton: {
+    backgroundColor: '#DC2626',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 8,
+  },
+  joinButtonLoading: {
+    backgroundColor: '#9CA3AF',
+  },
+  joinButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  leaveButton: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DC2626',
+  },
+  leaveButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#DC2626',
+  },
+  pendingBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  pendingText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#92400E',
+  },
+  fullWidthButton: {
+    width: '100%',
+    marginTop: 16,
+  },
+  aboutSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    color: '#111827',
+    marginBottom: 12,
+  },
+  aboutText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    lineHeight: 24,
+    textAlign: 'center',
+  },
+  statsSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 32,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#FEF2F2',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 8,
+  },
+  statValue: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: '#111827',
+  },
+  statLabel: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  communicationHubSection: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  communicationHubHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  expandButton: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  expandButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#374151',
+  },
+  primaryCommunicationGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  primaryCommunicationCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chatCard: {
+    backgroundColor: '#DC2626',
+  },
+  voiceCard: {
+    backgroundColor: '#7C3AED',
+  },
+  communicationCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  communicationIconContainer: {
+    position: 'relative',
+  },
+  liveIndicator: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 2,
+  },
+  voiceActiveIndicator: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 2,
+  },
+  unreadBadge: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  unreadText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  voiceParticipantsBadge: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  voiceParticipantsText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    color: '#7C3AED',
+  },
+  communicationCardTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  communicationCardSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  secondaryCommunicationGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryCommunicationCard: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 6,
+  },
+  secondaryCommunicationText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#374151',
+  },
+  featuresSection: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  featureGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  featureCard: {
+    width: '48%',
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  featureLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#111827',
+  },
+  featureSubtext: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  nonMemberSection: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  nonMemberCard: {
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  nonMemberTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 18,
+    color: '#111827',
+    textAlign: 'center',
+  },
+  nonMemberDescription: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  quickActionsSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+  },
+  quickActionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  quickActionText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#374151',
+    flex: 1,
+    marginLeft: 12,
+  },
+  quickActionArrow: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 18,
+    color: '#9CA3AF',
+  },
+  languageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  languageText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    color: '#DC2626',
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  modalCancelText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  modalTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: '#111827',
+  },
+  modalSendText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#DC2626',
+  },
+  modalSendTextDisabled: {
+    color: '#9CA3AF',
+  },
+  headerSpacer: {
+    width: 60,
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  modalSection: {
+    marginBottom: 32,
+  },
+  modalSectionTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginBottom: 16,
+  },
+  modalCommunicationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  modalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalItemIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  modalItemInfo: {
+    flex: 1,
+  },
+  modalItemTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+    marginBottom: 4,
+  },
+  modalItemSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+  },
+  modalUnreadBadge: {
+    backgroundColor: '#DC2626',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  modalUnreadText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  modalVoiceIndicator: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 8,
+  },
+  joinRequestTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: '#111827',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  joinRequestInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 16,
+  },
+  joinRequestUserInfo: {
+    flex: 1,
+  },
+  joinRequestUserName: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  joinRequestUserEmail: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  inputLabel: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#374151',
+    marginBottom: 8,
+  },
+  messageInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#111827',
+    minHeight: 120,
+    textAlignVertical: 'top',
+    marginBottom: 16,
+  },
+  joinRequestNote: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    backgroundColor: '#EFF6FF',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3B82F6',
   },
   noRequests: {
     alignItems: 'center',
@@ -613,7 +1205,28 @@ export default function ClubDetailScreen() {
   },
   actionButtonDisabled: {
     opacity: 0.5,
+  },
+});
+
+// Helper function to format time ago
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) {
+    return 'just now';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  } else {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
   }
+}
 
   return (
     <SafeAreaView style={styles.container}>
