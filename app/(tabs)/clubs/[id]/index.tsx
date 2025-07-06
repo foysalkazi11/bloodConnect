@@ -38,10 +38,20 @@ export default function ClubDetailScreen() {
   const [showCommunicationModal, setShowCommunicationModal] = useState(false);
   const [showJoinRequestModal, setShowJoinRequestModal] = useState(false);
   const [joinMessage, setJoinMessage] = useState('');
+  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
   useEffect(() => {
     loadClubData();
   }, [id, user]);
+
+  useEffect(() => {
+    if (club?.is_admin) {
+      loadJoinRequests();
+    }
+  }, [club?.is_admin]);
 
   const loadClubData = async () => {
     try {
@@ -164,6 +174,55 @@ export default function ClubDetailScreen() {
     }
   };
 
+  const loadJoinRequests = async () => {
+    try {
+      setRequestsLoading(true);
+      
+      // Fetch pending join requests
+      const { data, error } = await supabase
+        .from('club_join_requests')
+        .select(`
+          id,
+          user_id,
+          message,
+          created_at,
+          user_profiles:user_id(
+            name,
+            email,
+            blood_group
+          )
+        `)
+        .eq('club_id', id)
+        .eq('status', 'pending');
+      
+      if (error) throw error;
+      
+      // Format request data
+      const formattedRequests = data.map(request => ({
+        id: request.id,
+        user_id: request.user_id,
+        user_name: request.user_profiles.name,
+        user_email: request.user_profiles.email,
+        blood_group: request.user_profiles.blood_group,
+        message: request.message,
+        created_at: request.created_at,
+      }));
+      
+      setJoinRequests(formattedRequests);
+      console.log('Loaded join requests:', formattedRequests.length);
+    } catch (error) {
+      console.error('Error loading join requests:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load join requests',
+        duration: 4000,
+      });
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
   const handleJoinClub = () => {
     if (!user) {
       showNotification({
@@ -202,6 +261,47 @@ export default function ClubDetailScreen() {
     setShowJoinRequestModal(true);
   };
   
+  const handleJoinRequest = async (requestId: string, userId: string, approved: boolean) => {
+    if (processingRequestId) return;
+    
+    try {
+      setProcessingRequestId(requestId);
+      
+      // Update request status
+      const { error } = await supabase
+        .from('club_join_requests')
+        .update({ status: approved ? 'approved' : 'rejected' })
+        .eq('id', requestId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setJoinRequests(joinRequests.filter(request => request.id !== requestId));
+      
+      showNotification({
+        type: 'success',
+        title: approved ? 'Request Approved' : 'Request Rejected',
+        message: approved ? 'User has been added to the club' : 'Join request has been rejected',
+        duration: 3000,
+      });
+      
+      // Reload club data to update member count if approved
+      if (approved) {
+        loadClubData();
+      }
+    } catch (error) {
+      console.error('Error handling join request:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to process join request',
+        duration: 4000,
+      });
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
   const submitJoinRequest = async () => {
     if (!club || !user) return;
     
@@ -397,6 +497,122 @@ export default function ClubDetailScreen() {
         </View>
       </SafeAreaView>
     );
+  },
+  noRequests: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    gap: 12,
+  },
+  noRequestsText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  requestCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    position: 'relative',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  requestHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 12,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestName: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#111827',
+  },
+  requestEmail: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  bloodGroupBadge: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  bloodGroupText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  requestMessage: {
+    backgroundColor: '#EFF6FF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  requestMessageText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#1E40AF',
+    lineHeight: 20,
+  },
+  requestTime: {
+    marginBottom: 12,
+  },
+  requestTimeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  requestActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  rejectButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  approveButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  approveButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
   }
 
   return (
@@ -752,9 +968,24 @@ export default function ClubDetailScreen() {
               duration: 3000,
             })}
           >
-            <Settings size={20} color="#374151" />
+            onPress={() => {
+              if (club.is_admin && joinRequests.length > 0) {
+                setShowRequestsModal(true);
+              } else {
+                handleCommunicationAction('email');
+              }
+            }}
             <Text style={styles.quickActionText}>Settings</Text>
-            <Text style={styles.quickActionArrow}>›</Text>
+            {club.is_admin && joinRequests.length > 0 ? (
+              <View style={styles.notificationBadge}>
+                <Bell size={24} color="#DC2626" />
+                <View style={styles.badgeCount}>
+                  <Text style={styles.badgeText}>{joinRequests.length}</Text>
+                </View>
+              </View>
+            ) : (
+              <Mail size={24} color="#DC2626" />
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -954,6 +1185,90 @@ export default function ClubDetailScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+      
+      {/* Join Requests Modal */}
+      <Modal
+        visible={showRequestsModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowRequestsModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowRequestsModal(false)}>
+              <Text style={styles.modalCancelText}>Close</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Join Requests</Text>
+            <View style={styles.headerRight} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {requestsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#DC2626" />
+                <Text style={styles.loadingText}>Loading requests...</Text>
+              </View>
+            ) : joinRequests.length === 0 ? (
+              <View style={styles.noRequests}>
+                <UserPlus size={48} color="#D1D5DB" />
+                <Text style={styles.noRequestsText}>No pending join requests</Text>
+              </View>
+            ) : (
+              joinRequests.map(request => (
+                <View key={request.id} style={styles.requestCard}>
+                  {processingRequestId === request.id ? (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator size="small" color="#DC2626" />
+                    </View>
+                  ) : null}
+                  
+                  <View style={styles.requestHeader}>
+                    <TextAvatar name={request.user_name} size={48} />
+                    <View style={styles.requestInfo}>
+                      <Text style={styles.requestName}>{request.user_name}</Text>
+                      <Text style={styles.requestEmail}>{request.user_email}</Text>
+                      {request.blood_group && (
+                        <View style={styles.bloodGroupBadge}>
+                          <Text style={styles.bloodGroupText}>{request.blood_group}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  
+                  {request.message && (
+                    <View style={styles.requestMessage}>
+                      <Text style={styles.requestMessageText}>{request.message}</Text>
+                    </View>
+                  )}
+                  
+                  <View style={styles.requestTime}>
+                    <Text style={styles.requestTimeText}>
+                      Requested {formatTimeAgo(request.created_at)}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.requestActions}>
+                    <TouchableOpacity 
+                      style={[styles.rejectButton, processingRequestId !== null && styles.actionButtonDisabled]}
+                      onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                      disabled={processingRequestId !== null}
+                    >
+                      <Text style={styles.rejectButtonText}>Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.approveButton, processingRequestId !== null && styles.actionButtonDisabled]}
+                      onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                      disabled={processingRequestId !== null}
+                    >
+                      <Text style={styles.approveButtonText}>Approve</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1002,10 +1317,31 @@ const styles = StyleSheet.create({
   emailButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 20, 
     backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  notificationBadge: {
+    position: 'relative',
+  },
+  badgeCount: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  badgeText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 10,
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,
