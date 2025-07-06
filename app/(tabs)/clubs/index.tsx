@@ -57,8 +57,10 @@ export default function ClubsScreen() {
   const loadClubs = async () => {
     try {
       setLoading(true);
+
+      console.log('Loading clubs for all users regardless of type');
       
-      // Fetch all clubs regardless of user type - this should always show all clubs
+      // Explicitly fetch all clubs with user_type = 'club'
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -68,6 +70,7 @@ export default function ClubsScreen() {
       if (error) throw error;
       
       let clubsList = data || [];
+      console.log('Fetched clubs count:', clubsList.length);
       
       // If user is logged in, check which clubs they're a member of but still show all clubs
       if (user) {
@@ -116,6 +119,7 @@ export default function ClubsScreen() {
       
       // Fallback to mock data
       const mockClubs = getMockClubs();
+      console.log('Using mock data, clubs count:', mockClubs.length);
       setClubs(mockClubs);
       setStats({
         totalClubs: mockClubs.length,
@@ -243,6 +247,14 @@ export default function ClubsScreen() {
           message: 'Your request to join the club has been sent',
           duration: 3000,
         });
+      } else {
+        console.log('No user logged in, showing all clubs without membership info');
+        setClubs(clubsList);
+        setStats({
+          totalClubs: clubsList.length,
+          totalMembers: clubsList.reduce((sum, club) => sum + (club.total_members || 0), 0),
+          totalDonations: clubsList.reduce((sum, club) => sum + (club.total_donations || 0), 0)
+        });
       }
     } catch (error) {
       console.error('Error joining club:', error);
@@ -341,7 +353,7 @@ export default function ClubsScreen() {
   const getMockClubs = (): Club[] => {
     return [
       {
-        id: '1',
+        id: 'mock-1',
         name: 'Dhaka Blood Heroes',
         district: 'DHAKA',
         police_station: 'DHANMONDI',
@@ -355,7 +367,7 @@ export default function ClubsScreen() {
         last_activity: '2 hours ago',
       },
       {
-        id: '2',
+        id: 'mock-2',
         name: 'Life Savers Club',
         district: 'CHATTOGRAM',
         police_station: 'KOTWALI',
@@ -369,7 +381,7 @@ export default function ClubsScreen() {
         last_activity: '1 day ago',
       },
       {
-        id: '3',
+        id: 'mock-3',
         name: 'Red Cross Youth',
         district: 'SYLHET',
         police_station: 'KOTWALI',

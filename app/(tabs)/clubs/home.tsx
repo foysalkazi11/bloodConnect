@@ -58,16 +58,20 @@ export default function ClubsScreen() {
   const loadClubs = async () => {
     try {
       setLoading(true);
-      
-      // Fetch all clubs
+
+      console.log('Loading clubs for home screen, regardless of user type');
+
+      // Explicitly fetch all clubs with user_type = 'club'
       const { data: clubsData, error: clubsError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_type', 'club');
+        .eq('user_type', 'club')
+        .order('created_at', { ascending: false });
       
       if (clubsError) throw clubsError;
       
       let clubsList = clubsData || [];
+      console.log('Fetched clubs count:', clubsList.length);
       
       // If user is logged in, check which clubs they're a member of
       if (user) {
@@ -110,13 +114,13 @@ export default function ClubsScreen() {
         totalMembers,
         totalDonations
       });
-      
+
       // Add last activity time (mock for now)
       clubsList = clubsList.map(club => ({
         ...club,
         last_activity: getRandomTimeAgo()
       }));
-      
+
       setClubs(clubsList);
     } catch (error) {
       console.error('Error loading clubs:', error);
@@ -129,6 +133,7 @@ export default function ClubsScreen() {
       
       // Set mock data as fallback
       setClubs(getMockClubs());
+      console.log('Using mock data, clubs count:', getMockClubs().length);
       setStats({
         totalClubs: 3,
         totalMembers: 590,
