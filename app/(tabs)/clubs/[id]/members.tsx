@@ -252,8 +252,6 @@ export default function ClubMembersScreen() {
       // Fetch pending join requests
       const { data, error } = await supabase
       // Try using the custom function first
-      let data;
-      let error;
       
       try {
         const { data: functionData, error: functionError } = await supabase
