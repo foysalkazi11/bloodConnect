@@ -249,17 +249,18 @@ export default function ClubMembersScreen() {
       setRequestsLoading(true);
       console.log('Loading join requests for club:', id);
 
-      // Fetch pending join requests
-      const { data, error } = await supabase
-      // Try using the custom function first
-      
+      let data: any;
+      let error: any;
+
       try {
-        const { data: functionData, error: functionError } = await supabase
-          .rpc('get_join_requests', { club_id_param: id });
-          
+        const { data: functionData, error: functionError } = await supabase.rpc(
+          'get_join_requests',
+          { club_id_param: id }
+        );
+
         if (functionError) throw functionError;
-        
-        data = functionData.map(item => ({
+
+        data = functionData.map((item) => ({
           id: item.id,
           user_id: item.user_id,
           message: item.message,
@@ -267,16 +268,20 @@ export default function ClubMembersScreen() {
           user_profiles: {
             name: item.user_name,
             email: item.user_email,
-            blood_group: item.user_blood_group
-          }
+            blood_group: item.user_blood_group,
+          },
         }));
       } catch (functionError) {
-        console.log('Function approach failed, falling back to direct query:', functionError);
-        
+        console.log(
+          'Function approach failed, falling back to direct query:',
+          functionError
+        );
+
         // Fallback to direct query with join
         const { data: directData, error: directError } = await supabase
           .from('club_join_requests')
-          .select(`
+          .select(
+            `
             id,
             user_id,
             message,
@@ -286,10 +291,11 @@ export default function ClubMembersScreen() {
               email,
               blood_group
             )
-          `)
+          `
+          )
           .eq('club_id', id)
           .eq('status', 'pending');
-          
+
         data = directData;
         error = directError;
       }
