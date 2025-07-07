@@ -169,25 +169,58 @@ export default function ClubMembersScreen() {
     try {
       setLoading(true);
 
-      // Fetch club members
-      const { data, error } = await supabase
-        .from('club_members')
-        .select(
-          `
-          id,
-          role,
-          joined_at,
-          user_profiles:member_id(
+      // Try using the RPC function first
+      let data;
+      let error;
+      
+      try {
+        console.log('Fetching members using RPC function');
+        const { data: rpcData, error: rpcError } = await supabase.rpc(
+          'get_club_members',
+          { club_id_param: id }
+        );
+        
+        if (rpcError) throw rpcError;
+        
+        // Transform the data to match the expected format
+        data = rpcData.map(member => ({
+          id: member.id,
+          role: member.role,
+          joined_at: member.joined_at,
+          member_id: member.member_id,
+          user_profiles: {
+            id: member.member_id,
+            name: member.member_name,
+            email: member.member_email,
+            blood_group: member.member_blood_group,
+            phone: member.member_phone
+          }
+        }));
+      } catch (rpcError) {
+        console.log('RPC function failed, falling back to direct query:', rpcError);
+        
+        // Fallback to direct query
+        const { data: directData, error: directError } = await supabase
+          .from('club_members')
+          .select(`
             id,
-            name,
-            email,
-            blood_group,
-            phone
-          )
-        `
-        )
-        .eq('club_id', id)
-        .eq('is_active', true);
+            role,
+            joined_at,
+            member_id,
+            user_profiles:user_profiles!member_id(
+              id,
+              name,
+              email,
+              blood_group,
+              phone
+            )
+          `)
+          .eq('club_id', id)
+          .eq('is_active', true);
+          
+        data = directData;
+        error = directError;
+      }
 
       if (error) throw error;
 
@@ -524,6 +557,7 @@ export default function ClubMembersScreen() {
   ) => {
     try {
       setActionLoading(requestId);
+      console.log('Handling join request:', requestId, 'approved:', approved);
 
       // Update request status
       const { error } = await supabase
@@ -532,6 +566,29 @@ export default function ClubMembersScreen() {
         .eq('id', requestId);
 
       if (error) throw error;
+      
+      // If approved, we need to manually add the member since the trigger might fail
+      if (approved) {
+        try {
+          console.log('Manually adding member after approval');
+          const { error: memberError } = await supabase
+            .from('club_members')
+            .upsert({
+              club_id: id,
+              member_id: userId,
+              role: 'member',
+              is_active: true
+            }, {
+              onConflict: 'club_id,member_id'
+            });
+            
+          if (memberError) {
+            console.error('Error manually adding member:', memberError);
+          }
+        } catch (memberAddError) {
+          console.error('Exception adding member manually:', memberAddError);
+        }
+      }
 
       // Update local state
       setJoinRequests(
