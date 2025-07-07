@@ -193,10 +193,10 @@ export default function ClubMembersScreen() {
 
       // Format member data
       const formattedMembers: ClubMember[] = data.map((member) => ({
-        id: member.user_profiles[0]?.id,
-        name: member.user_profiles[0]?.name,
-        email: member.user_profiles[0]?.email,
-        blood_group: member.user_profiles[0]?.blood_group,
+        id: member.user_profiles?.id || member.id,
+        name: member.user_profiles?.name || 'Unknown User',
+        email: member.user_profiles?.email || 'No email',
+        blood_group: member.user_profiles?.blood_group,
         role: member.role,
         joined_date: member.joined_at,
         last_active: new Date(
@@ -204,7 +204,7 @@ export default function ClubMembersScreen() {
         ).toISOString(), // Random for demo
         is_online: Math.random() > 0.7, // Random for demo
         total_donations: Math.floor(Math.random() * 20), // Random for demo
-        phone: member.user_profiles[0]?.phone,
+        phone: member.user_profiles?.phone,
       }));
 
       setMembers(formattedMembers);
