@@ -247,25 +247,54 @@ export default function ClubMembersScreen() {
   const loadJoinRequests = async () => {
     try {
       setRequestsLoading(true);
+      console.log('Loading join requests for club:', id);
 
       // Fetch pending join requests
       const { data, error } = await supabase
-        .from('club_join_requests')
-        .select(
-          `
-          id,
-          user_id,
-          message,
-          created_at,
-          user_profiles:user_id(
-            name,
-            email,
-            blood_group
-          )
-        `
-        )
-        .eq('club_id', id)
-        .eq('status', 'pending');
+      // Try using the custom function first
+      let data;
+      let error;
+      
+      try {
+        const { data: functionData, error: functionError } = await supabase
+          .rpc('get_join_requests', { club_id_param: id });
+          
+        if (functionError) throw functionError;
+        
+        data = functionData.map(item => ({
+          id: item.id,
+          user_id: item.user_id,
+          message: item.message,
+          created_at: item.created_at,
+          user_profiles: {
+            name: item.user_name,
+            email: item.user_email,
+            blood_group: item.user_blood_group
+          }
+        }));
+      } catch (functionError) {
+        console.log('Function approach failed, falling back to direct query:', functionError);
+        
+        // Fallback to direct query with join
+        const { data: directData, error: directError } = await supabase
+          .from('club_join_requests')
+          .select(`
+            id,
+            user_id,
+            message,
+            created_at,
+            user_profiles:user_profiles!inner(
+              name,
+              email,
+              blood_group
+            )
+          `)
+          .eq('club_id', id)
+          .eq('status', 'pending');
+          
+        data = directData;
+        error = directError;
+      }
 
       if (error) throw error;
 
