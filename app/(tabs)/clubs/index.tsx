@@ -303,6 +303,44 @@ export default function ClubsScreen() {
   };
 
   const handleClubPress = (clubId: string) => {
+    // If user is not signed in, show notification
+    if (!user) {
+      showNotification({
+        type: 'info',
+        title: 'Sign In Required',
+        message: 'Please sign in to view club details',
+        duration: 3000,
+      });
+      router.push('/auth');
+      return;
+    }
+    
+    // If user is a club, they can't join other clubs
+    if (profile?.user_type === 'club') {
+      // If this is their own club, allow access
+      if (clubId === user.id) {
+        router.push(`/(tabs)/clubs/${clubId}`);
+        return;
+      }
+      
+      showNotification({
+        type: 'info',
+        title: 'Access Restricted',
+        message: 'Clubs cannot join other clubs',
+        duration: 3000,
+      });
+      return;
+    }
+    
+    // For donors, check if they're a member of the club
+    const club = clubs.find(c => c.id === clubId);
+    if (club?.is_joined) {
+      // If they're a member, allow access
+      router.push(`/(tabs)/clubs/${clubId}`);
+      return;
+    }
+    
+    // Otherwise, navigate but the club page will show restricted access
     router.push(`/(tabs)/clubs/${clubId}`);
   };
   
