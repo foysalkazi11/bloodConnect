@@ -89,17 +89,18 @@ export default function ClubEventsScreen() {
       // Fetch attendee counts for each event (only if we have events)
       const { data: attendeeCounts, error: attendeeError } = await supabase
         .from('club_event_attendees')
-        .select('event_id')
+        .select('event_id, count(*)')
         .in('event_id', eventIds)
-        .eq('status', 'going');
+        .eq('status', 'going')
+        .group('event_id');
 
       if (attendeeError) {
         console.warn('Error loading attendee counts:', attendeeError);
       }
 
       // Count attendees per event
-      const attendeeCountMap = (attendeeCounts || []).reduce((acc, attendee) => {
-        acc[attendee.event_id] = (acc[attendee.event_id] || 0) + 1;
+      const attendeeCountMap = (attendeeCounts || []).reduce((acc, item) => {
+        acc[item.event_id] = item.count || 0;
         return acc;
       }, {} as Record<string, number>);
 
