@@ -6,7 +6,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
-import { supabase } from '@/lib/supabase';
+import { supabase, UserProfile } from '@/lib/supabase';
 
 interface ClubMember {
   id: string;
@@ -35,6 +35,7 @@ export default function ClubMembersScreen() {
   const { id } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
+  const [clubDetails, setClubDetails] = useState<UserProfile | null>(null);
   
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [filteredMembers, setFilteredMembers] = useState<ClubMember[]>([]);
@@ -50,19 +51,92 @@ export default function ClubMembersScreen() {
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'members' | 'requests'>(
+    useLocalSearchParams().tab === 'requests' ? 'requests' : 'members'
+  );
 
   useEffect(() => {
-    loadMembers();
-    if (user) {
-      checkAdminStatus();
-    }
+    checkAccess();
   }, [id, user]);
 
-  useEffect(() => {
-    if (isAdmin) {
-      loadJoinRequests();
+  const checkAccess = async () => {
+    try {
+      setLoading(true);
+      
+      // First, fetch club details
+      const { data: clubData, error: clubError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', id)
+        .eq('user_type', 'club')
+        .single();
+      
+      if (clubError) {
+        console.error('Error loading club details:', clubError);
+        throw clubError;
+      }
+      
+      setClubDetails(clubData);
+      
+      // Check if user is authenticated
+      if (!user) {
+        setAccessDenied(true);
+        return;
+      }
+      
+      // Check if user is the club owner
+      const isOwner = user.id === id;
+      
+      if (isOwner) {
+        setIsAdmin(true);
+        await loadMembers();
+        if (activeTab === 'requests') {
+          await loadJoinRequests();
+        }
+        return;
+      }
+      
+      // Check if user is a member of this club
+      const { data: memberData, error: memberError } = await supabase
+        .from('club_members')
+        .select('role')
+        .eq('club_id', id)
+        .eq('member_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (memberError && !memberError.message.includes('PGRST116')) {
+        console.error('Error checking membership:', memberError);
+      }
+      
+      if (!memberData) {
+        setAccessDenied(true);
+        return;
+      }
+      
+      // Check if user is admin or moderator
+      const isAdminOrMod = ['admin', 'moderator'].includes(memberData.role);
+      setIsAdmin(isAdminOrMod);
+      
+      await loadMembers();
+      if (isAdminOrMod && activeTab === 'requests') {
+        await loadJoinRequests();
+      }
+      
+    } catch (error) {
+      console.error('Error checking access:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to check access permissions',
+        duration: 4000,
+      });
+      setAccessDenied(true);
+    } finally {
+      setLoading(false);
     }
-  }, [isAdmin]);
+  };
 
   useEffect(() => {
     filterMembers();
@@ -140,28 +214,6 @@ export default function ClubMembersScreen() {
           id: '3',
           name: 'Mohammad Ali',
           email: 'ali@example.com',
-          blood_group: 'B-',
-          role: 'member',
-          joined_date: '2023-03-10',
-          last_active: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          is_online: true,
-          total_donations: 5,
-        },
-      ];
-      
-      setMembers(mockMembers);
-      
-      showNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to load members. Using demo data instead.',
-        duration: 4000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const loadJoinRequests = async () => {
     try {
       setRequestsLoading(true);
@@ -442,6 +494,13 @@ export default function ClubMembersScreen() {
     }
   };
 
+  const handleTabChange = (tab: 'members' | 'requests') => {
+    setActiveTab(tab);
+    if (tab === 'requests' && !requestsLoading && joinRequests.length === 0) {
+      loadJoinRequests();
+    }
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return <Crown size={16} color="#F59E0B" />;
@@ -473,12 +532,40 @@ export default function ClubMembersScreen() {
     return `${diffInDays}d ago`;
   };
 
-  if (loading) {
+  if (loading && !accessDenied) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#DC2626" />
           <Text style={styles.loadingText}>Loading members...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <ArrowLeft size={24} color="#111827" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Club Members</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        
+        <View style={styles.accessDeniedContainer}>
+          <Users size={64} color="#D1D5DB" />
+          <Text style={styles.accessDeniedTitle}>Access Restricted</Text>
+          <Text style={styles.accessDeniedText}>
+            You need to be a member of this club to view its members.
+          </Text>
+          <TouchableOpacity 
+            style={styles.backToClubButton}
+            onPress={() => router.replace(`/(tabs)/clubs/${id}`)}
+          >
+            <Text style={styles.backToClubButtonText}>Back to Club</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -491,17 +578,27 @@ export default function ClubMembersScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color="#111827" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Members ({members.length})</Text>
+        <Text style={styles.headerTitle}>
+          {activeTab === 'members' ? `Members (${members.length})` : 'Join Requests'}
+        </Text>
         <View style={styles.headerActions}>
-          {isAdmin && joinRequests.length > 0 && (
+          {isAdmin && (
             <TouchableOpacity 
               style={styles.requestsButton}
-              onPress={() => setShowRequestsModal(true)}
+              onPress={() => handleTabChange(activeTab === 'members' ? 'requests' : 'members')}
             >
-              <Bell size={20} color="#FFFFFF" />
-              <View style={styles.requestsBadge}>
-                <Text style={styles.requestsBadgeText}>{joinRequests.length}</Text>
-              </View>
+              {activeTab === 'members' ? (
+                <>
+                  <UserPlus size={20} color="#FFFFFF" />
+                  {joinRequests.length > 0 && (
+                    <View style={styles.requestsBadge}>
+                      <Text style={styles.requestsBadgeText}>{joinRequests.length}</Text>
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Users size={20} color="#FFFFFF" />
+              )}
             </TouchableOpacity>
           )}
           {isAdmin && (
@@ -515,108 +612,179 @@ export default function ClubMembersScreen() {
         </View>
       </View>
 
-      {/* Search and Filters */}
-      <View style={styles.filtersContainer}>
-        <View style={styles.searchContainer}>
-          <Search size={20} color="#6B7280" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search members..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
+      {activeTab === 'members' ? (
+        <>
+          {/* Search and Filters */}
+          <View style={styles.filtersContainer}>
+            <View style={styles.searchContainer}>
+              <Search size={20} color="#6B7280" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search members..."
+                placeholderTextColor="#9CA3AF"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roleFilters}>
-          {['all', 'admin', 'moderator', 'member'].map((role) => (
-            <TouchableOpacity
-              key={role}
-              style={[
-                styles.roleFilter,
-                selectedRole === role && styles.roleFilterActive
-              ]}
-              onPress={() => setSelectedRole(role as any)}
-            >
-              <Text style={[
-                styles.roleFilterText,
-                selectedRole === role && styles.roleFilterTextActive
-              ]}>
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Members List */}
-      <ScrollView style={styles.membersList} showsVerticalScrollIndicator={false}>
-        {filteredMembers.length === 0 ? (
-          <View style={styles.noMembers}>
-            <User size={48} color="#D1D5DB" />
-            <Text style={styles.noMembersText}>No members found</Text>
-            <Text style={styles.noMembersSubtext}>
-              {searchQuery ? 'Try adjusting your search' : 'No members match the selected filters'}
-            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.roleFilters}>
+              {['all', 'admin', 'moderator', 'member'].map((role) => (
+                <TouchableOpacity
+                  key={role}
+                  style={[
+                    styles.roleFilter,
+                    selectedRole === role && styles.roleFilterActive
+                  ]}
+                  onPress={() => setSelectedRole(role as any)}
+                >
+                  <Text style={[
+                    styles.roleFilterText,
+                    selectedRole === role && styles.roleFilterTextActive
+                  ]}>
+                    {role.charAt(0).toUpperCase() + role.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
-        ) : (
-          filteredMembers.map((member) => (
-            <TouchableOpacity
-              key={member.id}
-              style={[
-                styles.memberCard,
-                actionLoading === member.id && styles.memberCardLoading
-              ]}
-              onPress={() => {
-                setSelectedMember(member);
-                setShowMemberModal(true);
-              }}
-              disabled={actionLoading !== null}
-            >
-              {actionLoading === member.id ? (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="small" color="#DC2626" />
-                </View>
-              ) : null}
-              
-              <View style={styles.memberInfo}>
-                <View style={styles.avatarContainer}>
-                  <TextAvatar name={member.name} size={48} />
-                  {member.is_online && <View style={styles.onlineIndicator} />}
-                </View>
-                
-                <View style={styles.memberDetails}>
-                  <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                    <View style={[styles.roleBadge, { backgroundColor: getRoleColor(member.role) }]}>
-                      {getRoleIcon(member.role)}
-                      <Text style={styles.roleText}>{member.role}</Text>
+
+          {/* Members List */}
+          <ScrollView style={styles.membersList} showsVerticalScrollIndicator={false}>
+            {filteredMembers.length === 0 ? (
+              <View style={styles.noMembers}>
+                <User size={48} color="#D1D5DB" />
+                <Text style={styles.noMembersText}>No members found</Text>
+                <Text style={styles.noMembersSubtext}>
+                  {searchQuery ? 'Try adjusting your search' : 'No members match the selected filters'}
+                </Text>
+              </View>
+            ) : (
+              filteredMembers.map((member) => (
+                <TouchableOpacity
+                  key={member.id}
+                  style={[
+                    styles.memberCard,
+                    actionLoading === member.id && styles.memberCardLoading
+                  ]}
+                  onPress={() => {
+                    setSelectedMember(member);
+                    setShowMemberModal(true);
+                  }}
+                  disabled={actionLoading !== null}
+                >
+                  {actionLoading === member.id ? (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator size="small" color="#DC2626" />
+                    </View>
+                  ) : null}
+                  
+                  <View style={styles.memberInfo}>
+                    <View style={styles.avatarContainer}>
+                      <TextAvatar name={member.name} size={48} />
+                      {member.is_online && <View style={styles.onlineIndicator} />}
+                    </View>
+                    
+                    <View style={styles.memberDetails}>
+                      <View style={styles.memberNameRow}>
+                        <Text style={styles.memberName}>{member.name}</Text>
+                        <View style={[styles.roleBadge, { backgroundColor: getRoleColor(member.role) }]}>
+                          {getRoleIcon(member.role)}
+                          <Text style={styles.roleText}>{member.role}</Text>
+                        </View>
+                      </View>
+                      
+                      <Text style={styles.memberEmail}>{member.email}</Text>
+                      
+                      <View style={styles.memberStats}>
+                        {member.blood_group && (
+                          <Text style={styles.bloodGroup}>{member.blood_group}</Text>
+                        )}
+                        <Text style={styles.statDivider}>•</Text>
+                        <Text style={styles.donationCount}>{member.total_donations} donations</Text>
+                        <Text style={styles.statDivider}>•</Text>
+                        <Text style={styles.lastActive}>
+                          {member.is_online ? 'Online' : formatTimeAgo(member.last_active)}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                  
-                  <Text style={styles.memberEmail}>{member.email}</Text>
-                  
-                  <View style={styles.memberStats}>
-                    {member.blood_group && (
-                      <Text style={styles.bloodGroup}>{member.blood_group}</Text>
+
+                  <TouchableOpacity style={styles.moreButton}>
+                    <MoreVertical size={20} color="#6B7280" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </>
+      ) : (
+        /* Join Requests List */
+        <ScrollView style={styles.requestsList} showsVerticalScrollIndicator={false}>
+          {requestsLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#DC2626" />
+              <Text style={styles.loadingText}>Loading requests...</Text>
+            </View>
+          ) : joinRequests.length === 0 ? (
+            <View style={styles.noRequests}>
+              <UserPlus size={48} color="#D1D5DB" />
+              <Text style={styles.noRequestsText}>No pending join requests</Text>
+            </View>
+          ) : (
+            joinRequests.map(request => (
+              <View key={request.id} style={styles.requestCard}>
+                {actionLoading === request.id ? (
+                  <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="small" color="#DC2626" />
+                  </View>
+                ) : null}
+                
+                <View style={styles.requestHeader}>
+                  <TextAvatar name={request.user_name} size={48} />
+                  <View style={styles.requestInfo}>
+                    <Text style={styles.requestName}>{request.user_name}</Text>
+                    <Text style={styles.requestEmail}>{request.user_email}</Text>
+                    {request.blood_group && (
+                      <View style={styles.bloodGroupBadge}>
+                        <Text style={styles.bloodGroupText}>{request.blood_group}</Text>
+                      </View>
                     )}
-                    <Text style={styles.statDivider}>•</Text>
-                    <Text style={styles.donationCount}>{member.total_donations} donations</Text>
-                    <Text style={styles.statDivider}>•</Text>
-                    <Text style={styles.lastActive}>
-                      {member.is_online ? 'Online' : formatTimeAgo(member.last_active)}
-                    </Text>
                   </View>
                 </View>
+                
+                {request.message && (
+                  <View style={styles.requestMessage}>
+                    <Text style={styles.requestMessageText}>{request.message}</Text>
+                  </View>
+                )}
+                
+                <View style={styles.requestTime}>
+                  <Text style={styles.requestTimeText}>
+                    Requested {formatTimeAgo(request.created_at)}
+                  </Text>
+                </View>
+                
+                <View style={styles.requestActions}>
+                  <TouchableOpacity 
+                    style={[styles.rejectButton, actionLoading !== null && styles.actionButtonDisabled]}
+                    onPress={() => handleJoinRequest(request.id, request.user_id, false)}
+                    disabled={actionLoading !== null}
+                  >
+                    <Text style={styles.rejectButtonText}>Reject</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.approveButton, actionLoading !== null && styles.actionButtonDisabled]}
+                    onPress={() => handleJoinRequest(request.id, request.user_id, true)}
+                    disabled={actionLoading !== null}
+                  >
+                    <Text style={styles.approveButtonText}>Approve</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-
-              <TouchableOpacity style={styles.moreButton}>
-                <MoreVertical size={20} color="#6B7280" />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+            ))
+          )}
+        </ScrollView>
+      )}
 
       {/* Invite Member Modal */}
       <Modal
@@ -1085,6 +1253,11 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     textAlign: 'center',
   },
+  requestsList: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -1312,5 +1485,37 @@ const styles = StyleSheet.create({
   },
   actionButtonDisabled: {
     opacity: 0.5,
+  },
+  accessDeniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  accessDeniedTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 20,
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  accessDeniedText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  backToClubButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+  },
+  backToClubButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 });
