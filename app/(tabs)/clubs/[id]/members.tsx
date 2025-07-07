@@ -273,9 +273,9 @@ export default function ClubMembersScreen() {
       const formattedRequests: JoinRequest[] = data.map((request) => ({
         id: request.id,
         user_id: request.user_id,
-        user_name: request.user_profiles[0]?.name,
-        user_email: request.user_profiles[0]?.email,
-        blood_group: request.user_profiles[0]?.blood_group,
+        user_name: request.user_profiles?.name,
+        user_email: request.user_profiles?.email,
+        blood_group: request.user_profiles?.blood_group,
         message: request.message,
         created_at: request.created_at,
       }));
