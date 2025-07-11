@@ -2,13 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Heart, Search, Users, Award, MapPin, Phone } from 'lucide-react-native';
+import {
+  Heart,
+  Search,
+  Users,
+  Award,
+  MapPin,
+  Phone,
+} from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
-import { colors } from '@/components/theme';
+import { colors } from '@/theme';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -48,16 +55,18 @@ export default function HomeScreen() {
     const errorMessage = error?.message || '';
     const errorName = error?.name || '';
     const errorString = String(error);
-    
-    return errorMessage.includes('Failed to fetch') || 
-           errorMessage.includes('CORS') ||
-           errorMessage.includes('Network request failed') ||
-           errorMessage.includes('NetworkError') ||
-           errorMessage.includes('fetch') ||
-           errorName === 'TypeError' ||
-           errorName === 'NetworkError' ||
-           errorString.includes('Failed to fetch') ||
-           errorString.includes('TypeError: Failed to fetch');
+
+    return (
+      errorMessage.includes('Failed to fetch') ||
+      errorMessage.includes('CORS') ||
+      errorMessage.includes('Network request failed') ||
+      errorMessage.includes('NetworkError') ||
+      errorMessage.includes('fetch') ||
+      errorName === 'TypeError' ||
+      errorName === 'NetworkError' ||
+      errorString.includes('Failed to fetch') ||
+      errorString.includes('TypeError: Failed to fetch')
+    );
   };
 
   const loadDashboardData = async () => {
@@ -84,21 +93,27 @@ export default function HomeScreen() {
               donor_name: 'Ahmed Rahman',
               blood_group: 'O+',
               location: 'Dhaka Medical College',
-              donation_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+              donation_date: new Date(
+                Date.now() - 2 * 60 * 60 * 1000
+              ).toISOString(),
             },
             {
               id: '2',
               donor_name: 'Fatima Khan',
               blood_group: 'A+',
               location: 'Chittagong General Hospital',
-              donation_date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+              donation_date: new Date(
+                Date.now() - 6 * 60 * 60 * 1000
+              ).toISOString(),
             },
             {
               id: '3',
               donor_name: 'Mohammad Ali',
               blood_group: 'B-',
               location: 'Sylhet MAG Osmani Medical',
-              donation_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+              donation_date: new Date(
+                Date.now() - 24 * 60 * 60 * 1000
+              ).toISOString(),
             },
           ]);
           setLoading(false);
@@ -108,24 +123,28 @@ export default function HomeScreen() {
       }
 
       // Load stats with error handling
-      const [donorsResult, clubsResult, donationsResult] = await Promise.allSettled([
-        supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact' })
-          .eq('user_type', 'donor'),
-        supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact' })
-          .eq('user_type', 'club'),
-        supabase
-          .from('donations')
-          .select('id', { count: 'exact' })
-      ]);
+      const [donorsResult, clubsResult, donationsResult] =
+        await Promise.allSettled([
+          supabase
+            .from('user_profiles')
+            .select('id', { count: 'exact' })
+            .eq('user_type', 'donor'),
+          supabase
+            .from('user_profiles')
+            .select('id', { count: 'exact' })
+            .eq('user_type', 'club'),
+          supabase.from('donations').select('id', { count: 'exact' }),
+        ]);
 
       // Handle stats results with fallbacks
-      const totalDonors = donorsResult.status === 'fulfilled' ? (donorsResult.value.count || 0) : 0;
-      const totalClubs = clubsResult.status === 'fulfilled' ? (clubsResult.value.count || 0) : 0;
-      const totalDonations = donationsResult.status === 'fulfilled' ? (donationsResult.value.count || 0) : 0;
+      const totalDonors =
+        donorsResult.status === 'fulfilled' ? donorsResult.value.count || 0 : 0;
+      const totalClubs =
+        clubsResult.status === 'fulfilled' ? clubsResult.value.count || 0 : 0;
+      const totalDonations =
+        donationsResult.status === 'fulfilled'
+          ? donationsResult.value.count || 0
+          : 0;
 
       setStats({
         totalDonors,
@@ -137,25 +156,29 @@ export default function HomeScreen() {
       try {
         const { data: donations, error } = await supabase
           .from('donations')
-          .select(`
+          .select(
+            `
             id,
             blood_group,
             location,
             donation_date,
             user_profiles!inner(name)
-          `)
+          `
+          )
           .order('donation_date', { ascending: false })
           .limit(3);
 
         if (!error && donations) {
-          const formattedDonations: RecentDonation[] = donations.map(donation => ({
-            id: donation.id,
-            donor_name: donation.user_profiles.name,
-            blood_group: donation.blood_group,
-            location: donation.location,
-            donation_date: donation.donation_date,
-            avatar_url: `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop`,
-          }));
+          const formattedDonations: RecentDonation[] = donations.map(
+            (donation) => ({
+              id: donation.id,
+              donor_name: donation.user_profiles.name,
+              blood_group: donation.blood_group,
+              location: donation.location,
+              donation_date: donation.donation_date,
+              avatar_url: `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop`,
+            })
+          );
           setRecentDonations(formattedDonations);
         } else {
           console.log('Could not load recent donations:', error?.message);
@@ -184,21 +207,27 @@ export default function HomeScreen() {
             donor_name: 'Ahmed Rahman',
             blood_group: 'O+',
             location: 'Dhaka Medical College',
-            donation_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            donation_date: new Date(
+              Date.now() - 2 * 60 * 60 * 1000
+            ).toISOString(),
           },
           {
             id: '2',
             donor_name: 'Fatima Khan',
             blood_group: 'A+',
             location: 'Chittagong General Hospital',
-            donation_date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+            donation_date: new Date(
+              Date.now() - 6 * 60 * 60 * 1000
+            ).toISOString(),
           },
           {
             id: '3',
             donor_name: 'Mohammad Ali',
             blood_group: 'B-',
             location: 'Sylhet MAG Osmani Medical',
-            donation_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+            donation_date: new Date(
+              Date.now() - 24 * 60 * 60 * 1000
+            ).toISOString(),
           },
         ]);
       } else {
@@ -218,8 +247,10 @@ export default function HomeScreen() {
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours} hours ago`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -228,9 +259,21 @@ export default function HomeScreen() {
   };
 
   const dashboardStats = [
-    { label: t('home.stats.donors'), value: stats.totalDonors.toLocaleString(), icon: Heart },
-    { label: t('home.stats.clubs'), value: stats.totalClubs.toLocaleString(), icon: Users },
-    { label: t('home.stats.donations'), value: stats.totalDonations.toLocaleString(), icon: Award },
+    {
+      label: t('home.stats.donors'),
+      value: stats.totalDonors.toLocaleString(),
+      icon: Heart,
+    },
+    {
+      label: t('home.stats.clubs'),
+      value: stats.totalClubs.toLocaleString(),
+      icon: Users,
+    },
+    {
+      label: t('home.stats.donations'),
+      value: stats.totalDonations.toLocaleString(),
+      icon: Award,
+    },
   ];
 
   const handleFindDonors = () => {
@@ -256,11 +299,11 @@ export default function HomeScreen() {
   const getHeroMessage = () => {
     if (user && profile) {
       if (profile.user_type === 'donor') {
-        return profile.is_available 
-          ? "You're available to help save lives" 
-          : "Update your availability to help more people";
+        return profile.is_available
+          ? "You're available to help save lives"
+          : 'Update your availability to help more people';
       } else {
-        return "Continue making a difference in your community";
+        return 'Continue making a difference in your community';
       }
     }
     return t('home.heroMessage');
@@ -268,7 +311,9 @@ export default function HomeScreen() {
 
   const getProfileImage = () => {
     // Generate a consistent avatar based on user ID
-    const avatarId = user?.id ? parseInt(user.id.slice(-3), 16) % 1000 + 1 : 220453;
+    const avatarId = user?.id
+      ? (parseInt(user.id.slice(-3), 16) % 1000) + 1
+      : 220453;
     return `https://images.pexels.com/photos/${avatarId}/pexels-photo-${avatarId}.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop`;
   };
 
@@ -277,20 +322,15 @@ export default function HomeScreen() {
 
     if (!imageError) {
       return (
-        <Image 
+        <Image
           source={{ uri: getProfileImage() }}
           className="w-12 h-12 rounded-full border-2 border-white"
           onError={() => setImageError(true)}
         />
       );
     }
-    
-    return (
-      <TextAvatar 
-        name={profile.name || 'User'} 
-        size={48}
-      />
-    );
+
+    return <TextAvatar name={profile.name || 'User'} size={48} />;
   };
 
   return (
@@ -300,7 +340,8 @@ export default function HomeScreen() {
         {connectionError && (
           <View className="bg-warning-100 px-4 py-3 border-b border-warning-500">
             <Text className="font-medium text-warning-800 text-center text-sm">
-              ⚠️ Demo Mode: Configure Supabase CORS settings to connect to live data
+              ⚠️ Demo Mode: Configure Supabase CORS settings to connect to live
+              data
             </Text>
           </View>
         )}
@@ -308,18 +349,24 @@ export default function HomeScreen() {
         {/* Header */}
         <View className="flex-row justify-between items-center px-5 pt-5 pb-2.5">
           <View className="flex-1">
-            <Text className="text-secondary-500 font-inter-regular text-base">{getWelcomeMessage()}</Text>
-            <Text className="text-secondary-900 font-inter-bold text-2xl mt-1">BloodConnect</Text>
+            <Text className="text-neutral-500 font-inter-regular text-base">
+              {getWelcomeMessage()}
+            </Text>
+            <Text className="text-neutral-900 font-inter-bold text-2xl mt-1">
+              BloodConnect
+            </Text>
           </View>
           {user && profile && (
-            <TouchableOpacity 
+            <TouchableOpacity
               className="relative"
               onPress={() => router.push('/profile')}
             >
               <View className="relative">
                 {renderProfileAvatar()}
-                <View 
-                  className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${profile.is_available ? 'bg-success-500' : 'bg-error-500'}`} 
+                <View
+                  className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                    profile.is_available ? 'bg-success-500' : 'bg-error-500'
+                  }`}
                 />
               </View>
             </TouchableOpacity>
@@ -333,20 +380,28 @@ export default function HomeScreen() {
         >
           <View className="p-6 items-center">
             <Heart size={48} color={colors.primary[600]} className="mb-4" />
-            <Text className="text-secondary-900 font-inter-bold text-2xl text-center mb-2">{t('home.title')}</Text>
-            <Text className="text-secondary-500 font-inter-regular text-base text-center mb-3">{t('home.subtitle')}</Text>
-            <Text className="text-primary-600 font-inter-medium text-sm text-center mb-6">{getHeroMessage()}</Text>
-            
+            <Text className="text-secondary-900 font-inter-bold text-2xl text-center mb-2">
+              {t('home.title')}
+            </Text>
+            <Text className="text-secondary-500 font-inter-regular text-base text-center mb-3">
+              {t('home.subtitle')}
+            </Text>
+            <Text className="text-primary-600 font-inter-medium text-sm text-center mb-6">
+              {getHeroMessage()}
+            </Text>
+
             <View className="flex-row gap-3 w-full">
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="flex-1 bg-primary-600 flex-row items-center justify-center py-3 rounded-xl gap-2"
                 onPress={handleFindDonors}
               >
                 <Search size={20} color="#FFFFFF" />
-                <Text className="text-white font-inter-semibold text-sm">{t('home.callToAction')}</Text>
+                <Text className="text-white font-inter-semibold text-sm">
+                  {t('home.callToAction')}
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 className="flex-1 bg-white flex-row items-center justify-center py-3 rounded-xl border-2 border-primary-600 gap-2"
                 onPress={handleBecomeDonor}
               >
@@ -361,13 +416,22 @@ export default function HomeScreen() {
 
         {/* Stats Section */}
         <View className="px-5 pt-8">
-          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Our Impact</Text>
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">
+            Our Impact
+          </Text>
           <View className="flex-row gap-3">
             {dashboardStats.map((stat, index) => (
-              <View key={index} className="flex-1 bg-secondary-50 p-4 rounded-xl items-center gap-2">
+              <View
+                key={index}
+                className="flex-1 bg-secondary-50 p-4 rounded-xl items-center gap-2"
+              >
                 <stat.icon size={24} color={colors.primary[600]} />
-                <Text className="text-secondary-900 font-inter-bold text-xl">{stat.value}</Text>
-                <Text className="text-secondary-500 font-inter-regular text-xs text-center">{stat.label}</Text>
+                <Text className="text-secondary-900 font-inter-bold text-xl">
+                  {stat.value}
+                </Text>
+                <Text className="text-secondary-500 font-inter-regular text-xs text-center">
+                  {stat.label}
+                </Text>
               </View>
             ))}
           </View>
@@ -375,15 +439,27 @@ export default function HomeScreen() {
 
         {/* Blood Groups Section */}
         <View className="px-5 pt-8">
-          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Blood Groups</Text>
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">
+            Blood Groups
+          </Text>
           <View className="flex-row flex-wrap gap-3">
             {BLOOD_GROUPS.map((group, index) => (
-              <TouchableOpacity 
-                key={index} 
-                className={`bg-primary-100 py-3 px-4 rounded-lg min-w-[60px] items-center border-2 ${user && profile && profile.blood_group === group ? 'bg-primary-600 border-primary-700' : 'border-transparent'}`}
+              <TouchableOpacity
+                key={index}
+                className={`bg-primary-100 py-3 px-4 rounded-lg min-w-[60px] items-center border-2 ${
+                  user && profile && profile.blood_group === group
+                    ? 'bg-primary-600 border-primary-700'
+                    : 'border-transparent'
+                }`}
                 onPress={() => router.push(`/search?bloodGroup=${group}`)}
               >
-                <Text className={`font-inter-semibold text-sm ${user && profile && profile.blood_group === group ? 'text-white' : 'text-primary-600'}`}>
+                <Text
+                  className={`font-inter-semibold text-sm ${
+                    user && profile && profile.blood_group === group
+                      ? 'text-white'
+                      : 'text-primary-600'
+                  }`}
+                >
                   {group}
                 </Text>
               </TouchableOpacity>
@@ -396,23 +472,34 @@ export default function HomeScreen() {
           <View className="bg-primary-50 rounded-xl p-5 flex-row items-center gap-4 border-l-4 border-l-primary-600">
             <Phone size={24} color={colors.primary[600]} />
             <View className="flex-1">
-              <Text className="text-secondary-900 font-inter-semibold text-base">Emergency Blood Need?</Text>
-              <Text className="text-secondary-500 font-inter-regular text-sm mt-0.5">Call our 24/7 helpline</Text>
+              <Text className="text-secondary-900 font-inter-semibold text-base">
+                Emergency Blood Need?
+              </Text>
+              <Text className="text-secondary-500 font-inter-regular text-sm mt-0.5">
+                Call our 24/7 helpline
+              </Text>
             </View>
             <TouchableOpacity className="bg-primary-600 py-2 px-4 rounded-lg">
-              <Text className="text-white font-inter-semibold text-sm">Call Now</Text>
+              <Text className="text-white font-inter-semibold text-sm">
+                Call Now
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Recent Activity */}
         <View className="px-5 pt-8 pb-8">
-          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">Recent Donations</Text>
+          <Text className="text-secondary-900 font-inter-bold text-xl mb-4">
+            Recent Donations
+          </Text>
           <View className="gap-3">
             {loading ? (
               // Loading placeholder
               [1, 2, 3].map((item, index) => (
-                <View key={index} className="flex-row items-center bg-secondary-100 p-4 rounded-xl gap-3">
+                <View
+                  key={index}
+                  className="flex-row items-center bg-secondary-100 p-4 rounded-xl gap-3"
+                >
                   <View className="w-12 h-12 rounded-full bg-secondary-200" />
                   <View className="flex-1 gap-2">
                     <View className="h-3 bg-secondary-200 rounded-md w-3/4" />
@@ -422,15 +509,17 @@ export default function HomeScreen() {
               ))
             ) : recentDonations.length > 0 ? (
               recentDonations.map((donation) => (
-                <View key={donation.id} className="flex-row items-center bg-secondary-50 p-4 rounded-xl gap-3">
+                <View
+                  key={donation.id}
+                  className="flex-row items-center bg-secondary-50 p-4 rounded-xl gap-3"
+                >
                   <View className="w-12 h-12 rounded-full overflow-hidden">
-                    <TextAvatar 
-                      name={donation.donor_name} 
-                      size={48}
-                    />
+                    <TextAvatar name={donation.donor_name} size={48} />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-secondary-900 font-inter-semibold text-base">{donation.donor_name}</Text>
+                    <Text className="text-secondary-900 font-inter-semibold text-base">
+                      {donation.donor_name}
+                    </Text>
                     <Text className="text-secondary-500 font-inter-regular text-sm">
                       Donated {donation.blood_group} • {donation.location}
                     </Text>
@@ -439,14 +528,18 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <View className="bg-primary-600 px-2 py-1 rounded-md">
-                    <Text className="text-white font-inter-semibold text-xs">{donation.blood_group}</Text>
+                    <Text className="text-white font-inter-semibold text-xs">
+                      {donation.blood_group}
+                    </Text>
                   </View>
                 </View>
               ))
             ) : (
               <View className="items-center py-12 gap-3">
                 <Heart size={48} color={colors.secondary[300]} />
-                <Text className="text-secondary-500 font-inter-semibold text-base">No recent donations</Text>
+                <Text className="text-secondary-500 font-inter-semibold text-base">
+                  No recent donations
+                </Text>
                 <Text className="text-secondary-400 font-inter-regular text-sm">
                   Be the first to make a difference!
                 </Text>

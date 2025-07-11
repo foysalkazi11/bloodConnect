@@ -1,8 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewProps } from 'react-native';
-import { colors, fonts, fontSizes, spacing, borderRadius } from '../theme';
+import { colors, fonts, fontSizes, spacing, borderRadius } from '@/theme';
 
-type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+type BadgeVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'info';
 type BadgeSize = 'sm' | 'md' | 'lg';
 
 interface BadgeProps extends ViewProps {
@@ -31,11 +37,9 @@ export const Badge: React.FC<BadgeProps> = ({
       ]}
       {...props}
     >
-      <Text style={[
-        styles.text,
-        styles[`text_${variant}`],
-        styles[`text_${size}`],
-      ]}>
+      <Text
+        style={[styles.text, styles[`text_${variant}`], styles[`text_${size}`]]}
+      >
         {label}
       </Text>
     </View>
