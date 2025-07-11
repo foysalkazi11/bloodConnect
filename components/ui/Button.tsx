@@ -1,15 +1,20 @@
 import React from 'react';
-import { 
-  TouchableOpacity, 
-  Text, 
-  ActivityIndicator, 
-  StyleSheet, 
-  TouchableOpacityProps, 
-  View 
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacityProps,
+  View,
 } from 'react-native';
-import { colors, fonts, fontSizes, spacing, borderRadius } from '../theme';
+import { colors, fonts, fontSizes, spacing, borderRadius } from '@/theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
+export type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends TouchableOpacityProps {
@@ -62,9 +67,9 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? colors.white : colors.primary[600]} 
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' ? colors.white : colors.primary[600]}
         />
       ) : (
         <View style={styles.contentContainer}>

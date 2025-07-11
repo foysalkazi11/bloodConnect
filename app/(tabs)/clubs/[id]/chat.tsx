@@ -1,7 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Send, Paperclip, Smile, Phone, Video, MoveVertical as MoreVertical } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
+  Smile,
+  Phone,
+  Video,
+  MoveVertical as MoreVertical,
+} from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
@@ -28,7 +45,7 @@ export default function ClubChatScreen() {
   const { id } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,7 +57,7 @@ export default function ClubChatScreen() {
   useEffect(() => {
     loadMessages();
     setupRealtimeSubscription();
-    
+
     return () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -65,7 +82,8 @@ export default function ClubChatScreen() {
           id: '2',
           sender_id: 'user2',
           sender_name: 'Fatima Khan',
-          content: 'Thanks for setting this up! This will make coordination much easier.',
+          content:
+            'Thanks for setting this up! This will make coordination much easier.',
           message_type: 'text',
           created_at: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
           is_own: false,
@@ -80,7 +98,7 @@ export default function ClubChatScreen() {
           is_own: true,
         },
       ];
-      
+
       setMessages(mockMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -99,23 +117,30 @@ export default function ClubChatScreen() {
     // Set up real-time subscription for new messages
     const channel = supabase
       .channel(`club_chat_${id}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'club_messages',
-        filter: `club_id=eq.${id}`,
-      }, (payload) => {
-        const newMessage = payload.new as any;
-        setMessages(prev => [...prev, {
-          id: newMessage.id,
-          sender_id: newMessage.sender_id,
-          sender_name: newMessage.sender_name,
-          content: newMessage.content,
-          message_type: newMessage.message_type,
-          created_at: newMessage.created_at,
-          is_own: newMessage.sender_id === user?.id,
-        }]);
-      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'club_messages',
+          filter: `club_id=eq.${id}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as any;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: newMessage.id,
+              sender_id: newMessage.sender_id,
+              sender_name: newMessage.sender_name,
+              content: newMessage.content,
+              message_type: newMessage.message_type,
+              created_at: newMessage.created_at,
+              is_own: newMessage.sender_id === user?.id,
+            },
+          ]);
+        }
+      )
       .on('presence', { event: 'sync' }, () => {
         // Handle user presence
       })
@@ -145,26 +170,24 @@ export default function ClubChatScreen() {
       is_own: true,
     };
 
-    setMessages(prev => [...prev, tempMessage]);
+    setMessages((prev) => [...prev, tempMessage]);
     setNewMessage('');
-    
+
     // Scroll to bottom
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
     try {
-      // Send message to Supabase
-      // const { error } = await supabase
-      //   .from('club_messages')
-      //   .insert({
-      //     club_id: id,
-      //     sender_id: user?.id,
-      //     content: newMessage,
-      //     message_type: 'text',
-      //   });
+      //Send message to Supabase
+      const { error } = await supabase.from('club_messages').insert({
+        club_id: id,
+        sender_id: user?.id,
+        content: newMessage,
+        message_type: 'text',
+      });
 
-      // if (error) throw error;
+      if (error) throw error;
     } catch (error) {
       console.error('Error sending message:', error);
       showNotification({
@@ -173,15 +196,15 @@ export default function ClubChatScreen() {
         message: 'Failed to send message',
         duration: 4000,
       });
-      
+
       // Remove the temp message on error
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempMessage.id));
     }
   };
 
   const handleTyping = (text: string) => {
     setNewMessage(text);
-    
+
     if (!isTyping && text.length > 0) {
       setIsTyping(true);
       // Send typing indicator
@@ -202,51 +225,71 @@ export default function ClubChatScreen() {
   const formatMessageTime = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60)
+    );
+
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    
+
     return date.toLocaleDateString();
   };
 
   const renderMessage = (message: ChatMessage, index: number) => {
-    const isConsecutive = index > 0 && 
+    const isConsecutive =
+      index > 0 &&
       messages[index - 1].sender_id === message.sender_id &&
-      new Date(message.created_at).getTime() - new Date(messages[index - 1].created_at).getTime() < 5 * 60 * 1000;
+      new Date(message.created_at).getTime() -
+        new Date(messages[index - 1].created_at).getTime() <
+        5 * 60 * 1000;
 
     return (
-      <View key={message.id} style={[
-        styles.messageContainer,
-        message.is_own ? styles.ownMessageContainer : styles.otherMessageContainer,
-        isConsecutive && styles.consecutiveMessage,
-      ]}>
+      <View
+        key={message.id}
+        style={[
+          styles.messageContainer,
+          message.is_own
+            ? styles.ownMessageContainer
+            : styles.otherMessageContainer,
+          isConsecutive && styles.consecutiveMessage,
+        ]}
+      >
         {!message.is_own && !isConsecutive && (
           <View style={styles.messageHeader}>
             <TextAvatar name={message.sender_name} size={32} />
             <Text style={styles.senderName}>{message.sender_name}</Text>
-            <Text style={styles.messageTime}>{formatMessageTime(message.created_at)}</Text>
+            <Text style={styles.messageTime}>
+              {formatMessageTime(message.created_at)}
+            </Text>
           </View>
         )}
-        
-        <View style={[
-          styles.messageBubble,
-          message.is_own ? styles.ownMessageBubble : styles.otherMessageBubble,
-          !message.is_own && isConsecutive && styles.consecutiveMessageBubble,
-        ]}>
-          <Text style={[
-            styles.messageText,
-            message.is_own ? styles.ownMessageText : styles.otherMessageText,
-          ]}>
+
+        <View
+          style={[
+            styles.messageBubble,
+            message.is_own
+              ? styles.ownMessageBubble
+              : styles.otherMessageBubble,
+            !message.is_own && isConsecutive && styles.consecutiveMessageBubble,
+          ]}
+        >
+          <Text
+            style={[
+              styles.messageText,
+              message.is_own ? styles.ownMessageText : styles.otherMessageText,
+            ]}
+          >
             {message.content}
           </Text>
         </View>
-        
+
         {message.is_own && (
-          <Text style={styles.ownMessageTime}>{formatMessageTime(message.created_at)}</Text>
+          <Text style={styles.ownMessageTime}>
+            {formatMessageTime(message.created_at)}
+          </Text>
         )}
       </View>
     );
@@ -266,15 +309,18 @@ export default function ClubChatScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="#111827" />
         </TouchableOpacity>
-        
+
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>Club Chat</Text>
           <Text style={styles.headerSubtitle}>12 members online</Text>
         </View>
-        
+
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.headerActionButton}>
             <Phone size={20} color="#DC2626" />
@@ -288,7 +334,7 @@ export default function ClubChatScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.chatContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -299,10 +345,12 @@ export default function ClubChatScreen() {
           style={styles.messagesContainer}
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
         >
           {messages.map((message, index) => renderMessage(message, index))}
-          
+
           {/* Typing Indicator */}
           {typingUsers.length > 0 && (
             <View style={styles.typingContainer}>
@@ -314,7 +362,8 @@ export default function ClubChatScreen() {
                 </View>
               </View>
               <Text style={styles.typingText}>
-                {typingUsers.map(u => u.user_name).join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+                {typingUsers.map((u) => u.user_name).join(', ')}{' '}
+                {typingUsers.length === 1 ? 'is' : 'are'} typing...
               </Text>
             </View>
           )}
@@ -325,7 +374,7 @@ export default function ClubChatScreen() {
           <TouchableOpacity style={styles.attachButton}>
             <Paperclip size={20} color="#6B7280" />
           </TouchableOpacity>
-          
+
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
@@ -340,11 +389,13 @@ export default function ClubChatScreen() {
               <Smile size={20} color="#6B7280" />
             </TouchableOpacity>
           </View>
-          
+
           <TouchableOpacity
             style={[
               styles.sendButton,
-              newMessage.trim() ? styles.sendButtonActive : styles.sendButtonInactive
+              newMessage.trim()
+                ? styles.sendButtonActive
+                : styles.sendButtonInactive,
             ]}
             onPress={handleSendMessage}
             disabled={!newMessage.trim()}
