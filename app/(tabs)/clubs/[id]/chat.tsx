@@ -119,14 +119,17 @@ export default function ClubChatScreen() {
             scrollViewRef.current?.scrollToEnd({ animated: true });
           }, 100);
 
-          // Show notification for messages from others
+          // Show popup notification for messages from others (only when on chat page)
           if (newMessage.sender_id !== user.id) {
-            showNotification({
-              type: 'info',
-              title: 'New Message',
-              message: `${newMessage.sender_name}: ${newMessage.content}`,
-              duration: 3000,
-            });
+            showNotification(
+              {
+                type: 'info',
+                title: 'New Message',
+                message: `${newMessage.sender_name}: ${newMessage.content}`,
+                duration: 3000,
+              },
+              true
+            ); // Force show popup since we're on chat page
           }
         },
         (updatedMessage) => {
