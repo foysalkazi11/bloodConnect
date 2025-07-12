@@ -1,0 +1,183 @@
+{
+  "timestamp": "2025-07-12T09:27:26.485Z",
+  "totalTests": 21,
+  "passed": 20,
+  "failed": 1,
+  "successRate": "95.2",
+  "results": [
+    {
+      "testName": "Push Service Initialization",
+      "success": true,
+      "message": "Test passed successfully",
+      "executionTime": 80
+    },
+    {
+      "testName": "User Preferences Loading",
+      "success": true,
+      "message": "Test passed successfully",
+      "executionTime": 122
+    },
+    {
+      "testName": "Notification Creation",
+      "success": false,
+      "message": "Test failed",
+      "executionTime": 168
+    },
+    {
+      "testName": "Database Connection",
+      "success": true,
+      "message": "Test passed successfully",
+      "executionTime": 123
+    },
+    {
+      "testName": "Permission Handling",
+      "success": true,
+      "message": "Test passed successfully",
+      "executionTime": 274
+    },
+    {
+      "testName": "Urgent Background Routing",
+      "type": "emergency_blood_request",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Emergency notification sent via push (background)",
+      "deliveryMethod": "push",
+      "executionTime": 569
+    },
+    {
+      "testName": "Active Foreground Routing",
+      "type": "direct_message",
+      "appState": "foreground",
+      "userActivity": "high",
+      "success": true,
+      "message": "Direct message sent in-app (user active)",
+      "deliveryMethod": "in_app",
+      "executionTime": 510
+    },
+    {
+      "testName": "Quiet Hours Handling",
+      "type": "club_message",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Club message sent via push (background)",
+      "deliveryMethod": "push",
+      "executionTime": 450
+    },
+    {
+      "testName": "Emergency Override",
+      "type": "emergency_blood_request",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Emergency notification sent via push (background)",
+      "deliveryMethod": "push",
+      "executionTime": 394
+    },
+    {
+      "testName": "Batching Logic",
+      "type": "club_announcement",
+      "appState": "background",
+      "userActivity": "medium",
+      "success": true,
+      "message": "Club announcement sent via push",
+      "deliveryMethod": "push",
+      "executionTime": 420
+    },
+    {
+      "testName": "emergency_blood_request (background, low activity)",
+      "type": "emergency_blood_request",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Emergency notification sent via push (background)",
+      "deliveryMethod": "push",
+      "executionTime": 575
+    },
+    {
+      "testName": "emergency_blood_request (foreground, high activity)",
+      "type": "emergency_blood_request",
+      "appState": "foreground",
+      "userActivity": "high",
+      "success": true,
+      "message": "Emergency notification sent via both push and in-app (foreground)",
+      "deliveryMethod": "both",
+      "executionTime": 388
+    },
+    {
+      "testName": "direct_message (background, low activity)",
+      "type": "direct_message",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Direct message sent via push (user inactive)",
+      "deliveryMethod": "push",
+      "executionTime": 103
+    },
+    {
+      "testName": "direct_message (foreground, high activity)",
+      "type": "direct_message",
+      "appState": "foreground",
+      "userActivity": "high",
+      "success": true,
+      "message": "Direct message sent in-app (user active)",
+      "deliveryMethod": "in_app",
+      "executionTime": 366
+    },
+    {
+      "testName": "club_message (background, medium activity)",
+      "type": "club_message",
+      "appState": "background",
+      "userActivity": "medium",
+      "success": true,
+      "message": "Club message sent via push (background)",
+      "deliveryMethod": "push",
+      "executionTime": 203
+    },
+    {
+      "testName": "club_message (foreground, medium activity)",
+      "type": "club_message",
+      "appState": "foreground",
+      "userActivity": "medium",
+      "success": true,
+      "message": "Club message sent in-app (foreground)",
+      "deliveryMethod": "in_app",
+      "executionTime": 348
+    },
+    {
+      "testName": "club_announcement (background, low activity)",
+      "type": "club_announcement",
+      "appState": "background",
+      "userActivity": "low",
+      "success": true,
+      "message": "Club announcement sent via push",
+      "deliveryMethod": "push",
+      "executionTime": 156
+    },
+    {
+      "testName": "Routing Metrics Collection",
+      "success": true,
+      "message": "Performance test passed",
+      "executionTime": 172
+    },
+    {
+      "testName": "User Activity Tracking",
+      "success": true,
+      "message": "Performance test passed",
+      "executionTime": 83
+    },
+    {
+      "testName": "Notification History",
+      "success": true,
+      "message": "Performance test passed",
+      "executionTime": 51
+    },
+    {
+      "testName": "Analytics Generation",
+      "success": true,
+      "message": "Performance test passed",
+      "executionTime": 102
+    }
+  ]
+}

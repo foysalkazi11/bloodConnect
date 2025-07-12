@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Users, MapPin, Plus, Search, Award, Calendar } from 'lucide-react-native';
+import {
+  Users,
+  MapPin,
+  Plus,
+  Search,
+  Award,
+  Calendar,
+} from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { router } from 'expo-router';
 import { TextAvatar } from '@/components/TextAvatar';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
+import AppHeader from '@/components/AppHeader';
 
 interface Club {
   id: string;
@@ -15,12 +32,11 @@ interface Club {
   description?: string;
   website?: string;
   country?: string;
-  district?: string; 
-  police_station?: string; 
+  district?: string;
+  police_station?: string;
   state?: string;
   city?: string;
   address?: string;
-  description?: string;
   total_members: number;
   total_donations: number;
   founded_year?: number;
@@ -42,11 +58,13 @@ export default function ClubsScreen() {
     totalMembers: 0,
     totalDonations: 0,
   });
-  const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(null);
+  const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(
+    null
+  );
 
   // Check if current user is a donor (not a club)
   const isDonor = profile?.user_type === 'donor';
-  
+
   // Check if user is not signed in
   const isNotSignedIn = !user;
 
@@ -59,19 +77,19 @@ export default function ClubsScreen() {
       setLoading(true);
 
       console.log('Loading clubs for all users regardless of type');
-      
+
       // Explicitly fetch all clubs with user_type = 'club'
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_type', 'club')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
-      
+
       let clubsList = data || [];
       console.log('Fetched clubs count:', clubsList.length);
-      
+
       // If user is logged in, check which clubs they're a member of but still show all clubs
       if (user) {
         try {
@@ -81,52 +99,68 @@ export default function ClubsScreen() {
             .select('club_id')
             .eq('member_id', user.id)
             .eq('is_active', true);
-        
+
           // Get pending join requests
           const { data: pendingRequests, error: requestsError } = await supabase
             .from('club_join_requests')
             .select('club_id')
             .eq('user_id', user.id)
             .eq('status', 'pending');
-        
+
           // Mark clubs as joined or with pending requests
-          const memberClubIds = new Set(memberships?.map(m => m.club_id) || []);
-          const pendingClubIds = new Set(pendingRequests?.map(r => r.club_id) || []);
-          
-          clubsList = clubsList.map(club => ({
+          const memberClubIds = new Set(
+            memberships?.map((m) => m.club_id) || []
+          );
+          const pendingClubIds = new Set(
+            pendingRequests?.map((r) => r.club_id) || []
+          );
+
+          clubsList = clubsList.map((club) => ({
             ...club,
             is_joined: memberClubIds.has(club.id),
             is_pending: pendingClubIds.has(club.id),
             has_new_posts: Math.random() > 0.5, // Random for demo
-            last_activity: getRandomTimeAgo() // Random for demo
+            last_activity: getRandomTimeAgo(), // Random for demo
           }));
         } catch (e) {
           console.error('Error checking memberships:', e);
         }
       }
-      
+
       // Calculate total stats
       const totalStats = {
         totalClubs: clubsList.length,
-        totalMembers: clubsList.reduce((sum, club) => sum + (club.total_members || 0), 0),
-        totalDonations: clubsList.reduce((sum, club) => sum + (club.total_donations || 0), 0)
+        totalMembers: clubsList.reduce(
+          (sum, club) => sum + (club.total_members || 0),
+          0
+        ),
+        totalDonations: clubsList.reduce(
+          (sum, club) => sum + (club.total_donations || 0),
+          0
+        ),
       };
-      
+
       setClubs(clubsList);
       setStats(totalStats);
     } catch (error) {
       console.error('Error loading clubs:', error);
-      
+
       // Fallback to mock data
       const mockClubs = getMockClubs();
       console.log('Using mock data, clubs count:', mockClubs.length);
       setClubs(mockClubs);
       setStats({
         totalClubs: mockClubs.length,
-        totalMembers: mockClubs.reduce((sum, club) => sum + club.total_members, 0),
-        totalDonations: mockClubs.reduce((sum, club) => sum + club.total_donations, 0)
+        totalMembers: mockClubs.reduce(
+          (sum, club) => sum + club.total_members,
+          0
+        ),
+        totalDonations: mockClubs.reduce(
+          (sum, club) => sum + club.total_donations,
+          0
+        ),
       });
-      
+
       showNotification({
         type: 'error',
         title: 'Error',
@@ -139,7 +173,15 @@ export default function ClubsScreen() {
   };
 
   const getRandomTimeAgo = () => {
-    const options = ['Just now', '5 minutes ago', '1 hour ago', '3 hours ago', 'Today', 'Yesterday', '2 days ago'];
+    const options = [
+      'Just now',
+      '5 minutes ago',
+      '1 hour ago',
+      '3 hours ago',
+      'Today',
+      'Yesterday',
+      '2 days ago',
+    ];
     return options[Math.floor(Math.random() * options.length)];
   };
 
@@ -154,7 +196,7 @@ export default function ClubsScreen() {
       router.push('/auth');
       return;
     }
-    
+
     if (!profile) {
       showNotification({
         type: 'info',
@@ -165,7 +207,7 @@ export default function ClubsScreen() {
       router.push('/complete-profile');
       return;
     }
-    
+
     // Check if user is a club (clubs can't join other clubs)
     if (profile.user_type === 'club') {
       showNotification({
@@ -176,9 +218,9 @@ export default function ClubsScreen() {
       });
       return;
     }
-    
+
     // Check if already a member
-    const club = clubs.find(c => c.id === clubId);
+    const club = clubs.find((c) => c.id === clubId);
     if (club?.is_joined) {
       // Show leave confirmation
       Alert.alert(
@@ -186,16 +228,16 @@ export default function ClubsScreen() {
         `Are you sure you want to leave ${club.name}?`,
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Leave', 
+          {
+            text: 'Leave',
             style: 'destructive',
-            onPress: () => handleLeaveClub(clubId, club.name)
-          }
+            onPress: () => handleLeaveClub(clubId, club.name),
+          },
         ]
       );
       return;
     }
-    
+
     // Check if already has a pending request
     if (club?.is_pending) {
       showNotification({
@@ -206,22 +248,23 @@ export default function ClubsScreen() {
       });
       return;
     }
-    
+
     try {
       setJoinRequestLoading(clubId);
-      
+
       // Create join request
-      const { error } = await supabase
-        .from('club_join_requests')
-        .insert({
-          club_id: clubId,
-          user_id: user.id,
-          message: `I would like to join this club. My blood group is ${profile.blood_group || 'not specified'}.`,
-          status: 'pending'
-        });
-      
+      const { error } = await supabase.from('club_join_requests').insert({
+        club_id: clubId,
+        user_id: user.id,
+        message: `I would like to join this club. My blood group is ${
+          profile.blood_group || 'not specified'
+        }.`,
+        status: 'pending',
+      });
+
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
+          // Unique violation
           showNotification({
             type: 'info',
             title: 'Already Requested',
@@ -233,14 +276,12 @@ export default function ClubsScreen() {
         }
       } else {
         // Update local state
-        setClubs(prevClubs => 
-          prevClubs.map(club => 
-            club.id === clubId 
-              ? { ...club, is_pending: true }
-              : club
+        setClubs((prevClubs) =>
+          prevClubs.map((club) =>
+            club.id === clubId ? { ...club, is_pending: true } : club
           )
         );
-        
+
         showNotification({
           type: 'success',
           title: 'Request Sent',
@@ -260,29 +301,27 @@ export default function ClubsScreen() {
       setJoinRequestLoading(null);
     }
   };
-  
+
   const handleLeaveClub = async (clubId: string, clubName: string) => {
     try {
       setJoinRequestLoading(clubId);
-      
+
       // Set member as inactive
       const { error } = await supabase
         .from('club_members')
         .update({ is_active: false })
         .eq('club_id', clubId)
         .eq('member_id', user?.id);
-      
+
       if (error) throw error;
-      
+
       // Update local state
-      setClubs(prevClubs => 
-        prevClubs.map(club => 
-          club.id === clubId 
-            ? { ...club, is_joined: false }
-            : club
+      setClubs((prevClubs) =>
+        prevClubs.map((club) =>
+          club.id === clubId ? { ...club, is_joined: false } : club
         )
       );
-      
+
       showNotification({
         type: 'success',
         title: 'Left Club',
@@ -314,7 +353,7 @@ export default function ClubsScreen() {
       router.push('/auth');
       return;
     }
-    
+
     // If user is a club, they can't join other clubs
     if (profile?.user_type === 'club') {
       // If this is their own club, allow access
@@ -322,7 +361,7 @@ export default function ClubsScreen() {
         router.push(`/(tabs)/clubs/${clubId}`);
         return;
       }
-      
+
       showNotification({
         type: 'info',
         title: 'Access Restricted',
@@ -331,19 +370,19 @@ export default function ClubsScreen() {
       });
       return;
     }
-    
+
     // For donors, check if they're a member of the club
-    const club = clubs.find(c => c.id === clubId);
+    const club = clubs.find((c) => c.id === clubId);
     if (club?.is_joined) {
       // If they're a member, allow access
       router.push(`/(tabs)/clubs/${clubId}`);
       return;
     }
-    
+
     // Otherwise, navigate but the club page will show restricted access
     router.push(`/(tabs)/clubs/${clubId}`);
   };
-  
+
   const handleCreateClub = () => {
     if (!user) {
       showNotification({
@@ -355,7 +394,7 @@ export default function ClubsScreen() {
       router.push('/auth');
       return;
     }
-    
+
     showNotification({
       type: 'info',
       title: 'Coming Soon',
@@ -364,10 +403,15 @@ export default function ClubsScreen() {
     });
   };
 
-  const filteredClubs = clubs.filter(club =>
-    club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (getLocationDisplay(club) && getLocationDisplay(club).toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (club.description && club.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredClubs = clubs.filter(
+    (club) =>
+      club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (getLocationDisplay(club) &&
+        getLocationDisplay(club)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())) ||
+      (club.description &&
+        club.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   // Get location display text for a club
@@ -388,7 +432,8 @@ export default function ClubsScreen() {
         district: 'DHAKA',
         police_station: 'DHANMONDI',
         country: 'BANGLADESH',
-        description: 'Dedicated to saving lives through regular blood donation drives and awareness campaigns.',
+        description:
+          'Dedicated to saving lives through regular blood donation drives and awareness campaigns.',
         total_members: 245,
         total_donations: 1250,
         founded_year: 2019,
@@ -402,7 +447,8 @@ export default function ClubsScreen() {
         district: 'CHATTOGRAM',
         police_station: 'KOTWALI',
         country: 'BANGLADESH',
-        description: 'A community-driven club focused on emergency blood supply and donor awareness.',
+        description:
+          'A community-driven club focused on emergency blood supply and donor awareness.',
         total_members: 189,
         total_donations: 890,
         founded_year: 2020,
@@ -416,7 +462,8 @@ export default function ClubsScreen() {
         district: 'SYLHET',
         police_station: 'KOTWALI',
         country: 'BANGLADESH',
-        description: 'Young volunteers committed to building a strong blood donation network.',
+        description:
+          'Young volunteers committed to building a strong blood donation network.',
         total_members: 156,
         total_donations: 2100,
         founded_year: 2018,
@@ -428,19 +475,21 @@ export default function ClubsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('clubs.title')}</Text>
-        {/* Only show Add Club button if user is not signed in */}
-        {isNotSignedIn && (
-          <TouchableOpacity 
-            style={styles.createButton}
-            onPress={handleCreateClub}
-          >
-            <Plus size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        )}
-      </View>
+    <View style={styles.container}>
+      <AppHeader
+        title={t('clubs.title')}
+        showNotifications={true}
+        rightComponent={
+          isNotSignedIn ? (
+            <TouchableOpacity
+              style={styles.createButton}
+              onPress={handleCreateClub}
+            >
+              <Plus size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Search Bar */}
@@ -499,7 +548,9 @@ export default function ClubsScreen() {
                   <View style={styles.clubHeader}>
                     <View style={styles.clubLogoContainer}>
                       <TextAvatar name={club.name} size={48} />
-                      {club.has_new_posts && <View style={styles.newPostIndicator} />}
+                      {club.has_new_posts && (
+                        <View style={styles.newPostIndicator} />
+                      )}
                     </View>
                     <View style={styles.clubInfo}>
                       <Text style={styles.clubName}>{club.name}</Text>
@@ -510,7 +561,8 @@ export default function ClubsScreen() {
                         </Text>
                       </View>
                       <Text style={styles.membersText}>
-                        {club.total_members} {t('clubs.members')} • Last activity: {club.last_activity}
+                        {club.total_members} {t('clubs.members')} • Last
+                        activity: {club.last_activity}
                       </Text>
                     </View>
                     {/* Only show Join button for donors, not for clubs */}
@@ -520,7 +572,8 @@ export default function ClubsScreen() {
                           styles.joinButton,
                           club.is_joined && styles.joinButtonActive,
                           club.is_pending && styles.joinButtonPending,
-                          joinRequestLoading === club.id && styles.joinButtonLoading
+                          joinRequestLoading === club.id &&
+                            styles.joinButtonLoading,
                         ]}
                         onPress={(e) => {
                           e.stopPropagation();
@@ -531,11 +584,18 @@ export default function ClubsScreen() {
                         {joinRequestLoading === club.id ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
-                          <Text style={[
-                            styles.joinButtonText,
-                            (club.is_joined || club.is_pending) && styles.joinButtonTextActive
-                          ]}>
-                            {club.is_joined ? 'Joined' : club.is_pending ? 'Pending' : 'Join'}
+                          <Text
+                            style={[
+                              styles.joinButtonText,
+                              (club.is_joined || club.is_pending) &&
+                                styles.joinButtonTextActive,
+                            ]}
+                          >
+                            {club.is_joined
+                              ? 'Joined'
+                              : club.is_pending
+                              ? 'Pending'
+                              : 'Join'}
                           </Text>
                         )}
                       </TouchableOpacity>
@@ -564,7 +624,9 @@ export default function ClubsScreen() {
                   {/* New Posts Indicator */}
                   {club.has_new_posts && (
                     <View style={styles.newPostsBanner}>
-                      <Text style={styles.newPostsText}>New posts available</Text>
+                      <Text style={styles.newPostsText}>
+                        New posts available
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -584,17 +646,19 @@ export default function ClubsScreen() {
                   Create a blood donation club in your community
                 </Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.createClubButton}
                 onPress={handleCreateClub}
               >
-                <Text style={styles.createClubButtonText}>{t('clubs.createClub')}</Text>
+                <Text style={styles.createClubButtonText}>
+                  {t('clubs.createClub')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

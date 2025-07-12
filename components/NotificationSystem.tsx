@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from 'react';
 import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { usePathname } from 'expo-router';
 // import { styled } from 'nativewind';
 import {
   CircleCheck as CheckCircle,
@@ -31,7 +32,10 @@ export interface Notification {
 }
 
 interface NotificationContextType {
-  showNotification: (notification: Omit<Notification, 'id'>) => void;
+  showNotification: (
+    notification: Omit<Notification, 'id'>,
+    showPopup?: boolean
+  ) => void;
   hideNotification: (id: string) => void;
   clearAll: () => void;
 }
@@ -237,9 +241,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
   children,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const pathname = usePathname();
+
+  // Check if current route is a chat page where popups should be shown
+  const isChatPage = useCallback(() => {
+    if (!pathname) return false;
+
+    // Show popups on chat and direct message pages
+    return (
+      pathname.includes('/chat') ||
+      pathname.includes('/direct-message') ||
+      pathname.match(/\/clubs\/[^\/]+\/(chat|direct-message)/)
+    );
+  }, [pathname]);
 
   const showNotification = useCallback(
-    (notificationData: Omit<Notification, 'id'>) => {
+    (notificationData: Omit<Notification, 'id'>, showPopup?: boolean) => {
       const id =
         Date.now().toString() + Math.random().toString(36).substr(2, 9);
       const notification: Notification = {
@@ -248,9 +265,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({
         ...notificationData,
       };
 
-      setNotifications((prev) => [notification, ...prev]);
+      // Only show popup if explicitly requested or if we're on a chat page
+      const shouldShowPopup =
+        showPopup !== undefined ? showPopup : isChatPage();
+
+      if (shouldShowPopup) {
+        setNotifications((prev) => [notification, ...prev]);
+      }
     },
-    []
+    [isChatPage]
   );
 
   const hideNotification = useCallback((id: string) => {
