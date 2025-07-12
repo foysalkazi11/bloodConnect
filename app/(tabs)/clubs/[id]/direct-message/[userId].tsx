@@ -25,74 +25,72 @@ import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import {
   chatService,
-  ClubMessage,
-  TypingIndicator,
+  DirectMessage,
+  Conversation,
 } from '@/services/chatService';
+import { supabase } from '@/lib/supabase';
 
-interface ChatMessageUI extends ClubMessage {
+interface DirectMessageUI extends DirectMessage {
   is_own: boolean;
 }
 
-export default function ClubChatScreen() {
-  const { id } = useLocalSearchParams();
+export default function DirectMessageScreen() {
+  const { id, userId } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
 
-  const [messages, setMessages] = useState<ChatMessageUI[]>([]);
+  const [messages, setMessages] = useState<DirectMessageUI[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [typingUsers, setTypingUsers] = useState<TypingIndicator[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [onlineCount, setOnlineCount] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
-    if (!id || !user?.id) return;
+    if (!userId || !user?.id) return;
 
-    let isMounted = true;
-
-    const initializeChat = async () => {
-      try {
-        await loadMessages();
-        if (isMounted) {
-          setupRealtimeSubscription();
-          await updatePresence();
-        }
-      } catch (error) {
-        console.error('Error initializing chat:', error);
-      }
-    };
-
-    initializeChat();
+    initializeConversation();
+    loadRecipientInfo();
 
     return () => {
-      isMounted = false;
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      // Unsubscribe from this specific club channel
-      chatService.unsubscribe(`club_${id}_messages`);
-      chatService.unsubscribe(`club_${id}_presence`);
+      chatService.unsubscribeAll();
     };
-  }, [id, user?.id]);
+  }, [userId, user?.id]);
 
-  const loadMessages = async () => {
-    if (!id || !user?.id) return;
+  const initializeConversation = async () => {
+    if (!userId || !user?.id) return;
 
     try {
-      const clubMessages = await chatService.getClubMessages(id as string);
-      const messagesWithOwnership = clubMessages.map((msg) => ({
-        ...msg,
-        is_own: msg.sender_id === user.id,
-      }));
-      setMessages(messagesWithOwnership);
+      // Get or create conversation
+      const conv = await chatService.getOrCreateConversation(
+        user.id,
+        userId as string
+      );
+
+      setConversation(conv);
+      setRecipientName(conv.participant_name);
+      setRecipientEmail(conv.participant_email);
+
+      // Load messages for this conversation
+      await loadMessages(conv.conversation_id);
+
+      // Set up real-time subscription
+      setupRealtimeSubscription(conv.conversation_id);
+
+      // Mark messages as read
+      await chatService.markMessagesAsRead(conv.conversation_id, user.id);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error initializing conversation:', error);
       showNotification({
         type: 'error',
         title: 'Error',
-        message: 'Failed to load messages',
+        message: 'Failed to load conversation',
         duration: 4000,
       });
     } finally {
@@ -100,103 +98,104 @@ export default function ClubChatScreen() {
     }
   };
 
-  const setupRealtimeSubscription = () => {
-    if (!id || !user?.id) return;
+  const loadRecipientInfo = async () => {
+    if (!userId) return;
 
     try {
-      // Subscribe to new messages
-      const messageChannel = chatService.subscribeToClubMessages(
-        id as string,
-        (newMessage) => {
-          const messageWithOwnership = {
-            ...newMessage,
-            is_own: newMessage.sender_id === user.id,
-          };
-          setMessages((prev) => [...prev, messageWithOwnership]);
+      const { data: recipientData, error } = await supabase
+        .from('user_profiles')
+        .select('name, email')
+        .eq('id', userId)
+        .single();
 
-          // Scroll to bottom when new message arrives
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 100);
+      if (error) throw error;
 
-          // Show notification for messages from others
-          if (newMessage.sender_id !== user.id) {
-            showNotification({
-              type: 'info',
-              title: 'New Message',
-              message: `${newMessage.sender_name}: ${newMessage.content}`,
-              duration: 3000,
-            });
-          }
-        },
-        (updatedMessage) => {
-          const messageWithOwnership = {
-            ...updatedMessage,
-            is_own: updatedMessage.sender_id === user.id,
-          };
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === updatedMessage.id ? messageWithOwnership : msg
-            )
-          );
-        },
-        (deletedMessageId) => {
-          setMessages((prev) =>
-            prev.filter((msg) => msg.id !== deletedMessageId)
-          );
-        }
-      );
-
-      // Subscribe to presence and typing indicators
-      const presenceChannel = chatService.subscribeToPresence(
-        id as string,
-        (presence) => {
-          setOnlineCount(presence.length);
-        },
-        (typing) => {
-          const filteredTyping = typing.filter((t) => t.user_id !== user.id);
-          setTypingUsers(filteredTyping);
-        }
-      );
+      setRecipientName(recipientData.name);
+      setRecipientEmail(recipientData.email);
     } catch (error) {
-      console.error('Error setting up realtime subscriptions:', error);
-      showNotification({
-        type: 'error',
-        title: 'Connection Error',
-        message: 'Failed to connect to real-time chat',
-        duration: 4000,
-      });
+      console.error('Error loading recipient info:', error);
     }
   };
 
-  const updatePresence = async () => {
-    if (!id || !user?.id) return;
-
+  const loadMessages = async (conversationId: string) => {
     try {
-      await chatService.updateMemberPresence(id as string, user.id, 'online');
+      const directMessages = await chatService.getDirectMessages(
+        conversationId
+      );
+      const messagesWithOwnership = directMessages.map((msg) => ({
+        ...msg,
+        is_own: msg.sender_id === user?.id,
+      }));
+      setMessages(messagesWithOwnership);
     } catch (error) {
-      console.error('Error updating presence:', error);
+      console.error('Error loading messages:', error);
     }
+  };
+
+  const setupRealtimeSubscription = (conversationId: string) => {
+    if (!user?.id) return;
+
+    chatService.subscribeToDirectMessages(
+      conversationId,
+      (newMessage) => {
+        const messageWithOwnership = {
+          ...newMessage,
+          is_own: newMessage.sender_id === user.id,
+        };
+        setMessages((prev) => [...prev, messageWithOwnership]);
+
+        // Scroll to bottom when new message arrives
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+
+        // Show notification for messages from others
+        if (newMessage.sender_id !== user.id) {
+          showNotification({
+            type: 'info',
+            title: 'New Message',
+            message: `${newMessage.sender_name}: ${newMessage.content}`,
+            duration: 3000,
+          });
+        }
+
+        // Mark message as read if it's not from current user
+        if (newMessage.sender_id !== user.id) {
+          chatService.markMessagesAsRead(conversationId, user.id);
+        }
+      },
+      (updatedMessage) => {
+        const messageWithOwnership = {
+          ...updatedMessage,
+          is_own: updatedMessage.sender_id === user.id,
+        };
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === updatedMessage.id ? messageWithOwnership : msg
+          )
+        );
+      },
+      (deletedMessageId) => {
+        setMessages((prev) =>
+          prev.filter((msg) => msg.id !== deletedMessageId)
+        );
+      }
+    );
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !id || !user?.id) return;
+    if (!newMessage.trim() || !conversation || !user?.id || !userId) return;
 
     const messageContent = newMessage.trim();
     setNewMessage('');
 
-    // Stop typing indicator
-    if (isTyping) {
-      setIsTyping(false);
-      try {
-        await chatService.setTypingStatus(id as string, user.id, false);
-      } catch (error) {
-        console.error('Error clearing typing status:', error);
-      }
-    }
-
     try {
-      await chatService.sendClubMessage(id as string, user.id, messageContent);
+      await chatService.sendDirectMessage(
+        conversation.conversation_id,
+        user.id,
+        userId as string,
+        messageContent
+      );
 
       // Scroll to bottom
       setTimeout(() => {
@@ -213,34 +212,18 @@ export default function ClubChatScreen() {
     }
   };
 
-  const handleTyping = async (text: string) => {
+  const handleTyping = (text: string) => {
     setNewMessage(text);
 
-    if (!id || !user?.id) return;
-
-    try {
-      if (!isTyping && text.length > 0) {
-        setIsTyping(true);
-        await chatService.setTypingStatus(id as string, user.id, true);
-      }
-
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
-      // Set new timeout
-      typingTimeoutRef.current = setTimeout(async () => {
-        setIsTyping(false);
-        try {
-          await chatService.setTypingStatus(id as string, user.id, false);
-        } catch (error) {
-          console.error('Error clearing typing status:', error);
-        }
-      }, 1000);
-    } catch (error) {
-      console.error('Error updating typing status:', error);
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
     }
+
+    // Set new timeout to stop typing indicator
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
   };
 
   const formatMessageTime = (dateString: string) => {
@@ -259,7 +242,7 @@ export default function ClubChatScreen() {
     return date.toLocaleDateString();
   };
 
-  const renderMessage = (message: ChatMessageUI, index: number) => {
+  const renderMessage = (message: DirectMessageUI, index: number) => {
     const isConsecutive =
       index > 0 &&
       messages[index - 1].sender_id === message.sender_id &&
@@ -280,9 +263,12 @@ export default function ClubChatScreen() {
               <Text style={styles.editedText}>(edited)</Text>
             )}
           </View>
-          <Text style={styles.ownMessageTime}>
-            {formatMessageTime(message.created_at)}
-          </Text>
+          <View style={styles.ownMessageFooter}>
+            <Text style={styles.ownMessageTime}>
+              {formatMessageTime(message.created_at)}
+            </Text>
+            {message.is_read && <Text style={styles.readStatus}>Read</Text>}
+          </View>
         </View>
       );
     } else {
@@ -340,7 +326,7 @@ export default function ClubChatScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading chat...</Text>
+          <Text style={styles.loadingText}>Loading conversation...</Text>
         </View>
       </SafeAreaView>
     );
@@ -358,10 +344,8 @@ export default function ClubChatScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>Club Chat</Text>
-          <Text style={styles.headerSubtitle}>
-            {onlineCount} member{onlineCount !== 1 ? 's' : ''} online
-          </Text>
+          <Text style={styles.headerTitle}>{recipientName}</Text>
+          <Text style={styles.headerSubtitle}>{recipientEmail}</Text>
         </View>
 
         <View style={styles.headerActions}>
@@ -392,23 +376,14 @@ export default function ClubChatScreen() {
             scrollViewRef.current?.scrollToEnd({ animated: true })
           }
         >
-          {messages.map((message, index) => renderMessage(message, index))}
-
-          {/* Typing Indicator */}
-          {typingUsers.length > 0 && (
-            <View style={styles.typingContainer}>
-              <View style={styles.typingBubble}>
-                <View style={styles.typingDots}>
-                  <View style={[styles.typingDot, styles.typingDot1]} />
-                  <View style={[styles.typingDot, styles.typingDot2]} />
-                  <View style={[styles.typingDot, styles.typingDot3]} />
-                </View>
-              </View>
-              <Text style={styles.typingText}>
-                {typingUsers.map((u) => u.user_name).join(', ')}{' '}
-                {typingUsers.length === 1 ? 'is' : 'are'} typing...
+          {messages.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>
+                Start your conversation with {recipientName}
               </Text>
             </View>
+          ) : (
+            messages.map((message, index) => renderMessage(message, index))
           )}
         </ScrollView>
 
@@ -421,7 +396,7 @@ export default function ClubChatScreen() {
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder="Type a message..."
+              placeholder={`Message ${recipientName}...`}
               placeholderTextColor="#9CA3AF"
               value={newMessage}
               onChangeText={handleTyping}
@@ -521,6 +496,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: 8,
+    flexGrow: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
   },
   messageContainer: {
     marginBottom: 12,
@@ -657,53 +645,23 @@ const styles = StyleSheet.create({
     marginTop: 3,
     opacity: 0.8,
   },
+  ownMessageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 3,
+    marginRight: 4,
+    gap: 8,
+  },
   ownMessageTime: {
     fontFamily: 'Inter-Regular',
     fontSize: 10,
     color: '#9CA3AF',
-    marginTop: 3,
-    alignSelf: 'flex-end',
-    marginRight: 4,
   },
-  typingContainer: {
-    alignItems: 'flex-start',
-    marginTop: 8,
-  },
-  typingBubble: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    borderBottomLeftRadius: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    marginLeft: 40,
-  },
-  typingDots: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#9CA3AF',
-  },
-  typingDot1: {
-    // Animation would be added here
-  },
-  typingDot2: {
-    // Animation would be added here
-  },
-  typingDot3: {
-    // Animation would be added here
-  },
-  typingText: {
+  readStatus: {
     fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-    marginLeft: 40,
+    fontSize: 11,
+    color: '#10B981',
   },
   inputContainer: {
     flexDirection: 'row',
