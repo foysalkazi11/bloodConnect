@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  TextInput, 
-  Text, 
-  StyleSheet, 
-  TextInputProps, 
-  TouchableOpacity 
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
+  TextInputProps,
+  TouchableOpacity,
 } from 'react-native';
 import { Eye, EyeOff, CircleAlert as AlertCircle } from 'lucide-react-native';
-import { colors, fonts, fontSizes, spacing, borderRadius } from '../theme';
+import { colors, fonts, fontSizes, spacing, borderRadius } from '@/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -58,7 +58,7 @@ export const Input: React.FC<InputProps> = ({
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-      
+
       <View
         style={[
           styles.inputContainer,
@@ -67,7 +67,7 @@ export const Input: React.FC<InputProps> = ({
         ]}
       >
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
-        
+
         <TextInput
           style={[
             styles.input,
@@ -81,10 +81,10 @@ export const Input: React.FC<InputProps> = ({
           secureTextEntry={isPassword && !showPassword}
           {...props}
         />
-        
+
         {isPassword ? (
-          <TouchableOpacity 
-            style={styles.rightIcon} 
+          <TouchableOpacity
+            style={styles.rightIcon}
             onPress={togglePasswordVisibility}
           >
             {passwordIcon}
@@ -93,7 +93,7 @@ export const Input: React.FC<InputProps> = ({
           <View style={styles.rightIcon}>{rightIcon}</View>
         ) : null}
       </View>
-      
+
       {(error || helper) && (
         <View style={styles.messageContainer}>
           {error ? (

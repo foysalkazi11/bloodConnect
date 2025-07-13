@@ -49,7 +49,6 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
-import { colors } from '@/components/theme';
 
 interface UserStats {
   totalDonations: number;
@@ -596,7 +595,7 @@ export default function ProfileScreen() {
         .eq('club_id', user.id)
         .order('start_time', { ascending: true })
         .limit(5);
-
+      console.log('club events', { data, error });
       if (error) throw error;
 
       // Get attendee counts for each event
@@ -605,8 +604,9 @@ export default function ProfileScreen() {
         .from('club_event_attendees')
         .select('event_id, count')
         .in('event_id', eventIds)
-        .eq('status', 'going');
-
+        .eq('status', 'going')
+        .group('event_id');
+      console.log('attendeesData', { attendeesData, attendeesError });
       if (attendeesError) throw attendeesError;
 
       // Create a map of event ID to attendee count
