@@ -116,7 +116,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     try {
       setLoading(true);
       await notificationService.initialize(user?.id!);
-      await loadNotifications();
+      await loadNotifications(true);
       await loadUnreadCount();
     } catch (error) {
       console.error('Error initializing notifications:', error);
@@ -263,8 +263,8 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
         useNativeDriver: true,
       }).start();
 
-      // Refresh notifications when opening
-      loadNotifications();
+      // Refresh notifications when opening - reset to get latest notifications first
+      loadNotifications(true);
     }
   };
 
@@ -281,13 +281,13 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     }
 
     // Refresh notifications list
-    await loadNotifications();
+    await loadNotifications(true);
   };
 
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
-      await loadNotifications();
+      await loadNotifications(true);
       setShowDropdown(false);
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -301,7 +301,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     event.stopPropagation();
     try {
       await notificationService.dismissNotification(notificationId);
-      await loadNotifications();
+      await loadNotifications(true);
     } catch (error) {
       console.error('Error dismissing notification:', error);
     }
