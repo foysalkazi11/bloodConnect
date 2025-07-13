@@ -15,6 +15,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
+import NotificationBell from '@/components/NotificationBell';
 import { colors } from '@/theme';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -356,21 +357,32 @@ export default function HomeScreen() {
               BloodConnect
             </Text>
           </View>
-          {user && profile && (
-            <TouchableOpacity
-              className="relative"
-              onPress={() => router.push('/profile')}
-            >
-              <View className="relative">
-                {renderProfileAvatar()}
-                <View
-                  className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                    profile.is_available ? 'bg-success-500' : 'bg-error-500'
-                  }`}
-                />
-              </View>
-            </TouchableOpacity>
-          )}
+
+          {/* Right Section: Notification Bell + Profile */}
+          <View className="flex-row items-center gap-3">
+            {user && (
+              <NotificationBell
+                size={24}
+                iconColor="#374151"
+                badgeColor="#DC2626"
+              />
+            )}
+            {user && profile && (
+              <TouchableOpacity
+                className="relative"
+                onPress={() => router.push('/profile')}
+              >
+                <View className="relative">
+                  {renderProfileAvatar()}
+                  <View
+                    className={`absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                      profile.is_available ? 'bg-success-500' : 'bg-error-500'
+                    }`}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Hero Section */}

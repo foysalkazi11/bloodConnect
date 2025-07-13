@@ -36,7 +36,7 @@ import {
   ChevronUp,
 } from 'lucide-react-native';
 import { useAuth } from '@/providers/AuthProvider';
-import notificationService from '@/services/notificationService';
+import { notificationService } from '@/services/notificationService';
 import {
   Notification,
   EnhancedNotification,
@@ -150,6 +150,14 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   const loadNotifications = async (reset: boolean = false) => {
     try {
       const currentPage = reset ? 0 : page;
+
+      // Check if notification service method exists
+      if (typeof notificationService.getEnhancedNotifications !== 'function') {
+        console.warn('getEnhancedNotifications method not available');
+        setNotifications([]);
+        return;
+      }
+
       const data = await notificationService.getEnhancedNotifications({
         limit: 20,
         offset: currentPage * 20,
@@ -159,25 +167,48 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
           selectedCategory !== 'all' ? (selectedCategory as any) : undefined,
       });
 
+      // Ensure data is an array and has unique IDs
+      const uniqueData = Array.isArray(data)
+        ? data.filter(
+            (notification, index, self) =>
+              index === self.findIndex((n) => n.id === notification.id)
+          )
+        : [];
+
       if (reset) {
-        setNotifications(data);
+        setNotifications(uniqueData);
         setPage(0);
       } else {
-        setNotifications((prev) => [...prev, ...data]);
+        setNotifications((prev) => {
+          const combined = [...prev, ...uniqueData];
+          // Remove duplicates based on ID
+          return combined.filter(
+            (notification, index, self) =>
+              index === self.findIndex((n) => n.id === notification.id)
+          );
+        });
       }
 
-      setHasMore(data.length === 20);
+      setHasMore(uniqueData.length === 20);
     } catch (error) {
       console.error('Error loading notifications:', error);
+      setNotifications([]);
     }
   };
 
   const loadUnreadCount = async () => {
     try {
+      if (typeof notificationService.getUnreadCount !== 'function') {
+        console.warn('getUnreadCount method not available');
+        setUnreadCount(0);
+        return;
+      }
+
       const count = await notificationService.getUnreadCount();
-      setUnreadCount(count);
+      setUnreadCount(typeof count === 'number' ? count : 0);
     } catch (error) {
       console.error('Error loading unread count:', error);
+      setUnreadCount(0);
     }
   };
 
@@ -277,9 +308,15 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   };
 
   const getNotificationIcon = (type: string) => {
+    const defaultColor = '#6B7280';
+    const iconColor =
+      typeof notificationService.getNotificationColor === 'function'
+        ? notificationService.getNotificationColor(type)
+        : defaultColor;
+
     const iconProps = {
       size: 20,
-      color: notificationService.getNotificationColor(type),
+      color: iconColor || defaultColor,
     };
 
     switch (type) {
@@ -303,7 +340,28 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
   };
 
   const formatNotificationTime = (dateString: string) => {
-    return notificationService.formatNotificationTime(dateString);
+    if (typeof notificationService.formatNotificationTime === 'function') {
+      return notificationService.formatNotificationTime(dateString);
+    }
+
+    // Fallback formatting
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMinutes = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60)
+      );
+
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Recently';
+    }
   };
 
   const renderNotificationItem = (
@@ -311,7 +369,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
     index: number
   ) => (
     <TouchableOpacity
-      key={notification.id}
+      key={`notification-${notification.id}-${index}`}
       style={[
         styles.notificationItem,
         !notification.is_read && styles.notificationItemUnread,
@@ -435,13 +493,18 @@ const NotificationBell: React.FC<NotificationBellProps> = ({
                     <Bell size={48} color="#D1D5DB" />
                     <Text style={styles.emptyTitle}>No notifications</Text>
                     <Text style={styles.emptyText}>
-                      You're all caught up! New notifications will appear here.
+                      You&apos;re all caught up! New notifications will appear
+                      here.
                     </Text>
                   </View>
                 ) : (
-                  notifications.map((notification, index) =>
-                    renderNotificationItem(notification, index)
-                  )
+                  notifications.map((notification, index) => (
+                    <View
+                      key={`notification-wrapper-${notification.id}-${index}`}
+                    >
+                      {renderNotificationItem(notification, index)}
+                    </View>
+                  ))
                 )}
               </ScrollView>
             </TouchableOpacity>
