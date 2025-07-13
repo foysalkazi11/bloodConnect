@@ -14,8 +14,11 @@ Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const { data } = notification.request.content;
 
-    // Determine if notification should be shown based on priority
-    const shouldShow = data?.priority === 'urgent' || data?.priority === 'high';
+    // Always show test notifications and urgent/high priority notifications
+    const isTest = data?.test === true || data?.type === 'test';
+    const isHighPriority =
+      data?.priority === 'urgent' || data?.priority === 'high';
+    const shouldShow = isTest || isHighPriority;
 
     return {
       shouldShowAlert: shouldShow,
@@ -189,29 +192,54 @@ export class PushNotificationService {
 
       const deviceId = Device.modelName || 'unknown';
 
-      // Deactivate old tokens for this user/device
+      // First, deactivate all old tokens for this user/device combination
       await supabase
         .from('push_tokens')
         .update({ is_active: false })
         .eq('user_id', userId)
         .eq('device_type', deviceType);
 
-      // Insert new token
-      const { error } = await supabase.from('push_tokens').insert({
-        user_id: userId,
-        token,
-        device_type: deviceType,
-        device_id: deviceId,
-        is_active: true,
-      });
+      // Try to update existing record first
+      const { data: existingData, error: updateError } = await supabase
+        .from('push_tokens')
+        .update({
+          device_type: deviceType,
+          device_id: deviceId,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('token', token)
+        .select();
 
-      if (error) {
-        console.error('Error storing push token:', error);
+      if (updateError) {
+        console.error('Error updating existing token:', updateError);
+      }
+
+      // If no existing record was updated, insert a new one
+      if (!existingData || existingData.length === 0) {
+        const { error: insertError } = await supabase
+          .from('push_tokens')
+          .insert({
+            user_id: userId,
+            token,
+            device_type: deviceType,
+            device_id: deviceId,
+            is_active: true,
+          });
+
+        if (insertError) {
+          console.error('Error inserting push token:', insertError);
+          throw insertError;
+        } else {
+          console.log('Push token inserted successfully');
+        }
       } else {
-        console.log('Push token stored successfully');
+        console.log('Push token updated successfully');
       }
     } catch (error) {
       console.error('Error in storePushToken:', error);
+      throw error;
     }
   }
 
@@ -258,7 +286,7 @@ export class PushNotificationService {
 
     // Mark notification as read if it has an ID
     if (data?.notification_id) {
-      this.markNotificationAsRead(data.notification_id);
+      this.markNotificationAsRead(String(data.notification_id));
     }
   }
 

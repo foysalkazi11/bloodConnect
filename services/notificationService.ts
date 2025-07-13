@@ -681,52 +681,183 @@ class NotificationService {
     return data || false;
   }
 
+  // Navigate to direct message conversation
+  private async navigateToDirectMessage(
+    conversationId: string,
+    fallbackUserId?: string
+  ) {
+    try {
+      // Get conversation participants to find the other user
+      const { data: participants, error } = await supabase
+        .from('conversation_participants')
+        .select('user_id')
+        .eq('conversation_id', conversationId)
+        .neq('user_id', this.currentUserId);
+
+      if (error || !participants || participants.length === 0) {
+        console.error('Error getting conversation participants:', error);
+        router.push('/(tabs)/clubs' as any);
+        return;
+      }
+
+      const otherUserId = participants[0].user_id;
+
+      // Find clubs where both users are members
+      const { data: otherUserClubs, error: otherClubError } = await supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', otherUserId)
+        .eq('status', 'approved');
+
+      if (otherClubError || !otherUserClubs || otherUserClubs.length === 0) {
+        console.log('Other user has no clubs, navigating to clubs list');
+        router.push('/(tabs)/clubs' as any);
+        return;
+      }
+
+      const otherUserClubIds = otherUserClubs.map((c) => c.club_id);
+
+      // Find a shared club
+      const { data: sharedClubs, error: sharedClubError } = await supabase
+        .from('club_members')
+        .select('club_id')
+        .eq('user_id', this.currentUserId)
+        .eq('status', 'approved')
+        .in('club_id', otherUserClubIds)
+        .limit(1);
+
+      if (sharedClubs && sharedClubs.length > 0) {
+        const clubId = sharedClubs[0].club_id;
+        console.log(
+          `Navigating to direct message: /(tabs)/clubs/${clubId}/direct-message/${otherUserId}`
+        );
+        router.push(
+          `/(tabs)/clubs/${clubId}/direct-message/${otherUserId}` as any
+        );
+      } else {
+        console.log('No shared club found, navigating to clubs list');
+        router.push('/(tabs)/clubs' as any);
+      }
+    } catch (error) {
+      console.error('Error navigating to direct message:', error);
+      router.push('/(tabs)/clubs' as any);
+    }
+  }
+
   // Handle notification tap/click - navigate to appropriate screen
   handleNotificationTap(notification: Notification) {
+    console.log('Handling notification tap:', notification);
+
     // Mark as read first
     this.markAsRead(notification.id);
 
-    // Navigate based on action URL or notification type
-    if (notification.action_url) {
-      router.push(notification.action_url as any);
-    } else {
-      // Fallback navigation based on type
-      switch (notification.type) {
-        case 'direct_message':
+    try {
+      // Navigate based on action URL or notification type
+      if (notification.action_url) {
+        console.log('Navigating to action URL:', notification.action_url);
+
+        // Check if the action URL is valid and specific
+        if (
+          notification.action_url.includes('/direct-message/') ||
+          notification.action_url.includes('/chat') ||
+          notification.action_url.includes('/announcements') ||
+          notification.action_url.includes('/events') ||
+          notification.action_url.includes('/members')
+        ) {
+          // This is a specific URL, navigate directly
+          router.push(notification.action_url as any);
+        } else if (
+          notification.action_url === '/(tabs)/clubs' &&
+          notification.type === 'direct_message'
+        ) {
+          // Generic clubs URL for direct message - try to be more specific
           if (
             notification.related_id &&
             notification.related_type === 'conversation'
           ) {
-            // Try to navigate to clubs list where user can find the conversation
-            // In the future, we could implement a dedicated messages screen
-            router.push('/clubs' as any);
+            this.navigateToDirectMessage(notification.related_id);
+          } else {
+            router.push(notification.action_url as any);
           }
-          break;
-        case 'group_message':
-          if (notification.related_id) {
-            router.push(`/clubs/${notification.related_id}/chat` as any);
-          }
-          break;
-        case 'club_announcement':
-          if (notification.related_id) {
-            // Extract club_id from related data
-            router.push('/clubs' as any);
-          }
-          break;
-        case 'club_event':
-          if (notification.related_id) {
-            // Extract club_id from related data
-            router.push('/clubs' as any);
-          }
-          break;
-        case 'join_request':
-        case 'join_approved':
-        case 'join_rejected':
-          router.push('/clubs' as any);
-          break;
-        default:
-          router.push('/clubs' as any);
+        } else {
+          // Use the action URL as provided
+          router.push(notification.action_url as any);
+        }
+      } else {
+        // Fallback navigation based on type (for notifications without action_url)
+        switch (notification.type) {
+          case 'direct_message':
+            if (
+              notification.related_id &&
+              notification.related_type === 'conversation'
+            ) {
+              console.log(
+                'Navigating to direct message conversation:',
+                notification.related_id
+              );
+              this.navigateToDirectMessage(notification.related_id);
+            } else {
+              router.push('/(tabs)/clubs' as any);
+            }
+            break;
+          case 'group_message':
+            if (notification.related_id) {
+              console.log('Navigating to club chat:', notification.related_id);
+              router.push(
+                `/(tabs)/clubs/${notification.related_id}/chat` as any
+              );
+            } else {
+              router.push('/(tabs)/clubs' as any);
+            }
+            break;
+          case 'club_announcement':
+            if (notification.related_id) {
+              console.log(
+                'Navigating to club announcements:',
+                notification.related_id
+              );
+              router.push(
+                `/(tabs)/clubs/${notification.related_id}/announcements` as any
+              );
+            } else {
+              router.push('/(tabs)/clubs' as any);
+            }
+            break;
+          case 'club_event':
+            if (notification.related_id) {
+              console.log(
+                'Navigating to club events:',
+                notification.related_id
+              );
+              router.push(
+                `/(tabs)/clubs/${notification.related_id}/events` as any
+              );
+            } else {
+              router.push('/(tabs)/clubs' as any);
+            }
+            break;
+          case 'join_request':
+          case 'join_approved':
+          case 'join_rejected':
+            if (notification.related_id) {
+              console.log(
+                'Navigating to club for join status:',
+                notification.related_id
+              );
+              router.push(`/(tabs)/clubs/${notification.related_id}` as any);
+            } else {
+              router.push('/(tabs)/clubs' as any);
+            }
+            break;
+          default:
+            console.log('Default navigation to clubs');
+            router.push('/(tabs)/clubs' as any);
+        }
       }
+    } catch (error) {
+      console.error('Error navigating from notification:', error);
+      // Fallback to main tabs screen
+      router.push('/(tabs)');
     }
   }
 
