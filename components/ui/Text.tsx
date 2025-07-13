@@ -1,18 +1,22 @@
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, StyleSheet } from 'react-native';
-import { colors, fonts, fontSizes } from '../theme';
+import {
+  Text as RNText,
+  TextProps as RNTextProps,
+  StyleSheet,
+} from 'react-native';
+import { colors, fonts, fontSizes } from '@/theme';
 
-export type TextVariant = 
-  | 'h1' 
-  | 'h2' 
-  | 'h3' 
-  | 'h4' 
-  | 'h5' 
-  | 'h6' 
-  | 'body' 
-  | 'body-sm' 
-  | 'body-lg' 
-  | 'caption' 
+export type TextVariant =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'body'
+  | 'body-sm'
+  | 'body-lg'
+  | 'caption'
   | 'label';
 
 export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
@@ -36,12 +40,7 @@ export const Text: React.FC<TextProps> = ({
   return (
     <RNText
       className={className}
-      style={[
-        styles[variant],
-        styles[weight],
-        color ? { color } : {},
-        style,
-      ]}
+      style={[styles[variant], styles[weight], color ? { color } : {}, style]}
       {...props}
     >
       {children}
@@ -106,7 +105,7 @@ const styles = StyleSheet.create({
     lineHeight: fontSizes.sm * 1.2,
     color: colors.secondary[700],
   },
-  
+
   // Weights
   regular: {
     fontFamily: fonts.regular,

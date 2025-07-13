@@ -1,7 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, MapPin, Users, Award, Calendar, Bell, Settings, UserPlus, MessageCircle, Phone, Mail, Globe, Info } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  MapPin,
+  Users,
+  Award,
+  Calendar,
+  Bell,
+  Settings,
+  UserPlus,
+  MessageCircle,
+  Phone,
+  Mail,
+  Globe,
+  Info,
+} from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
@@ -19,6 +42,8 @@ interface ClubDetails {
   state?: string;
   city?: string;
   address?: string;
+  phone?: string;
+  email: string;
   total_members: number;
   total_donations: number;
   founded_year: number;
@@ -45,21 +70,23 @@ export default function ClubDetailScreen() {
   const { id } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [club, setClub] = useState<ClubDetails | null>(null);
   const [stats, setStats] = useState<ClubStats>({
     total_members: 0,
     total_donations: 0,
     total_events: 0,
-    total_announcements: 0
+    total_announcements: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [joinRequestStatus, setJoinRequestStatus] = useState<JoinRequestStatus>({
-    isPending: false,
-    isMember: false,
-    memberRole: undefined,
-    isOwner: false
-  });
+  const [joinRequestStatus, setJoinRequestStatus] = useState<JoinRequestStatus>(
+    {
+      isPending: false,
+      isMember: false,
+      memberRole: undefined,
+      isOwner: false,
+    }
+  );
   const [pendingJoinRequests, setPendingJoinRequests] = useState<number>(0);
   const [joinRequestLoading, setJoinRequestLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
@@ -71,7 +98,7 @@ export default function ClubDetailScreen() {
   const loadClubDetails = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch club details
       const { data: clubData, error: clubError } = await supabase
         .from('user_profiles')
@@ -79,12 +106,12 @@ export default function ClubDetailScreen() {
         .eq('id', id)
         .eq('user_type', 'club')
         .single();
-      
+
       if (clubError) {
         console.error('Error loading club details:', clubError);
         throw clubError;
       }
-      
+
       if (!clubData) {
         showNotification({
           type: 'error',
@@ -95,9 +122,9 @@ export default function ClubDetailScreen() {
         router.replace('/clubs');
         return;
       }
-      
+
       setClub(clubData);
-      
+
       // Check if user is authenticated
       if (user) {
         // Check if user is a member of this club
@@ -108,11 +135,11 @@ export default function ClubDetailScreen() {
           .eq('member_id', user.id)
           .eq('is_active', true)
           .maybeSingle();
-        
+
         if (memberError && !memberError.message.includes('PGRST116')) {
           console.error('Error checking membership:', memberError);
         }
-        
+
         // Check if user has a pending join request
         const { data: requestData, error: requestError } = await supabase
           .from('club_join_requests')
@@ -121,37 +148,44 @@ export default function ClubDetailScreen() {
           .eq('user_id', user.id)
           .eq('status', 'pending')
           .maybeSingle();
-        
+
         if (requestError && !requestError.message.includes('PGRST116')) {
           console.error('Error checking join request:', requestError);
         }
-        
+
         // Check if user is the owner of the club
         const isOwner = user.id === clubData.id;
-        
+
         setJoinRequestStatus({
           isPending: !!requestData,
           isMember: !!memberData,
-          memberRole: memberData?.role as 'admin' | 'moderator' | 'member' | undefined,
-          isOwner
+          memberRole: memberData?.role as
+            | 'admin'
+            | 'moderator'
+            | 'member'
+            | undefined,
+          isOwner,
         });
-        
+
         // If user is admin or moderator, fetch pending join requests count
-        if (isOwner || (memberData && ['admin', 'moderator'].includes(memberData.role))) {
+        if (
+          isOwner ||
+          (memberData && ['admin', 'moderator'].includes(memberData.role))
+        ) {
           const { count, error: countError } = await supabase
             .from('club_join_requests')
             .select('*', { count: 'exact', head: true })
             .eq('club_id', id)
             .eq('status', 'pending');
-          
+
           if (!countError) {
             setPendingJoinRequests(count || 0);
           }
         }
-        
+
         // Check if user has access to this club page
         const hasAccess = isOwner || !!memberData;
-        
+
         if (!hasAccess && profile?.user_type !== 'club') {
           setAccessDenied(true);
         }
@@ -159,31 +193,31 @@ export default function ClubDetailScreen() {
         // If not authenticated, deny access
         setAccessDenied(true);
       }
-      
+
       // Fetch club stats
-      const [membersResult, eventsResult, announcementsResult] = await Promise.all([
-        supabase
-          .from('club_members')
-          .select('id', { count: 'exact', head: true })
-          .eq('club_id', id)
-          .eq('is_active', true),
-        supabase
-          .from('club_events')
-          .select('id', { count: 'exact', head: true })
-          .eq('club_id', id),
-        supabase
-          .from('club_announcements')
-          .select('id', { count: 'exact', head: true })
-          .eq('club_id', id)
-      ]);
-      
+      const [membersResult, eventsResult, announcementsResult] =
+        await Promise.all([
+          supabase
+            .from('club_members')
+            .select('id', { count: 'exact', head: true })
+            .eq('club_id', id)
+            .eq('is_active', true),
+          supabase
+            .from('club_events')
+            .select('id', { count: 'exact', head: true })
+            .eq('club_id', id),
+          supabase
+            .from('club_announcements')
+            .select('id', { count: 'exact', head: true })
+            .eq('club_id', id),
+        ]);
+
       setStats({
         total_members: membersResult.count || 0,
         total_donations: clubData.total_donations || 0,
         total_events: eventsResult.count || 0,
-        total_announcements: announcementsResult.count || 0
+        total_announcements: announcementsResult.count || 0,
       });
-      
     } catch (error) {
       console.error('Error in loadClubDetails:', error);
       showNotification({
@@ -208,7 +242,7 @@ export default function ClubDetailScreen() {
       router.push('/auth');
       return;
     }
-    
+
     if (!profile) {
       showNotification({
         type: 'info',
@@ -219,7 +253,7 @@ export default function ClubDetailScreen() {
       router.push('/complete-profile');
       return;
     }
-    
+
     // Check if user is a club (clubs can't join other clubs)
     if (profile.user_type === 'club') {
       showNotification({
@@ -230,22 +264,21 @@ export default function ClubDetailScreen() {
       });
       return;
     }
-    
+
     try {
       setJoinRequestLoading(true);
-      
+
       // Create join request
-      const { error } = await supabase
-        .from('club_join_requests')
-        .insert({
-          club_id: id,
-          user_id: user.id,
-          message: `I would like to join ${club?.name}`,
-          status: 'pending'
-        });
-      
+      const { error } = await supabase.from('club_join_requests').insert({
+        club_id: id,
+        user_id: user.id,
+        message: `I would like to join ${club?.name}`,
+        status: 'pending',
+      });
+
       if (error) {
-        if (error.code === '23505') { // Unique violation
+        if (error.code === '23505') {
+          // Unique violation
           showNotification({
             type: 'info',
             title: 'Already Requested',
@@ -258,9 +291,9 @@ export default function ClubDetailScreen() {
       } else {
         setJoinRequestStatus({
           ...joinRequestStatus,
-          isPending: true
+          isPending: true,
         });
-        
+
         showNotification({
           type: 'success',
           title: 'Request Sent',
@@ -280,58 +313,54 @@ export default function ClubDetailScreen() {
       setJoinRequestLoading(false);
     }
   };
-  
+
   const handleLeaveClub = async () => {
     if (!user) return;
-    
-    Alert.alert(
-      'Leave Club',
-      'Are you sure you want to leave this club?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setJoinRequestLoading(true);
-              
-              // Set member as inactive
-              const { error } = await supabase
-                .from('club_members')
-                .update({ is_active: false })
-                .eq('club_id', id)
-                .eq('member_id', user.id);
-              
-              if (error) throw error;
-              
-              setJoinRequestStatus({
-                ...joinRequestStatus,
-                isMember: false,
-                memberRole: undefined
-              });
-              
-              showNotification({
-                type: 'success',
-                title: 'Left Club',
-                message: 'You have left the club',
-                duration: 3000,
-              });
-            } catch (error) {
-              console.error('Error leaving club:', error);
-              showNotification({
-                type: 'error',
-                title: 'Error',
-                message: 'Failed to leave club',
-                duration: 4000,
-              });
-            } finally {
-              setJoinRequestLoading(false);
-            }
+
+    Alert.alert('Leave Club', 'Are you sure you want to leave this club?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setJoinRequestLoading(true);
+
+            // Set member as inactive
+            const { error } = await supabase
+              .from('club_members')
+              .update({ is_active: false })
+              .eq('club_id', id)
+              .eq('member_id', user.id);
+
+            if (error) throw error;
+
+            setJoinRequestStatus({
+              ...joinRequestStatus,
+              isMember: false,
+              memberRole: undefined,
+            });
+
+            showNotification({
+              type: 'success',
+              title: 'Left Club',
+              message: 'You have left the club',
+              duration: 3000,
+            });
+          } catch (error) {
+            console.error('Error leaving club:', error);
+            showNotification({
+              type: 'error',
+              title: 'Error',
+              message: 'Failed to leave club',
+              duration: 4000,
+            });
+          } finally {
+            setJoinRequestLoading(false);
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   const handleManageRequests = () => {
@@ -340,7 +369,7 @@ export default function ClubDetailScreen() {
 
   const getLocationDisplay = () => {
     if (!club) return '';
-    
+
     if (club.country === 'BANGLADESH') {
       return [club.police_station, club.district].filter(Boolean).join(', ');
     } else {
@@ -370,6 +399,11 @@ export default function ClubDetailScreen() {
     router.push(`/(tabs)/clubs/${id}/${section}`);
   };
 
+  const handleMessageClub = () => {
+    if (!club?.id) return;
+    router.push(`/(tabs)/clubs/${id}/direct-message/${club.id}`);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -385,20 +419,23 @@ export default function ClubDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Club Details</Text>
           <View style={{ width: 40 }} />
         </View>
-        
+
         <View style={styles.accessDeniedContainer}>
           <Users size={64} color="#D1D5DB" />
           <Text style={styles.accessDeniedTitle}>Access Restricted</Text>
           <Text style={styles.accessDeniedText}>
             You need to be a member of this club to view its details.
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.joinButton}
             onPress={handleJoinClub}
             disabled={joinRequestLoading || joinRequestStatus.isPending}
@@ -407,7 +444,9 @@ export default function ClubDetailScreen() {
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text style={styles.joinButtonText}>
-                {joinRequestStatus.isPending ? 'Request Pending' : 'Request to Join'}
+                {joinRequestStatus.isPending
+                  ? 'Request Pending'
+                  : 'Request to Join'}
               </Text>
             )}
           </TouchableOpacity>
@@ -421,7 +460,7 @@ export default function ClubDetailScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Club not found</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backToClubsButton}
             onPress={() => router.replace('/clubs')}
           >
@@ -437,11 +476,15 @@ export default function ClubDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Club Details</Text>
-          {joinRequestStatus.isOwner || joinRequestStatus.memberRole === 'admin' ? (
+          {joinRequestStatus.isOwner ||
+          joinRequestStatus.memberRole === 'admin' ? (
             <TouchableOpacity style={styles.settingsButton}>
               <Settings size={24} color="#111827" />
             </TouchableOpacity>
@@ -455,26 +498,28 @@ export default function ClubDetailScreen() {
           <View style={styles.clubAvatarContainer}>
             <TextAvatar name={club.name} size={80} />
           </View>
-          
+
           <Text style={styles.clubName}>{club.name}</Text>
-          
+
           <View style={styles.locationContainer}>
             <MapPin size={16} color="#6B7280" />
             <Text style={styles.locationText}>{getLocationDisplay()}</Text>
           </View>
-          
+
           {club.description && (
             <Text style={styles.description}>{club.description}</Text>
           )}
-          
+
           {/* Join/Leave Button */}
           {!joinRequestStatus.isOwner && profile?.user_type !== 'club' && (
             <TouchableOpacity
               style={[
                 getJoinButtonStyle(),
-                joinRequestLoading && styles.joinButtonLoading
+                joinRequestLoading && styles.joinButtonLoading,
               ]}
-              onPress={joinRequestStatus.isMember ? handleLeaveClub : handleJoinClub}
+              onPress={
+                joinRequestStatus.isMember ? handleLeaveClub : handleJoinClub
+              }
               disabled={joinRequestLoading || joinRequestStatus.isPending}
             >
               {joinRequestLoading ? (
@@ -486,21 +531,25 @@ export default function ClubDetailScreen() {
               )}
             </TouchableOpacity>
           )}
-          
+
           {/* Pending Join Requests Badge (for admins) */}
-          {(joinRequestStatus.isOwner || ['admin', 'moderator'].includes(joinRequestStatus.memberRole || '')) && 
-           pendingJoinRequests > 0 && (
-            <TouchableOpacity 
-              style={styles.pendingRequestsBadge}
-              onPress={handleManageRequests}
-            >
-              <UserPlus size={16} color="#FFFFFF" />
-              <Text style={styles.pendingRequestsText}>
-                {pendingJoinRequests} pending request{pendingJoinRequests !== 1 ? 's' : ''}
-              </Text>
-            </TouchableOpacity>
-          )}
-          
+          {(joinRequestStatus.isOwner ||
+            ['admin', 'moderator'].includes(
+              joinRequestStatus.memberRole || ''
+            )) &&
+            pendingJoinRequests > 0 && (
+              <TouchableOpacity
+                style={styles.pendingRequestsBadge}
+                onPress={handleManageRequests}
+              >
+                <UserPlus size={16} color="#FFFFFF" />
+                <Text style={styles.pendingRequestsText}>
+                  {pendingJoinRequests} pending request
+                  {pendingJoinRequests !== 1 ? 's' : ''}
+                </Text>
+              </TouchableOpacity>
+            )}
+
           {/* Club Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
@@ -521,24 +570,37 @@ export default function ClubDetailScreen() {
               <Text style={styles.statLabel}>Events</Text>
             </View>
           </View>
+
+          {/* Message Club Button (for members only, not owners) */}
+          {joinRequestStatus.isMember && !joinRequestStatus.isOwner && (
+            <TouchableOpacity
+              style={styles.messageClubButton}
+              onPress={handleMessageClub}
+            >
+              <MessageCircle size={20} color="#FFFFFF" />
+              <Text style={styles.messageClubButtonText}>Message Club</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Club Management Section (only for members) */}
         {(joinRequestStatus.isMember || joinRequestStatus.isOwner) && (
           <View style={styles.managementSection}>
             <Text style={styles.sectionTitle}>Club Management</Text>
-            
+
             <View style={styles.managementGrid}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('members')}
               >
                 <Users size={24} color="#DC2626" />
                 <Text style={styles.managementCardTitle}>Members</Text>
-                <Text style={styles.managementCardSubtitle}>{stats.total_members} active</Text>
+                <Text style={styles.managementCardSubtitle}>
+                  {stats.total_members} active
+                </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('announcements')}
               >
@@ -546,8 +608,8 @@ export default function ClubDetailScreen() {
                 <Text style={styles.managementCardTitle}>Announcements</Text>
                 <Text style={styles.managementCardSubtitle}>Post updates</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('events')}
               >
@@ -555,8 +617,8 @@ export default function ClubDetailScreen() {
                 <Text style={styles.managementCardTitle}>Events</Text>
                 <Text style={styles.managementCardSubtitle}>Manage drives</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.managementCard}
                 onPress={() => navigateToSection('chat')}
               >
@@ -571,7 +633,7 @@ export default function ClubDetailScreen() {
         {/* Contact Information */}
         <View style={styles.contactSection}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
-          
+
           <View style={styles.contactCard}>
             {club.phone && (
               <View style={styles.contactItem}>
@@ -579,19 +641,19 @@ export default function ClubDetailScreen() {
                 <Text style={styles.contactText}>{club.phone}</Text>
               </View>
             )}
-            
+
             <View style={styles.contactItem}>
               <Mail size={20} color="#DC2626" />
               <Text style={styles.contactText}>{club.email}</Text>
             </View>
-            
+
             {club.website && (
               <View style={styles.contactItem}>
                 <Globe size={20} color="#DC2626" />
                 <Text style={styles.contactText}>{club.website}</Text>
               </View>
             )}
-            
+
             {club.address && (
               <View style={styles.contactItem}>
                 <MapPin size={20} color="#DC2626" />
@@ -604,20 +666,20 @@ export default function ClubDetailScreen() {
         {/* About Section */}
         <View style={styles.aboutSection}>
           <Text style={styles.sectionTitle}>About</Text>
-          
+
           <View style={styles.aboutCard}>
             <View style={styles.aboutItem}>
               <Info size={20} color="#DC2626" />
               <Text style={styles.aboutLabel}>Founded</Text>
               <Text style={styles.aboutText}>{club.founded_year || 'N/A'}</Text>
             </View>
-            
+
             <View style={styles.aboutItem}>
               <Award size={20} color="#DC2626" />
               <Text style={styles.aboutLabel}>Total Donations</Text>
               <Text style={styles.aboutText}>{club.total_donations || 0}</Text>
             </View>
-            
+
             <View style={styles.aboutItem}>
               <Users size={20} color="#DC2626" />
               <Text style={styles.aboutLabel}>Member Count</Text>
@@ -794,6 +856,22 @@ const styles = StyleSheet.create({
     width: 1,
     height: '100%',
     backgroundColor: '#FCA5A5',
+  },
+  messageClubButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    marginTop: 16,
+    gap: 8,
+  },
+  messageClubButtonText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
   managementSection: {
     paddingHorizontal: 20,

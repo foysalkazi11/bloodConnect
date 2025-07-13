@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewProps } from 'react-native';
-import { colors, fonts, fontSizes } from '../theme';
+import { colors, fonts, fontSizes } from '@/theme';
 
 interface AvatarProps extends ViewProps {
   size?: number;
@@ -22,19 +22,21 @@ export const Avatar: React.FC<AvatarProps> = ({
   // Generate initials from name
   const getInitials = (fullName: string): string => {
     if (!fullName || fullName.trim().length === 0) return '?';
-    
+
     const names = fullName.trim().split(' ');
     if (names.length === 1) {
       return names[0].charAt(0).toUpperCase();
     }
-    
-    return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+
+    return (
+      names[0].charAt(0) + names[names.length - 1].charAt(0)
+    ).toUpperCase();
   };
 
   // Generate consistent color based on name
   const getBackgroundColor = (fullName: string): string => {
     if (backgroundColor) return backgroundColor;
-    
+
     const colors = [
       '#DC2626', // Red
       '#EA580C', // Orange
@@ -47,12 +49,12 @@ export const Avatar: React.FC<AvatarProps> = ({
       '#C026D3', // Fuchsia
       '#E11D48', // Rose
     ];
-    
+
     let hash = 0;
     for (let i = 0; i < fullName.length; i++) {
       hash = fullName.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
+
     return colors[Math.abs(hash) % colors.length];
   };
 
@@ -78,12 +80,13 @@ export const Avatar: React.FC<AvatarProps> = ({
       {source?.uri ? (
         <Image
           source={source}
-          style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
+          style={[
+            styles.image,
+            { width: size, height: size, borderRadius: size / 2 },
+          ]}
         />
       ) : (
-        <Text style={[styles.initials, { fontSize }]}>
-          {initials}
-        </Text>
+        <Text style={[styles.initials, { fontSize }]}>{initials}</Text>
       )}
     </View>
   );
