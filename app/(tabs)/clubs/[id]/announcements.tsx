@@ -772,8 +772,8 @@ export default function ClubAnnouncementsScreen() {
   const canDeleteAnnouncementItem = (announcement: Announcement) => {
     if (!user) return false;
     if (user.id === id) return true; // Club owner can delete all
-    if (user.id === announcement.author_id) return canDeleteAnnouncement; // Author can delete if they have permission
-    return false;
+    if (user.id === announcement.author_id) return true; // Author can always delete their own announcements
+    return canDeleteAnnouncement; // Admins can delete any announcement
   };
 
   if (loading) {
