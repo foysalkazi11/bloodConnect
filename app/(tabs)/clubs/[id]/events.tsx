@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Modal,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Calendar, Clock, MapPin, Users, Video, CircleCheck as CheckCircle, Circle as XCircle, CircleHelp as HelpCircle } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Plus,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Video,
+  CircleCheck as CheckCircle,
+  Circle as XCircle,
+  CircleHelp as HelpCircle,
+} from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import { supabase } from '@/lib/supabase';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface ClubEvent {
   id: string;
@@ -29,11 +50,13 @@ export default function ClubEventsScreen() {
   const { id } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
-  
+
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>(
+    'upcoming'
+  );
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
@@ -46,18 +69,102 @@ export default function ClubEventsScreen() {
     max_attendees: '',
   });
 
+  // Permission and role state
+  const [userRole, setUserRole] = useState<
+    'owner' | 'admin' | 'moderator' | 'member' | null
+  >(null);
+  const [canCreateEvent, setCanCreateEvent] = useState(false);
+  const [clubData, setClubData] = useState<any>(null);
+
+  // Date picker state
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [startDateTime, setStartDateTime] = useState<Date | null>(null);
+  const [endDateTime, setEndDateTime] = useState<Date | null>(null);
+
   useEffect(() => {
-    loadEvents();
-  }, [id]);
+    checkUserPermissions();
+  }, [id, user]);
+
+  useEffect(() => {
+    if (userRole !== null) {
+      loadEvents();
+    }
+  }, [userRole]);
+
+  const checkUserPermissions = async () => {
+    try {
+      if (!user) {
+        setUserRole(null);
+        setCanCreateEvent(false);
+        return;
+      }
+
+      // Check if user is the club owner
+      const { data: clubData, error: clubError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', id)
+        .eq('user_type', 'club')
+        .single();
+
+      if (clubError || !clubData) {
+        console.error('Error loading club:', clubError);
+        return;
+      }
+
+      setClubData(clubData);
+
+      // Check if user is the club owner
+      if (user.id === id) {
+        setUserRole('owner');
+        setCanCreateEvent(true);
+        return;
+      }
+
+      // Check club membership and role
+      const { data: memberData, error: memberError } = await supabase
+        .from('club_members')
+        .select('role')
+        .eq('club_id', id)
+        .eq('member_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (memberError && !memberError.message.includes('PGRST116')) {
+        console.error('Error checking membership:', memberError);
+        setUserRole(null);
+        setCanCreateEvent(false);
+        return;
+      }
+
+      if (!memberData) {
+        setUserRole(null);
+        setCanCreateEvent(false);
+        return;
+      }
+
+      setUserRole(memberData.role);
+      // Only owners and admins can create events
+      setCanCreateEvent(memberData.role === 'admin');
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+      setUserRole(null);
+      setCanCreateEvent(false);
+    }
+  };
 
   const loadEvents = async () => {
     try {
       setLoading(true);
-      
+
       // First, fetch the main event data
       const { data: eventsData, error: eventsError } = await supabase
         .from('club_events')
-        .select(`
+        .select(
+          `
           id,
           title,
           description,
@@ -70,7 +177,8 @@ export default function ClubEventsScreen() {
           max_attendees,
           organizer_id,
           user_profiles!club_events_organizer_id_fkey(name)
-        `)
+        `
+        )
         .eq('club_id', id)
         .order('start_time', { ascending: true });
 
@@ -84,45 +192,51 @@ export default function ClubEventsScreen() {
       }
 
       // Get event IDs for attendee queries
-      const eventIds = eventsData.map(event => event.id);
+      const eventIds = eventsData.map((event) => event.id);
 
       // Fetch attendee counts for each event (only if we have events)
       const { data: attendeeCounts, error: attendeeError } = await supabase
         .from('club_event_attendees')
-        .select('event_id, count(*)')
+        .select('event_id')
         .in('event_id', eventIds)
-        .eq('status', 'going')
-        .group('event_id');
+        .eq('status', 'going');
 
       if (attendeeError) {
         console.warn('Error loading attendee counts:', attendeeError);
       }
 
       // Count attendees per event
-      const attendeeCountMap = (attendeeCounts || []).reduce((acc, item) => {
-        acc[item.event_id] = item.count || 0;
-        return acc;
-      }, {} as Record<string, number>);
+      const attendeeCountMap = (attendeeCounts || []).reduce(
+        (acc: Record<string, number>, item: any) => {
+          acc[item.event_id] = (acc[item.event_id] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       // Fetch current user's attendance status for each event
-      const { data: userAttendance, error: userAttendanceError } = await supabase
-        .from('club_event_attendees')
-        .select('event_id, status')
-        .in('event_id', eventIds)
-        .eq('user_id', user?.id);
+      const { data: userAttendance, error: userAttendanceError } =
+        await supabase
+          .from('club_event_attendees')
+          .select('event_id, status')
+          .in('event_id', eventIds)
+          .eq('user_id', user?.id);
 
       if (userAttendanceError) {
         console.warn('Error loading user attendance:', userAttendanceError);
       }
 
       // Create user attendance map
-      const userAttendanceMap = (userAttendance || []).reduce((acc, attendance) => {
-        acc[attendance.event_id] = attendance.status;
-        return acc;
-      }, {} as Record<string, string>);
+      const userAttendanceMap = (userAttendance || []).reduce(
+        (acc, attendance) => {
+          acc[attendance.event_id] = attendance.status;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
 
       // Combine all data
-      const formattedEvents: ClubEvent[] = eventsData.map(event => ({
+      const formattedEvents: ClubEvent[] = eventsData.map((event) => ({
         id: event.id,
         title: event.title,
         description: event.description || '',
@@ -134,9 +248,11 @@ export default function ClubEventsScreen() {
         meeting_link: event.meeting_link,
         max_attendees: event.max_attendees,
         organizer_id: event.organizer_id,
-        organizer_name: event.user_profiles?.name || 'Unknown',
+        organizer_name: event.user_profiles?.[0]?.name || 'Unknown',
         attendees_count: attendeeCountMap[event.id] || 0,
-        user_status: userAttendanceMap[event.id] || null,
+        user_status:
+          (userAttendanceMap[event.id] as 'going' | 'maybe' | 'not_going') ||
+          null,
       }));
 
       setEvents(formattedEvents);
@@ -153,10 +269,13 @@ export default function ClubEventsScreen() {
         {
           id: '1',
           title: 'Emergency Blood Drive',
-          description: 'Urgent blood drive for emergency cases at Dhaka Medical College Hospital. We need O+ and AB- donors.',
+          description:
+            'Urgent blood drive for emergency cases at Dhaka Medical College Hospital. We need O+ and AB- donors.',
           event_type: 'blood_drive',
           start_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(Date.now() + 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000).toISOString(),
+          end_time: new Date(
+            Date.now() + 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000
+          ).toISOString(),
           location: 'Dhaka Medical College Hospital',
           is_virtual: false,
           organizer_id: 'admin1',
@@ -167,10 +286,15 @@ export default function ClubEventsScreen() {
         {
           id: '2',
           title: 'Monthly Club Meeting',
-          description: 'Regular monthly meeting to discuss club activities, upcoming events, and new member orientations.',
+          description:
+            'Regular monthly meeting to discuss club activities, upcoming events, and new member orientations.',
           event_type: 'meeting',
-          start_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+          start_time: new Date(
+            Date.now() + 3 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          end_time: new Date(
+            Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000
+          ).toISOString(),
           location: 'Club Office',
           is_virtual: true,
           meeting_link: 'https://meet.google.com/abc-defg-hij',
@@ -183,10 +307,15 @@ export default function ClubEventsScreen() {
         {
           id: '3',
           title: 'Volunteer Training Workshop',
-          description: 'Comprehensive training for new volunteers covering blood donation processes, donor care, and emergency procedures.',
+          description:
+            'Comprehensive training for new volunteers covering blood donation processes, donor care, and emergency procedures.',
           event_type: 'training',
-          start_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(),
+          start_time: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          end_time: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000
+          ).toISOString(),
           location: 'Training Center',
           is_virtual: false,
           max_attendees: 30,
@@ -203,35 +332,90 @@ export default function ClubEventsScreen() {
   };
 
   const handleCreateEvent = async () => {
-    if (!newEvent.title.trim() || !newEvent.start_time || !newEvent.end_time) {
+    if (!canCreateEvent) {
+      showNotification({
+        type: 'error',
+        title: 'Permission Denied',
+        message: 'Only club owners and admins can create events',
+        duration: 4000,
+      });
+      return;
+    }
+
+    if (!newEvent.title.trim() || !startDateTime || !endDateTime) {
       showNotification({
         type: 'error',
         title: 'Validation Error',
-        message: 'Please fill in all required fields',
+        message: 'Please fill in title, start time, and end time',
+        duration: 4000,
+      });
+      return;
+    }
+
+    if (endDateTime <= startDateTime) {
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'End time must be after start time',
         duration: 4000,
       });
       return;
     }
 
     try {
-      const event: ClubEvent = {
-        id: Date.now().toString(),
-        title: newEvent.title,
-        description: newEvent.description,
+      const eventData = {
+        club_id: id,
+        organizer_id: user?.id,
+        title: newEvent.title.trim(),
+        description: newEvent.description.trim(),
         event_type: newEvent.event_type,
-        start_time: newEvent.start_time,
-        end_time: newEvent.end_time,
-        location: newEvent.location,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        location: newEvent.location.trim() || null,
         is_virtual: newEvent.is_virtual,
-        meeting_link: newEvent.meeting_link,
-        max_attendees: newEvent.max_attendees ? parseInt(newEvent.max_attendees) : undefined,
-        organizer_id: user?.id || 'current_user',
-        organizer_name: profile?.name || 'You',
-        attendees_count: 1,
-        user_status: 'going',
+        meeting_link: newEvent.meeting_link.trim() || null,
+        max_attendees: newEvent.max_attendees
+          ? parseInt(newEvent.max_attendees)
+          : null,
       };
 
-      setEvents([event, ...events]);
+      const { data, error } = await supabase
+        .from('club_events')
+        .insert([eventData])
+        .select(
+          `
+          *,
+          user_profiles!club_events_organizer_id_fkey(name)
+        `
+        )
+        .single();
+
+      if (error) {
+        console.error('Error creating event:', error);
+        throw error;
+      }
+
+      // Add the new event to the list
+      const newEventItem: ClubEvent = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        event_type: data.event_type,
+        start_time: data.start_time,
+        end_time: data.end_time,
+        location: data.location,
+        is_virtual: data.is_virtual,
+        meeting_link: data.meeting_link,
+        max_attendees: data.max_attendees,
+        organizer_id: data.organizer_id,
+        organizer_name: data.user_profiles?.name || profile?.name || 'You',
+        attendees_count: 0,
+        user_status: null,
+      };
+
+      setEvents([newEventItem, ...events]);
+
+      // Reset form
       setNewEvent({
         title: '',
         description: '',
@@ -243,8 +427,10 @@ export default function ClubEventsScreen() {
         meeting_link: '',
         max_attendees: '',
       });
+      setStartDateTime(null);
+      setEndDateTime(null);
       setShowCreateModal(false);
-      
+
       showNotification({
         type: 'success',
         title: 'Event Created',
@@ -252,6 +438,7 @@ export default function ClubEventsScreen() {
         duration: 3000,
       });
     } catch (error) {
+      console.error('Error creating event:', error);
       showNotification({
         type: 'error',
         title: 'Error',
@@ -261,43 +448,169 @@ export default function ClubEventsScreen() {
     }
   };
 
-  const handleAttendanceChange = (eventId: string, status: 'going' | 'maybe' | 'not_going') => {
-    setEvents(events.map(event => {
-      if (event.id === eventId) {
-        const oldStatus = event.user_status;
-        let attendeesChange = 0;
-        
-        if (oldStatus === null && status === 'going') attendeesChange = 1;
-        else if (oldStatus === 'going' && status !== 'going') attendeesChange = -1;
-        else if (oldStatus !== 'going' && status === 'going') attendeesChange = 1;
-        
-        return {
-          ...event,
-          user_status: status,
-          attendees_count: Math.max(0, event.attendees_count + attendeesChange),
-        };
+  const handleAttendanceChange = (
+    eventId: string,
+    status: 'going' | 'maybe' | 'not_going'
+  ) => {
+    setEvents(
+      events.map((event) => {
+        if (event.id === eventId) {
+          const oldStatus = event.user_status;
+          let attendeesChange = 0;
+
+          if (oldStatus === null && status === 'going') attendeesChange = 1;
+          else if (oldStatus === 'going' && status !== 'going')
+            attendeesChange = -1;
+          else if (oldStatus !== 'going' && status === 'going')
+            attendeesChange = 1;
+
+          return {
+            ...event,
+            user_status: status,
+            attendees_count: Math.max(
+              0,
+              event.attendees_count + attendeesChange
+            ),
+          };
+        }
+        return event;
+      })
+    );
+  };
+
+  // Date picker functions
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowStartDatePicker(false);
+    }
+
+    if (selectedDate) {
+      const newDate = new Date(selectedDate);
+      if (startDateTime) {
+        // Preserve the time if it was already set
+        newDate.setHours(startDateTime.getHours(), startDateTime.getMinutes());
       }
-      return event;
-    }));
+      setStartDateTime(newDate);
+
+      if (Platform.OS === 'ios') {
+        setShowStartDatePicker(false);
+        setShowStartTimePicker(true);
+      }
+    }
+  };
+
+  const handleStartTimeChange = (event: any, selectedTime?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowStartTimePicker(false);
+    }
+
+    if (selectedTime && startDateTime) {
+      const newDate = new Date(startDateTime);
+      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+      setStartDateTime(newDate);
+    }
+  };
+
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEndDatePicker(false);
+    }
+
+    if (selectedDate) {
+      const newDate = new Date(selectedDate);
+      if (endDateTime) {
+        // Preserve the time if it was already set
+        newDate.setHours(endDateTime.getHours(), endDateTime.getMinutes());
+      }
+      setEndDateTime(newDate);
+
+      if (Platform.OS === 'ios') {
+        setShowEndDatePicker(false);
+        setShowEndTimePicker(true);
+      }
+    }
+  };
+
+  const handleEndTimeChange = (event: any, selectedTime?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEndTimePicker(false);
+    }
+
+    if (selectedTime && endDateTime) {
+      const newDate = new Date(endDateTime);
+      newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+      setEndDateTime(newDate);
+    }
+  };
+
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Web-specific date handlers
+  const handleWebStartDateChange = (event: any) => {
+    const value = event.target.value; // Format: YYYY-MM-DDTHH:mm
+    if (value) {
+      const newDate = new Date(value);
+      setStartDateTime(newDate);
+    }
+  };
+
+  const handleWebEndDateChange = (event: any) => {
+    const value = event.target.value; // Format: YYYY-MM-DDTHH:mm
+    if (value) {
+      const newDate = new Date(value);
+      setEndDateTime(newDate);
+    }
+  };
+
+  // Format date for web input (YYYY-MM-DDTHH:mm)
+  const formatDateForWeb = (date: Date | null) => {
+    if (!date) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
-      case 'blood_drive': return '#EF4444';
-      case 'meeting': return '#3B82F6';
-      case 'training': return '#10B981';
-      case 'social': return '#8B5CF6';
-      default: return '#6B7280';
+      case 'blood_drive':
+        return '#EF4444';
+      case 'meeting':
+        return '#3B82F6';
+      case 'training':
+        return '#10B981';
+      case 'social':
+        return '#8B5CF6';
+      default:
+        return '#6B7280';
     }
   };
 
   const getEventTypeLabel = (type: string) => {
     switch (type) {
-      case 'blood_drive': return 'Blood Drive';
-      case 'meeting': return 'Meeting';
-      case 'training': return 'Training';
-      case 'social': return 'Social';
-      default: return 'Other';
+      case 'blood_drive':
+        return 'Blood Drive';
+      case 'meeting':
+        return 'Meeting';
+      case 'training':
+        return 'Training';
+      case 'social':
+        return 'Social';
+      default:
+        return 'Other';
     }
   };
 
@@ -322,7 +635,7 @@ export default function ClubEventsScreen() {
     return new Date(endTime) < new Date();
   };
 
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = events.filter((event) => {
     if (selectedTab === 'upcoming') {
       return !isEventPast(event.end_time);
     } else {
@@ -332,10 +645,14 @@ export default function ClubEventsScreen() {
 
   const getAttendanceIcon = (status: string | null) => {
     switch (status) {
-      case 'going': return <CheckCircle size={16} color="#10B981" />;
-      case 'maybe': return <HelpCircle size={16} color="#F59E0B" />;
-      case 'not_going': return <XCircle size={16} color="#EF4444" />;
-      default: return null;
+      case 'going':
+        return <CheckCircle size={16} color="#10B981" />;
+      case 'maybe':
+        return <HelpCircle size={16} color="#F59E0B" />;
+      case 'not_going':
+        return <XCircle size={16} color="#EF4444" />;
+      default:
+        return null;
     }
   };
 
@@ -353,16 +670,23 @@ export default function ClubEventsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <ArrowLeft size={24} color="#111827" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Events</Text>
-        <TouchableOpacity 
-          style={styles.createButton}
-          onPress={() => setShowCreateModal(true)}
-        >
-          <Plus size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        {canCreateEvent ? (
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => setShowCreateModal(true)}
+          >
+            <Plus size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholderButton} />
+        )}
       </View>
 
       {/* Tabs */}
@@ -371,7 +695,12 @@ export default function ClubEventsScreen() {
           style={[styles.tab, selectedTab === 'upcoming' && styles.activeTab]}
           onPress={() => setSelectedTab('upcoming')}
         >
-          <Text style={[styles.tabText, selectedTab === 'upcoming' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'upcoming' && styles.activeTabText,
+            ]}
+          >
             Upcoming
           </Text>
         </TouchableOpacity>
@@ -379,7 +708,12 @@ export default function ClubEventsScreen() {
           style={[styles.tab, selectedTab === 'past' && styles.activeTab]}
           onPress={() => setSelectedTab('past')}
         >
-          <Text style={[styles.tabText, selectedTab === 'past' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === 'past' && styles.activeTabText,
+            ]}
+          >
             Past
           </Text>
         </TouchableOpacity>
@@ -392,10 +726,12 @@ export default function ClubEventsScreen() {
             {/* Event Header */}
             <View style={styles.eventHeader}>
               <View style={styles.eventTypeContainer}>
-                <View style={[
-                  styles.eventTypeBadge,
-                  { backgroundColor: getEventTypeColor(event.event_type) }
-                ]}>
+                <View
+                  style={[
+                    styles.eventTypeBadge,
+                    { backgroundColor: getEventTypeColor(event.event_type) },
+                  ]}
+                >
                   <Text style={styles.eventTypeText}>
                     {getEventTypeLabel(event.event_type)}
                   </Text>
@@ -407,7 +743,7 @@ export default function ClubEventsScreen() {
                   </View>
                 )}
               </View>
-              
+
               <View style={styles.attendanceStatus}>
                 {getAttendanceIcon(event.user_status)}
               </View>
@@ -422,17 +758,19 @@ export default function ClubEventsScreen() {
               <View style={styles.eventDetailRow}>
                 <Calendar size={16} color="#6B7280" />
                 <Text style={styles.eventDetailText}>
-                  {formatEventDate(event.start_time)} • {formatEventTime(event.start_time)} - {formatEventTime(event.end_time)}
+                  {formatEventDate(event.start_time)} •{' '}
+                  {formatEventTime(event.start_time)} -{' '}
+                  {formatEventTime(event.end_time)}
                 </Text>
               </View>
-              
+
               <View style={styles.eventDetailRow}>
                 <MapPin size={16} color="#6B7280" />
                 <Text style={styles.eventDetailText}>
                   {event.is_virtual ? 'Virtual Event' : event.location}
                 </Text>
               </View>
-              
+
               <View style={styles.eventDetailRow}>
                 <Users size={16} color="#6B7280" />
                 <Text style={styles.eventDetailText}>
@@ -445,7 +783,9 @@ export default function ClubEventsScreen() {
             {/* Organizer */}
             <View style={styles.organizerInfo}>
               <TextAvatar name={event.organizer_name} size={24} />
-              <Text style={styles.organizerText}>Organized by {event.organizer_name}</Text>
+              <Text style={styles.organizerText}>
+                Organized by {event.organizer_name}
+              </Text>
             </View>
 
             {/* Actions */}
@@ -454,15 +794,24 @@ export default function ClubEventsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.attendanceButton,
-                    event.user_status === 'going' && styles.attendanceButtonActive
+                    event.user_status === 'going' &&
+                      styles.attendanceButtonActive,
                   ]}
                   onPress={() => handleAttendanceChange(event.id, 'going')}
                 >
-                  <CheckCircle size={16} color={event.user_status === 'going' ? '#FFFFFF' : '#10B981'} />
-                  <Text style={[
-                    styles.attendanceButtonText,
-                    event.user_status === 'going' && styles.attendanceButtonTextActive
-                  ]}>
+                  <CheckCircle
+                    size={16}
+                    color={
+                      event.user_status === 'going' ? '#FFFFFF' : '#10B981'
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.attendanceButtonText,
+                      event.user_status === 'going' &&
+                        styles.attendanceButtonTextActive,
+                    ]}
+                  >
                     Going
                   </Text>
                 </TouchableOpacity>
@@ -470,15 +819,24 @@ export default function ClubEventsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.attendanceButton,
-                    event.user_status === 'maybe' && styles.attendanceButtonActive
+                    event.user_status === 'maybe' &&
+                      styles.attendanceButtonActive,
                   ]}
                   onPress={() => handleAttendanceChange(event.id, 'maybe')}
                 >
-                  <HelpCircle size={16} color={event.user_status === 'maybe' ? '#FFFFFF' : '#F59E0B'} />
-                  <Text style={[
-                    styles.attendanceButtonText,
-                    event.user_status === 'maybe' && styles.attendanceButtonTextActive
-                  ]}>
+                  <HelpCircle
+                    size={16}
+                    color={
+                      event.user_status === 'maybe' ? '#FFFFFF' : '#F59E0B'
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.attendanceButtonText,
+                      event.user_status === 'maybe' &&
+                        styles.attendanceButtonTextActive,
+                    ]}
+                  >
                     Maybe
                   </Text>
                 </TouchableOpacity>
@@ -486,40 +844,49 @@ export default function ClubEventsScreen() {
                 <TouchableOpacity
                   style={[
                     styles.attendanceButton,
-                    event.user_status === 'not_going' && styles.attendanceButtonActive
+                    event.user_status === 'not_going' &&
+                      styles.attendanceButtonActive,
                   ]}
                   onPress={() => handleAttendanceChange(event.id, 'not_going')}
                 >
-                  <XCircle size={16} color={event.user_status === 'not_going' ? '#FFFFFF' : '#EF4444'} />
-                  <Text style={[
-                    styles.attendanceButtonText,
-                    event.user_status === 'not_going' && styles.attendanceButtonTextActive
-                  ]}>
-                    Can't Go
+                  <XCircle
+                    size={16}
+                    color={
+                      event.user_status === 'not_going' ? '#FFFFFF' : '#EF4444'
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.attendanceButtonText,
+                      event.user_status === 'not_going' &&
+                        styles.attendanceButtonTextActive,
+                    ]}
+                  >
+                    Can&apos;t Go
                   </Text>
                 </TouchableOpacity>
               </View>
             )}
 
             {/* Join Meeting Link */}
-            {event.is_virtual && event.meeting_link && !isEventPast(event.end_time) && (
-              <TouchableOpacity style={styles.joinMeetingButton}>
-                <Video size={16} color="#FFFFFF" />
-                <Text style={styles.joinMeetingText}>Join Meeting</Text>
-              </TouchableOpacity>
-            )}
+            {event.is_virtual &&
+              event.meeting_link &&
+              !isEventPast(event.end_time) && (
+                <TouchableOpacity style={styles.joinMeetingButton}>
+                  <Video size={16} color="#FFFFFF" />
+                  <Text style={styles.joinMeetingText}>Join Meeting</Text>
+                </TouchableOpacity>
+              )}
           </View>
         ))}
 
         {filteredEvents.length === 0 && (
           <View style={styles.noEvents}>
             <Calendar size={48} color="#D1D5DB" />
-            <Text style={styles.noEventsText}>
-              No {selectedTab} events
-            </Text>
+            <Text style={styles.noEventsText}>No {selectedTab} events</Text>
             <Text style={styles.noEventsSubtext}>
-              {selectedTab === 'upcoming' 
-                ? 'Create an event to get started' 
+              {selectedTab === 'upcoming'
+                ? 'Create an event to get started'
                 : 'Past events will appear here'}
             </Text>
           </View>
@@ -539,14 +906,19 @@ export default function ClubEventsScreen() {
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>New Event</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleCreateEvent}
-              disabled={!newEvent.title.trim() || !newEvent.start_time || !newEvent.end_time}
+              disabled={
+                !newEvent.title.trim() || !startDateTime || !endDateTime
+              }
             >
-              <Text style={[
-                styles.modalCreateText,
-                (!newEvent.title.trim() || !newEvent.start_time || !newEvent.end_time) && styles.modalCreateTextDisabled
-              ]}>
+              <Text
+                style={[
+                  styles.modalCreateText,
+                  (!newEvent.title.trim() || !startDateTime || !endDateTime) &&
+                    styles.modalCreateTextDisabled,
+                ]}
+              >
                 Create
               </Text>
             </TouchableOpacity>
@@ -560,31 +932,41 @@ export default function ClubEventsScreen() {
                 placeholder="Enter event title"
                 placeholderTextColor="#9CA3AF"
                 value={newEvent.title}
-                onChangeText={(text) => setNewEvent({...newEvent, title: text})}
+                onChangeText={(text) =>
+                  setNewEvent({ ...newEvent, title: text })
+                }
               />
             </View>
 
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>Type</Text>
               <View style={styles.typeSelector}>
-                {['meeting', 'blood_drive', 'training', 'social', 'other'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.typeOption,
-                      newEvent.event_type === type && styles.typeOptionActive,
-                      { borderColor: getEventTypeColor(type) }
-                    ]}
-                    onPress={() => setNewEvent({...newEvent, event_type: type as any})}
-                  >
-                    <Text style={[
-                      styles.typeOptionText,
-                      newEvent.event_type === type && { color: getEventTypeColor(type) }
-                    ]}>
-                      {getEventTypeLabel(type)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {['meeting', 'blood_drive', 'training', 'social', 'other'].map(
+                  (type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.typeOption,
+                        newEvent.event_type === type && styles.typeOptionActive,
+                        { borderColor: getEventTypeColor(type) },
+                      ]}
+                      onPress={() =>
+                        setNewEvent({ ...newEvent, event_type: type as any })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.typeOptionText,
+                          newEvent.event_type === type && {
+                            color: getEventTypeColor(type),
+                          },
+                        ]}
+                      >
+                        {getEventTypeLabel(type)}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                )}
               </View>
             </View>
 
@@ -595,7 +977,9 @@ export default function ClubEventsScreen() {
                 placeholder="Describe your event..."
                 placeholderTextColor="#9CA3AF"
                 value={newEvent.description}
-                onChangeText={(text) => setNewEvent({...newEvent, description: text})}
+                onChangeText={(text) =>
+                  setNewEvent({ ...newEvent, description: text })
+                }
                 multiline
                 textAlignVertical="top"
               />
@@ -603,33 +987,217 @@ export default function ClubEventsScreen() {
 
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>Start Time *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM"
-                placeholderTextColor="#9CA3AF"
-                value={newEvent.start_time}
-                onChangeText={(text) => setNewEvent({...newEvent, start_time: text})}
-              />
+
+              {Platform.OS === 'web' ? (
+                // Web: HTML5 datetime-local input
+                <View style={styles.webDateContainer}>
+                  <input
+                    type="datetime-local"
+                    value={formatDateForWeb(startDateTime)}
+                    onChange={handleWebStartDateChange}
+                    min={formatDateForWeb(new Date())}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '16px',
+                      fontFamily: 'Inter-Regular',
+                      color: '#111827',
+                      outline: 'none',
+                    }}
+                  />
+                  {startDateTime && (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={() => setStartDateTime(null)}
+                    >
+                      <Text style={styles.clearDateText}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                // Mobile: Native date/time pickers
+                <>
+                  {startDateTime ? (
+                    <View style={styles.dateDisplayContainer}>
+                      <Text style={styles.dateDisplayText}>
+                        {formatDateTime(startDateTime)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={() => setStartDateTime(null)}
+                      >
+                        <Text style={styles.clearDateText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#6B7280" />
+                      <Text style={styles.datePickerButtonText}>
+                        Select Start Date & Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {startDateTime && (
+                    <TouchableOpacity
+                      style={[styles.datePickerButton, styles.updateDateButton]}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#DC2626" />
+                      <Text
+                        style={[
+                          styles.datePickerButtonText,
+                          { color: '#DC2626' },
+                        ]}
+                      >
+                        Change Start Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
             </View>
 
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>End Time *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="YYYY-MM-DD HH:MM"
-                placeholderTextColor="#9CA3AF"
-                value={newEvent.end_time}
-                onChangeText={(text) => setNewEvent({...newEvent, end_time: text})}
-              />
+
+              {Platform.OS === 'web' ? (
+                // Web: HTML5 datetime-local input
+                <View style={styles.webDateContainer}>
+                  <input
+                    type="datetime-local"
+                    value={formatDateForWeb(endDateTime)}
+                    onChange={handleWebEndDateChange}
+                    min={formatDateForWeb(startDateTime || new Date())}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '16px',
+                      fontFamily: 'Inter-Regular',
+                      color: '#111827',
+                      outline: 'none',
+                    }}
+                  />
+                  {endDateTime && (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={() => setEndDateTime(null)}
+                    >
+                      <Text style={styles.clearDateText}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                // Mobile: Native date/time pickers
+                <>
+                  {endDateTime ? (
+                    <View style={styles.dateDisplayContainer}>
+                      <Text style={styles.dateDisplayText}>
+                        {formatDateTime(endDateTime)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={() => setEndDateTime(null)}
+                      >
+                        <Text style={styles.clearDateText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowEndDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#6B7280" />
+                      <Text style={styles.datePickerButtonText}>
+                        Select End Date & Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {endDateTime && (
+                    <TouchableOpacity
+                      style={[styles.datePickerButton, styles.updateDateButton]}
+                      onPress={() => setShowEndDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#DC2626" />
+                      <Text
+                        style={[
+                          styles.datePickerButtonText,
+                          { color: '#DC2626' },
+                        ]}
+                      >
+                        Change End Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Date Pickers */}
+                  {showStartDatePicker && (
+                    <DateTimePicker
+                      value={startDateTime || new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleStartDateChange}
+                      minimumDate={new Date()}
+                    />
+                  )}
+
+                  {showStartTimePicker && (
+                    <DateTimePicker
+                      value={startDateTime || new Date()}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleStartTimeChange}
+                    />
+                  )}
+
+                  {showEndDatePicker && (
+                    <DateTimePicker
+                      value={endDateTime || startDateTime || new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleEndDateChange}
+                      minimumDate={startDateTime || new Date()}
+                    />
+                  )}
+
+                  {showEndTimePicker && (
+                    <DateTimePicker
+                      value={endDateTime || new Date()}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleEndTimeChange}
+                    />
+                  )}
+                </>
+              )}
             </View>
 
             <View style={styles.inputSection}>
               <TouchableOpacity
                 style={styles.virtualToggle}
-                onPress={() => setNewEvent({...newEvent, is_virtual: !newEvent.is_virtual})}
+                onPress={() =>
+                  setNewEvent({ ...newEvent, is_virtual: !newEvent.is_virtual })
+                }
               >
-                <View style={[styles.checkbox, newEvent.is_virtual && styles.checkboxActive]}>
-                  {newEvent.is_virtual && <Text style={styles.checkmark}>✓</Text>}
+                <View
+                  style={[
+                    styles.checkbox,
+                    newEvent.is_virtual && styles.checkboxActive,
+                  ]}
+                >
+                  {newEvent.is_virtual && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
                 </View>
                 <Text style={styles.virtualToggleText}>Virtual Event</Text>
               </TouchableOpacity>
@@ -643,7 +1211,9 @@ export default function ClubEventsScreen() {
                   placeholder="https://meet.google.com/..."
                   placeholderTextColor="#9CA3AF"
                   value={newEvent.meeting_link}
-                  onChangeText={(text) => setNewEvent({...newEvent, meeting_link: text})}
+                  onChangeText={(text) =>
+                    setNewEvent({ ...newEvent, meeting_link: text })
+                  }
                   keyboardType="url"
                   autoCapitalize="none"
                 />
@@ -656,7 +1226,9 @@ export default function ClubEventsScreen() {
                   placeholder="Enter event location"
                   placeholderTextColor="#9CA3AF"
                   value={newEvent.location}
-                  onChangeText={(text) => setNewEvent({...newEvent, location: text})}
+                  onChangeText={(text) =>
+                    setNewEvent({ ...newEvent, location: text })
+                  }
                 />
               </View>
             )}
@@ -668,7 +1240,9 @@ export default function ClubEventsScreen() {
                 placeholder="Enter maximum number of attendees"
                 placeholderTextColor="#9CA3AF"
                 value={newEvent.max_attendees}
-                onChangeText={(text) => setNewEvent({...newEvent, max_attendees: text})}
+                onChangeText={(text) =>
+                  setNewEvent({ ...newEvent, max_attendees: text })
+                }
                 keyboardType="numeric"
               />
             </View>
@@ -726,6 +1300,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  placeholderButton: {
+    width: 40,
+    height: 40,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -1023,5 +1601,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 16,
     color: '#374151',
+  },
+  dateDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dateDisplayText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#111827',
+    flex: 1,
+  },
+  clearDateButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#EF4444',
+    borderRadius: 6,
+  },
+  clearDateText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  datePickerButtonText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  updateDateButton: {
+    marginTop: 8,
+    borderColor: '#DC2626',
+  },
+  webDateContainer: {
+    position: 'relative',
   },
 });
