@@ -20,6 +20,9 @@ import {
   Users,
   MessageCircle,
   Heart,
+  Edit,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
@@ -56,6 +59,9 @@ export default function ClubAnnouncementsScreen() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] =
+    useState<Announcement | null>(null);
   const [newAnnouncement, setNewAnnouncement] = useState({
     title: '',
     content: '',
@@ -81,6 +87,8 @@ export default function ClubAnnouncementsScreen() {
     'owner' | 'admin' | 'moderator' | 'member' | null
   >(null);
   const [canCreateAnnouncement, setCanCreateAnnouncement] = useState(false);
+  const [canEditAnnouncement, setCanEditAnnouncement] = useState(false);
+  const [canDeleteAnnouncement, setCanDeleteAnnouncement] = useState(false);
   const [clubData, setClubData] = useState<any>(null);
 
   // Date picker state
@@ -126,6 +134,8 @@ export default function ClubAnnouncementsScreen() {
       if (user.id === id) {
         setUserRole('owner');
         setCanCreateAnnouncement(true);
+        setCanEditAnnouncement(true);
+        setCanDeleteAnnouncement(true);
         return;
       }
 
@@ -152,8 +162,12 @@ export default function ClubAnnouncementsScreen() {
       }
 
       setUserRole(memberData.role);
-      // Only owners and admins can create announcements
+      // Set permissions based on role
       setCanCreateAnnouncement(memberData.role === 'admin');
+      setCanEditAnnouncement(
+        memberData.role === 'admin' || memberData.role === 'moderator'
+      );
+      setCanDeleteAnnouncement(memberData.role === 'admin');
     } catch (error) {
       console.error('Error checking permissions:', error);
       setUserRole(null);
@@ -327,6 +341,168 @@ export default function ClubAnnouncementsScreen() {
         type: 'error',
         title: 'Error',
         message: 'Failed to create announcement',
+        duration: 4000,
+      });
+    }
+  };
+
+  const handleEditAnnouncement = (announcement: Announcement) => {
+    setEditingAnnouncement(announcement);
+    setNewAnnouncement({
+      title: announcement.title,
+      content: announcement.content,
+      priority: announcement.priority,
+      event_date: announcement.event_date || '',
+      tags: announcement.tags || [],
+      location: announcement.location || '',
+      target_audience: announcement.target_audience || 'all',
+      attachment_url: announcement.attachment_url || '',
+    });
+    if (announcement.event_date) {
+      setEventDate(new Date(announcement.event_date));
+    } else {
+      setEventDate(null);
+    }
+    setShowEditModal(true);
+  };
+
+  const handleDeleteAnnouncement = (announcementId: string) => {
+    Alert.alert(
+      'Delete Announcement',
+      'Are you sure you want to delete this announcement? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteAnnouncement(announcementId),
+        },
+      ]
+    );
+  };
+
+  const deleteAnnouncement = async (announcementId: string) => {
+    try {
+      const { error } = await supabase
+        .from('club_announcements')
+        .delete()
+        .eq('id', announcementId);
+
+      if (error) {
+        console.error('Error deleting announcement:', error);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete announcement',
+          duration: 4000,
+        });
+        return;
+      }
+
+      showNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Announcement deleted successfully',
+        duration: 3000,
+      });
+
+      // Reload announcements
+      loadAnnouncements();
+    } catch (error) {
+      console.error('Error deleting announcement:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete announcement',
+        duration: 4000,
+      });
+    }
+  };
+
+  const handleUpdateAnnouncement = async () => {
+    if (!editingAnnouncement) return;
+
+    // Mark all fields as touched before validation
+    setTouchedFields({
+      title: true,
+      content: true,
+      location: true,
+      attachment_url: true,
+    });
+
+    // Validate form
+    if (!validateForm()) {
+      const firstError = Object.values(validationErrors)[0];
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: firstError || 'Please fix the errors and try again',
+        duration: 4000,
+      });
+      return;
+    }
+
+    try {
+      const updateData = {
+        title: newAnnouncement.title.trim(),
+        content: newAnnouncement.content.trim(),
+        priority: newAnnouncement.priority,
+        event_date: eventDate ? eventDate.toISOString() : null,
+        tags: newAnnouncement.tags,
+        location: newAnnouncement.location.trim() || null,
+        target_audience: newAnnouncement.target_audience,
+        attachment_url: newAnnouncement.attachment_url.trim() || null,
+      };
+
+      const { error } = await supabase
+        .from('club_announcements')
+        .update(updateData)
+        .eq('id', editingAnnouncement.id);
+
+      if (error) {
+        console.error('Error updating announcement:', error);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update announcement',
+          duration: 4000,
+        });
+        return;
+      }
+
+      showNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Announcement updated successfully',
+        duration: 3000,
+      });
+
+      // Reset form and close modal
+      setShowEditModal(false);
+      setEditingAnnouncement(null);
+      setNewAnnouncement({
+        title: '',
+        content: '',
+        priority: 'medium',
+        event_date: '',
+        tags: [],
+        location: '',
+        target_audience: 'all',
+        attachment_url: '',
+      });
+      setCurrentTag('');
+      setValidationErrors({});
+      setTouchedFields({});
+      setEventDate(null);
+
+      // Reload announcements
+      loadAnnouncements();
+    } catch (error) {
+      console.error('Error updating announcement:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to update announcement',
         duration: 4000,
       });
     }
@@ -586,6 +762,20 @@ export default function ClubAnnouncementsScreen() {
     });
   };
 
+  const canEditAnnouncementItem = (announcement: Announcement) => {
+    if (!user) return false;
+    if (user.id === id) return true; // Club owner can edit all
+    if (user.id === announcement.author_id) return canEditAnnouncement; // Author can edit if they have permission
+    return false;
+  };
+
+  const canDeleteAnnouncementItem = (announcement: Announcement) => {
+    if (!user) return false;
+    if (user.id === id) return true; // Club owner can delete all
+    if (user.id === announcement.author_id) return canDeleteAnnouncement; // Author can delete if they have permission
+    return false;
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -706,34 +896,35 @@ export default function ClubAnnouncementsScreen() {
               </View>
             )}
 
-            {/* Actions */}
-            <View style={styles.announcementActions}>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => handleLikeAnnouncement(announcement.id)}
-              >
-                <Heart
-                  size={20}
-                  color={announcement.is_liked ? '#DC2626' : '#6B7280'}
-                  fill={announcement.is_liked ? '#DC2626' : 'none'}
-                />
-                <Text style={styles.actionText}>
-                  {announcement.likes_count}
-                </Text>
-              </TouchableOpacity>
+            {/* Edit/Delete Actions */}
+            {(canEditAnnouncementItem(announcement) ||
+              canDeleteAnnouncementItem(announcement)) && (
+              <View style={styles.announcementActions}>
+                {canEditAnnouncementItem(announcement) && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleEditAnnouncement(announcement)}
+                  >
+                    <Edit size={20} color="#3B82F6" />
+                    <Text style={[styles.actionText, { color: '#3B82F6' }]}>
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              <TouchableOpacity style={styles.actionButton}>
-                <MessageCircle size={20} color="#6B7280" />
-                <Text style={styles.actionText}>
-                  {announcement.comments_count}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.actionButton}>
-                <Users size={20} color="#6B7280" />
-                <Text style={styles.actionText}>Share</Text>
-              </TouchableOpacity>
-            </View>
+                {canDeleteAnnouncementItem(announcement) && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDeleteAnnouncement(announcement.id)}
+                  >
+                    <Trash2 size={20} color="#EF4444" />
+                    <Text style={[styles.actionText, { color: '#EF4444' }]}>
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -1056,6 +1247,321 @@ export default function ClubAnnouncementsScreen() {
               keyboardType="url"
               autoCapitalize="none"
               helpText="Optional - Link to documents, images, or additional resources"
+            />
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Edit Announcement Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowEditModal(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Edit Announcement</Text>
+            <TouchableOpacity
+              onPress={handleUpdateAnnouncement}
+              disabled={
+                !newAnnouncement.title.trim() || !newAnnouncement.content.trim()
+              }
+            >
+              <Text
+                style={[
+                  styles.modalPostText,
+                  (!newAnnouncement.title.trim() ||
+                    !newAnnouncement.content.trim()) &&
+                    styles.modalPostTextDisabled,
+                ]}
+              >
+                Update
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <ValidatedInput
+              label="Title"
+              value={newAnnouncement.title}
+              onChangeText={(text) => handleFieldChange('title', text)}
+              onBlur={() => handleFieldTouch('title')}
+              error={validationErrors.title}
+              touched={touchedFields.title}
+              placeholder="Enter announcement title"
+              maxLength={100}
+              required
+            />
+
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Priority</Text>
+              <View style={styles.prioritySelector}>
+                {['low', 'medium', 'high', 'urgent'].map((priority) => (
+                  <TouchableOpacity
+                    key={priority}
+                    style={[
+                      styles.priorityOption,
+                      newAnnouncement.priority === priority &&
+                        styles.priorityOptionActive,
+                      { borderColor: getPriorityColor(priority) },
+                    ]}
+                    onPress={() =>
+                      setNewAnnouncement({
+                        ...newAnnouncement,
+                        priority: priority as any,
+                      })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.priorityOptionText,
+                        newAnnouncement.priority === priority && {
+                          color: getPriorityColor(priority),
+                        },
+                      ]}
+                    >
+                      {getPriorityLabel(priority)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            <ValidatedInput
+              label="Content"
+              value={newAnnouncement.content}
+              onChangeText={(text) => handleFieldChange('content', text)}
+              onBlur={() => handleFieldTouch('content')}
+              error={validationErrors.content}
+              touched={touchedFields.content}
+              placeholder="Write your announcement..."
+              multiline
+              maxLength={1000}
+              helpText={`${newAnnouncement.content.length}/1000 characters`}
+              required
+              style={{ minHeight: 100 }}
+            />
+
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Event Date (Optional)</Text>
+
+              {Platform.OS === 'web' ? (
+                // Web: HTML5 datetime-local input
+                <View style={styles.webDateContainer}>
+                  <input
+                    type="datetime-local"
+                    value={formatDateForWeb(eventDate)}
+                    onChange={handleWebDateChange}
+                    min={formatDateForWeb(new Date())}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '16px',
+                      fontFamily: 'Inter-Regular',
+                      color: '#111827',
+                      outline: 'none',
+                    }}
+                  />
+                  {eventDate && (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={clearEventDate}
+                    >
+                      <Text style={styles.clearDateText}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                // Mobile: Native date/time pickers
+                <>
+                  {eventDate ? (
+                    <View style={styles.dateDisplayContainer}>
+                      <Text style={styles.dateDisplayText}>
+                        {formatEventDateTime(eventDate)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={clearEventDate}
+                      >
+                        <Text style={styles.clearDateText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.datePickerButton}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#6B7280" />
+                      <Text style={styles.datePickerButtonText}>
+                        Select Event Date
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Update existing date */}
+                  {eventDate && (
+                    <TouchableOpacity
+                      style={[styles.datePickerButton, styles.updateDateButton]}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#DC2626" />
+                      <Text
+                        style={[
+                          styles.datePickerButtonText,
+                          { color: '#DC2626' },
+                        ]}
+                      >
+                        Change Date/Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Date Picker */}
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={selectedDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleDateChange}
+                      minimumDate={new Date()}
+                    />
+                  )}
+
+                  {/* Time Picker */}
+                  {showTimePicker && (
+                    <DateTimePicker
+                      value={selectedDate}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleTimeChange}
+                    />
+                  )}
+                </>
+              )}
+            </View>
+
+            {/* Tags Section */}
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Tags (Optional)</Text>
+              <View style={styles.tagInputContainer}>
+                <TextInput
+                  style={[
+                    styles.tagInput,
+                    validationErrors.tag && styles.inputError,
+                  ]}
+                  placeholder="Add a tag and press Enter"
+                  placeholderTextColor="#9CA3AF"
+                  value={currentTag}
+                  onChangeText={(text) => {
+                    setCurrentTag(text);
+                    if (validationErrors.tag) {
+                      setValidationErrors({ ...validationErrors, tag: '' });
+                    }
+                  }}
+                  onKeyPress={handleTagKeyPress}
+                  maxLength={20}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={styles.addTagButton}
+                  onPress={addTag}
+                  disabled={!currentTag.trim()}
+                >
+                  <Text
+                    style={[
+                      styles.addTagText,
+                      !currentTag.trim() && styles.addTagTextDisabled,
+                    ]}
+                  >
+                    Add
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {validationErrors.tag && (
+                <Text style={styles.errorText}>{validationErrors.tag}</Text>
+              )}
+              {newAnnouncement.tags.length > 0 && (
+                <View style={styles.tagsContainer}>
+                  {newAnnouncement.tags.map((tag, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={styles.tagChip}
+                      onPress={() => removeTag(tag)}
+                    >
+                      <Text style={styles.tagChipText}>#{tag}</Text>
+                      <Text style={styles.tagChipRemove}>×</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              <Text style={styles.helperText}>
+                Press Enter or comma to add tags. Tap tags to remove. Max 5
+                tags.
+              </Text>
+            </View>
+
+            {/* Location Section */}
+            <ValidatedInput
+              label="Location"
+              value={newAnnouncement.location}
+              onChangeText={(text) => handleFieldChange('location', text)}
+              onBlur={() => handleFieldTouch('location')}
+              error={validationErrors.location}
+              touched={touchedFields.location}
+              placeholder="Event or announcement location"
+              maxLength={200}
+            />
+
+            {/* Target Audience Section */}
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Target Audience</Text>
+              <View style={styles.audienceSelector}>
+                {['all', 'admins', 'moderators', 'members'].map((audience) => (
+                  <TouchableOpacity
+                    key={audience}
+                    style={[
+                      styles.audienceOption,
+                      newAnnouncement.target_audience === audience &&
+                        styles.audienceOptionActive,
+                    ]}
+                    onPress={() =>
+                      setNewAnnouncement({
+                        ...newAnnouncement,
+                        target_audience: audience as any,
+                      })
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.audienceOptionText,
+                        newAnnouncement.target_audience === audience &&
+                          styles.audienceOptionTextActive,
+                      ]}
+                    >
+                      {audience.charAt(0).toUpperCase() + audience.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Attachment URL Section */}
+            <ValidatedInput
+              label="Attachment URL"
+              value={newAnnouncement.attachment_url}
+              onChangeText={(text) => handleFieldChange('attachment_url', text)}
+              onBlur={() => handleFieldTouch('attachment_url')}
+              error={validationErrors.attachment_url}
+              touched={touchedFields.attachment_url}
+              placeholder="https://example.com/document.pdf"
+              maxLength={500}
             />
           </ScrollView>
         </SafeAreaView>
