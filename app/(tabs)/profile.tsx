@@ -49,6 +49,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { NotificationSettings } from '@/components/NotificationSettings';
 
 interface UserStats {
   totalDonations: number;
@@ -273,6 +274,10 @@ export default function ProfileScreen() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [showJoinRequestsModal, setShowJoinRequestsModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Add notification settings modal state
+  const [showNotificationSettings, setShowNotificationSettings] =
+    useState(false);
 
   useEffect(() => {
     if (user && profile) {
@@ -1098,6 +1103,10 @@ export default function ProfileScreen() {
     });
   };
 
+  const handleNotificationSettings = () => {
+    setShowNotificationSettings(true);
+  };
+
   if (!user || !profile) {
     return (
       <SafeAreaView style={styles.container}>
@@ -1393,7 +1402,10 @@ export default function ProfileScreen() {
               <ChevronRight size={20} color="#9CA3AF" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleNotificationSettings}
+            >
               <View style={styles.menuItemLeft}>
                 <BellIcon size={20} color="#374151" />
                 <RNText style={styles.menuItemText}>Notifications</RNText>
@@ -1576,6 +1588,12 @@ export default function ProfileScreen() {
           profile={profile}
           onSave={handleSaveProfile}
           loading={profileUpdateLoading}
+        />
+
+        {/* Notification Settings Modal */}
+        <NotificationSettings
+          visible={showNotificationSettings}
+          onClose={() => setShowNotificationSettings(false)}
         />
       </SafeAreaView>
     );
@@ -1910,7 +1928,10 @@ export default function ProfileScreen() {
             <ChevronRight size={20} color="#9CA3AF" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleNotificationSettings}
+          >
             <View style={styles.menuItemLeft}>
               <BellIcon size={20} color="#374151" />
               <RNText style={styles.menuItemText}>Notifications</RNText>
@@ -2327,6 +2348,12 @@ export default function ProfileScreen() {
           />
         </SafeAreaView>
       </Modal>
+
+      {/* Notification Settings Modal */}
+      <NotificationSettings
+        visible={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+      />
     </SafeAreaView>
   );
 }

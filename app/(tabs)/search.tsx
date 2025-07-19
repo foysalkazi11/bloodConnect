@@ -1,11 +1,34 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, FlatList, ActivityIndicator, Platform, ScrollView, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  FlatList,
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  Modal,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search as SearchIcon, Filter, MapPin, Phone, Mail, Clock, ChevronDown, X } from 'lucide-react-native';
+import {
+  Search as SearchIcon,
+  Filter,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  ChevronDown,
+  X,
+} from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import { useNotification } from '@/components/NotificationSystem';
+import useProgressivePermissions from '@/hooks/useProgressivePermissions';
+import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
 
 const BLOOD_GROUPS = ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -46,6 +69,15 @@ interface PoliceStation {
 export default function SearchScreen() {
   const { t } = useI18n();
   const { showNotification } = useNotification();
+  const {
+    currentRequest,
+    isVisible,
+    triggerPermissionRequest,
+    handleAccept,
+    handleDecline,
+    handleSkip,
+    handleCustomize,
+  } = useProgressivePermissions();
   const [selectedBloodGroup, setSelectedBloodGroup] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
@@ -63,7 +95,8 @@ export default function SearchScreen() {
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedPoliceStation, setSelectedPoliceStation] = useState('');
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
-  const [showPoliceStationDropdown, setShowPoliceStationDropdown] = useState(false);
+  const [showPoliceStationDropdown, setShowPoliceStationDropdown] =
+    useState(false);
   const [districtSearchQuery, setDistrictSearchQuery] = useState('');
   const [policeStationSearchQuery, setPoliceStationSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -85,17 +118,16 @@ export default function SearchScreen() {
     if (selectedDistrict) {
       try {
         const policeStationsData = require('@/assets/data/policeStations.json');
-        
+
         // Find district ID
-        const district = districts.find(
-          (d) => d.value === selectedDistrict
-        );
-        
+        const district = districts.find((d) => d.value === selectedDistrict);
+
         if (district) {
           // Filter police stations by district ID
-          const filteredStations = policeStationsData.content
-            .filter((station: PoliceStation) => station.districtId === district.id);
-          
+          const filteredStations = policeStationsData.content.filter(
+            (station: PoliceStation) => station.districtId === district.id
+          );
+
           setPoliceStations(filteredStations);
           setSelectedPoliceStation('');
         }
@@ -116,37 +148,45 @@ export default function SearchScreen() {
   // Apply filters when they change
   useEffect(() => {
     applyFilters();
-  }, [selectedBloodGroup, searchQuery, showAvailableOnly, donors, locationFilter]);
+  }, [
+    selectedBloodGroup,
+    searchQuery,
+    showAvailableOnly,
+    donors,
+    locationFilter,
+  ]);
 
   const loadDonors = async (reset = true) => {
     if (loading || (loadingMore && !reset)) return;
-    
+
     if (reset) {
       setLoading(true);
       setPage(0);
     } else {
       setLoadingMore(true);
     }
-    
+
     setError(null);
-    
+
     try {
       const currentPage = reset ? 0 : page;
-      
+
       // Create query to fetch donors
       let query = supabase
         .from('user_profiles')
-        .select('id, name, email, phone, blood_group, country, district, police_station, state, city, is_available')
+        .select(
+          'id, name, email, phone, blood_group, country, district, police_station, state, city, is_available'
+        )
         .eq('user_type', 'donor')
         .order('created_at', { ascending: false })
         .range(currentPage * pageSize, (currentPage + 1) * pageSize - 1);
-      
+
       const { data, error } = await query;
-      
+
       if (error) {
         throw error;
       }
-      
+
       // Get last donation date for each donor
       const donorsWithLastDonation = await Promise.all(
         (data || []).map(async (donor) => {
@@ -157,12 +197,15 @@ export default function SearchScreen() {
               .eq('donor_id', donor.id)
               .order('donation_date', { ascending: false })
               .limit(1);
-            
+
             if (donationError) throw donationError;
-            
+
             return {
               ...donor,
-              last_donation: donations && donations.length > 0 ? donations[0].donation_date : undefined
+              last_donation:
+                donations && donations.length > 0
+                  ? donations[0].donation_date
+                  : undefined,
             };
           } catch (err) {
             console.error('Error fetching donation date:', err);
@@ -170,19 +213,19 @@ export default function SearchScreen() {
           }
         })
       );
-      
+
       if (reset) {
         setDonors(donorsWithLastDonation);
       } else {
         setDonors([...donors, ...donorsWithLastDonation]);
       }
-      
+
       setHasMore(data?.length === pageSize);
       setPage(currentPage + 1);
     } catch (err) {
       console.error('Error loading donors:', err);
       setError('Failed to load donors. Please try again.');
-      
+
       // Use mock data if there's an error (e.g., CORS issues in development)
       if (reset) {
         const mockDonors = getMockDonors();
@@ -205,10 +248,12 @@ export default function SearchScreen() {
         country: 'BANGLADESH',
         district: 'DHAKA',
         police_station: 'DHANMONDI',
-        last_donation: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+        last_donation: new Date(
+          Date.now() - 90 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         is_available: true,
         phone: '+880 1234567890',
-        email: 'ahmed@example.com'
+        email: 'ahmed@example.com',
       },
       {
         id: '2',
@@ -217,10 +262,12 @@ export default function SearchScreen() {
         country: 'BANGLADESH',
         district: 'DHAKA',
         police_station: 'GULSHAN',
-        last_donation: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+        last_donation: new Date(
+          Date.now() - 60 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         is_available: true,
         phone: '+880 1987654321',
-        email: 'fatima@example.com'
+        email: 'fatima@example.com',
       },
       {
         id: '3',
@@ -229,10 +276,12 @@ export default function SearchScreen() {
         country: 'BANGLADESH',
         district: 'CHATTOGRAM',
         police_station: 'KOTWALI',
-        last_donation: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        last_donation: new Date(
+          Date.now() - 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         is_available: false,
         phone: '+880 1555666777',
-        email: 'ali@example.com'
+        email: 'ali@example.com',
       },
       {
         id: '4',
@@ -241,58 +290,78 @@ export default function SearchScreen() {
         country: 'UNITED STATES OF AMERICA',
         state: 'California',
         city: 'Los Angeles',
-        last_donation: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+        last_donation: new Date(
+          Date.now() - 120 * 24 * 60 * 60 * 1000
+        ).toISOString(),
         is_available: true,
         phone: '+1 555-123-4567',
-        email: 'sarah@example.com'
-      }
+        email: 'sarah@example.com',
+      },
     ];
   };
 
   const applyFilters = () => {
     let filtered = [...donors];
-    
+
     // Filter by blood group
     if (selectedBloodGroup !== 'All') {
-      filtered = filtered.filter(donor => donor.blood_group === selectedBloodGroup);
+      filtered = filtered.filter(
+        (donor) => donor.blood_group === selectedBloodGroup
+      );
     }
-    
+
     // Filter by search query (name or location)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(donor => {
+      filtered = filtered.filter((donor) => {
         const nameMatch = donor.name.toLowerCase().includes(query);
         const districtMatch = donor.district?.toLowerCase().includes(query);
-        const policeStationMatch = donor.police_station?.toLowerCase().includes(query);
+        const policeStationMatch = donor.police_station
+          ?.toLowerCase()
+          .includes(query);
         const stateMatch = donor.state?.toLowerCase().includes(query);
         const cityMatch = donor.city?.toLowerCase().includes(query);
-        
-        return nameMatch || districtMatch || policeStationMatch || stateMatch || cityMatch;
+
+        return (
+          nameMatch ||
+          districtMatch ||
+          policeStationMatch ||
+          stateMatch ||
+          cityMatch
+        );
       });
     }
-    
+
     // Filter by availability
     if (showAvailableOnly) {
-      filtered = filtered.filter(donor => donor.is_available);
+      filtered = filtered.filter((donor) => donor.is_available);
     }
-    
+
     // Filter by location
     if (locationFilter.district) {
-      filtered = filtered.filter(donor => donor.district === locationFilter.district);
-      
+      filtered = filtered.filter(
+        (donor) => donor.district === locationFilter.district
+      );
+
       if (locationFilter.police_station) {
-        filtered = filtered.filter(donor => donor.police_station === locationFilter.police_station);
+        filtered = filtered.filter(
+          (donor) => donor.police_station === locationFilter.police_station
+        );
       }
     }
-    
+
     if (locationFilter.state) {
-      filtered = filtered.filter(donor => donor.state === locationFilter.state);
-      
+      filtered = filtered.filter(
+        (donor) => donor.state === locationFilter.state
+      );
+
       if (locationFilter.city) {
-        filtered = filtered.filter(donor => donor.city === locationFilter.city);
+        filtered = filtered.filter(
+          (donor) => donor.city === locationFilter.city
+        );
       }
     }
-    
+
     setFilteredDonors(filtered);
   };
 
@@ -313,6 +382,18 @@ export default function SearchScreen() {
 
   const handleBloodGroupSelect = (group: string) => {
     setSelectedBloodGroup(group);
+
+    // Trigger emergency notification permission when user searches for specific blood group
+    if (group !== 'All') {
+      triggerPermissionRequest({
+        trigger: 'emergency_request',
+        metadata: {
+          searchedBloodGroup: group,
+          context: 'blood_search',
+        },
+      });
+    }
+
     // Scroll to top when changing filters
     if (flatListRef.current) {
       flatListRef.current.scrollToOffset({ offset: 0, animated: true });
@@ -333,18 +414,18 @@ export default function SearchScreen() {
 
   const applyLocationFilter = () => {
     const newFilter: LocationFilter = {};
-    
+
     if (selectedDistrict) {
       newFilter.district = selectedDistrict;
-      
+
       if (selectedPoliceStation) {
         newFilter.police_station = selectedPoliceStation;
       }
     }
-    
+
     setLocationFilter(newFilter);
     setShowLocationModal(false);
-    
+
     // Scroll to top when applying filters
     if (flatListRef.current) {
       flatListRef.current.scrollToOffset({ offset: 0, animated: true });
@@ -368,7 +449,7 @@ export default function SearchScreen() {
       });
       return;
     }
-    
+
     if (method === 'call' && donor.phone) {
       if (Platform.OS === 'web') {
         window.location.href = `tel:${donor.phone}`;
@@ -394,11 +475,13 @@ export default function SearchScreen() {
 
   const formatLastDonation = (dateString?: string) => {
     if (!dateString) return 'No donation record';
-    
+
     const date = new Date(dateString);
     const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const diffInDays = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
     if (diffInDays < 30) {
       return `${diffInDays} days ago`;
     } else {
@@ -409,12 +492,12 @@ export default function SearchScreen() {
 
   const getLocationDisplay = (donor: Donor) => {
     if (donor.country === 'BANGLADESH') {
-      return donor.police_station && donor.district 
-        ? `${donor.police_station}, ${donor.district}` 
+      return donor.police_station && donor.district
+        ? `${donor.police_station}, ${donor.district}`
         : donor.district || 'Location not specified';
     } else {
-      return donor.city && donor.state 
-        ? `${donor.city}, ${donor.state}` 
+      return donor.city && donor.state
+        ? `${donor.city}, ${donor.state}`
         : donor.state || donor.city || 'Location not specified';
     }
   };
@@ -430,48 +513,65 @@ export default function SearchScreen() {
         <View style={styles.donorInfo}>
           <View style={styles.donorNameRow}>
             <Text style={styles.donorName}>{item.name}</Text>
-            <View style={[
-              styles.bloodGroupBadge,
-              { backgroundColor: item.is_available ? '#DC2626' : '#9CA3AF' }
-            ]}>
+            <View
+              style={[
+                styles.bloodGroupBadge,
+                { backgroundColor: item.is_available ? '#DC2626' : '#9CA3AF' },
+              ]}
+            >
               <Text style={styles.bloodGroupText}>{item.blood_group}</Text>
             </View>
           </View>
           <View style={styles.locationRow}>
             <MapPin size={14} color="#6B7280" />
-            <Text style={styles.locationText}>
-              {getLocationDisplay(item)}
-            </Text>
+            <Text style={styles.locationText}>{getLocationDisplay(item)}</Text>
           </View>
           <View style={styles.statusRow}>
             <Clock size={14} color="#6B7280" />
             <Text style={styles.statusText}>
               Last donation: {formatLastDonation(item.last_donation)}
             </Text>
-            <View style={[
-              styles.availabilityStatus,
-              { backgroundColor: item.is_available ? '#10B981' : '#EF4444' }
-            ]} />
+            <View
+              style={[
+                styles.availabilityStatus,
+                { backgroundColor: item.is_available ? '#10B981' : '#EF4444' },
+              ]}
+            />
           </View>
         </View>
       </View>
-      
+
       <View style={styles.donorActions}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.phoneButton, !item.is_available && styles.actionButtonDisabled]}
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            styles.phoneButton,
+            !item.is_available && styles.actionButtonDisabled,
+          ]}
           onPress={() => handleContactDonor(item, 'call')}
           disabled={!item.is_available}
         >
           <Phone size={16} color="#FFFFFF" />
           <Text style={styles.actionButtonText}>Call</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.emailButton, !item.is_available && styles.actionButtonDisabled]}
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            styles.emailButton,
+            !item.is_available && styles.actionButtonDisabled,
+          ]}
           onPress={() => handleContactDonor(item, 'email')}
           disabled={!item.is_available}
         >
-          <Mail size={16} color={item.is_available ? "#DC2626" : "#9CA3AF"} />
-          <Text style={[styles.emailButtonText, !item.is_available && styles.emailButtonTextDisabled]}>Email</Text>
+          <Mail size={16} color={item.is_available ? '#DC2626' : '#9CA3AF'} />
+          <Text
+            style={[
+              styles.emailButtonText,
+              !item.is_available && styles.emailButtonTextDisabled,
+            ]}
+          >
+            Email
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -500,9 +600,9 @@ export default function SearchScreen() {
 
       {/* Blood Group Filter */}
       <Text style={styles.filterTitle}>{t('search.bloodGroup')}</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         style={styles.filterScroll}
         contentContainerStyle={styles.bloodGroupContainer}
       >
@@ -511,14 +611,16 @@ export default function SearchScreen() {
             key={group}
             style={[
               styles.filterChip,
-              selectedBloodGroup === group && styles.filterChipActive
+              selectedBloodGroup === group && styles.filterChipActive,
             ]}
             onPress={() => handleBloodGroupSelect(group)}
           >
-            <Text style={[
-              styles.filterChipText,
-              selectedBloodGroup === group && styles.filterChipTextActive
-            ]}>
+            <Text
+              style={[
+                styles.filterChipText,
+                selectedBloodGroup === group && styles.filterChipTextActive,
+              ]}
+            >
               {group}
             </Text>
           </TouchableOpacity>
@@ -528,23 +630,28 @@ export default function SearchScreen() {
       {/* Location Filter */}
       <View style={styles.locationFilterContainer}>
         <Text style={styles.filterTitle}>Location</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationFilterButton}
           onPress={handleLocationFilter}
         >
-          <Text style={[
-            styles.locationFilterButtonText,
-            Object.keys(locationFilter).length === 0 && styles.locationFilterPlaceholder
-          ]}>
-            {Object.keys(locationFilter).length > 0 
-              ? `${locationFilter.district || ''} ${locationFilter.police_station || ''}`
+          <Text
+            style={[
+              styles.locationFilterButtonText,
+              Object.keys(locationFilter).length === 0 &&
+                styles.locationFilterPlaceholder,
+            ]}
+          >
+            {Object.keys(locationFilter).length > 0
+              ? `${locationFilter.district || ''} ${
+                  locationFilter.police_station || ''
+                }`
               : 'Select location'}
           </Text>
           <ChevronDown size={20} color="#6B7280" />
         </TouchableOpacity>
-        
+
         {Object.keys(locationFilter).length > 0 && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.clearFilterButton}
             onPress={clearLocationFilter}
           >
@@ -559,7 +666,9 @@ export default function SearchScreen() {
         style={styles.availabilityToggle}
         onPress={handleAvailabilityToggle}
       >
-        <View style={[styles.checkbox, showAvailableOnly && styles.checkboxActive]}>
+        <View
+          style={[styles.checkbox, showAvailableOnly && styles.checkboxActive]}
+        >
           {showAvailableOnly && <Text style={styles.checkmark}>✓</Text>}
         </View>
         <Text style={styles.availabilityText}>{t('search.availability')}</Text>
@@ -590,7 +699,7 @@ export default function SearchScreen() {
         </View>
       );
     }
-    
+
     if (loadingMore) {
       return (
         <View style={styles.listFooter}>
@@ -599,17 +708,17 @@ export default function SearchScreen() {
         </View>
       );
     }
-    
+
     return null;
   };
 
   // Filter districts based on search query
-  const filteredDistricts = districts.filter(district => 
+  const filteredDistricts = districts.filter((district) =>
     district.value.toLowerCase().includes(districtSearchQuery.toLowerCase())
   );
 
   // Filter police stations based on search query
-  const filteredPoliceStations = policeStations.filter(station => 
+  const filteredPoliceStations = policeStations.filter((station) =>
     station.name.toLowerCase().includes(policeStationSearchQuery.toLowerCase())
   );
 
@@ -623,7 +732,7 @@ export default function SearchScreen() {
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.retryButton}
             onPress={() => loadDonors()}
           >
@@ -663,7 +772,7 @@ export default function SearchScreen() {
                 <X size={24} color="#111827" />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.modalContent}>
               {/* District Selection */}
               <View style={styles.filterField}>
@@ -675,15 +784,17 @@ export default function SearchScreen() {
                     setShowPoliceStationDropdown(false);
                   }}
                 >
-                  <Text style={[
-                    styles.dropdownButtonText,
-                    !selectedDistrict && styles.dropdownPlaceholder
-                  ]}>
+                  <Text
+                    style={[
+                      styles.dropdownButtonText,
+                      !selectedDistrict && styles.dropdownPlaceholder,
+                    ]}
+                  >
                     {selectedDistrict || 'Select district'}
                   </Text>
                   <ChevronDown size={20} color="#6B7280" />
                 </TouchableOpacity>
-                
+
                 {showDistrictDropdown && (
                   <View style={styles.dropdownContainer}>
                     <View style={styles.dropdownSearchContainer}>
@@ -696,13 +807,17 @@ export default function SearchScreen() {
                         placeholderTextColor="#9CA3AF"
                       />
                     </View>
-                    <ScrollView style={styles.dropdownList} nestedScrollEnabled={true}>
+                    <ScrollView
+                      style={styles.dropdownList}
+                      nestedScrollEnabled={true}
+                    >
                       {filteredDistricts.map((district) => (
                         <TouchableOpacity
                           key={district.id}
                           style={[
                             styles.dropdownItem,
-                            selectedDistrict === district.value && styles.dropdownItemSelected
+                            selectedDistrict === district.value &&
+                              styles.dropdownItemSelected,
                           ]}
                           onPress={() => {
                             setSelectedDistrict(district.value);
@@ -710,24 +825,29 @@ export default function SearchScreen() {
                             setDistrictSearchQuery('');
                           }}
                         >
-                          <Text style={[
-                            styles.dropdownItemText,
-                            selectedDistrict === district.value && styles.dropdownItemTextSelected
-                          ]}>
+                          <Text
+                            style={[
+                              styles.dropdownItemText,
+                              selectedDistrict === district.value &&
+                                styles.dropdownItemTextSelected,
+                            ]}
+                          >
                             {district.value}
                           </Text>
                         </TouchableOpacity>
                       ))}
                       {filteredDistricts.length === 0 && (
                         <View style={styles.noResultsDropdown}>
-                          <Text style={styles.noResultsDropdownText}>No districts found</Text>
+                          <Text style={styles.noResultsDropdownText}>
+                            No districts found
+                          </Text>
                         </View>
                       )}
                     </ScrollView>
                   </View>
                 )}
               </View>
-              
+
               {/* Police Station Selection (only if district is selected) */}
               {selectedDistrict && (
                 <View style={styles.filterField}>
@@ -739,15 +859,17 @@ export default function SearchScreen() {
                       setShowDistrictDropdown(false);
                     }}
                   >
-                    <Text style={[
-                      styles.dropdownButtonText,
-                      !selectedPoliceStation && styles.dropdownPlaceholder
-                    ]}>
+                    <Text
+                      style={[
+                        styles.dropdownButtonText,
+                        !selectedPoliceStation && styles.dropdownPlaceholder,
+                      ]}
+                    >
                       {selectedPoliceStation || 'Select police station'}
                     </Text>
                     <ChevronDown size={20} color="#6B7280" />
                   </TouchableOpacity>
-                  
+
                   {showPoliceStationDropdown && (
                     <View style={styles.dropdownContainer}>
                       <View style={styles.dropdownSearchContainer}>
@@ -760,13 +882,17 @@ export default function SearchScreen() {
                           placeholderTextColor="#9CA3AF"
                         />
                       </View>
-                      <ScrollView style={styles.dropdownList} nestedScrollEnabled={true}>
+                      <ScrollView
+                        style={styles.dropdownList}
+                        nestedScrollEnabled={true}
+                      >
                         {filteredPoliceStations.map((station) => (
                           <TouchableOpacity
                             key={station.id}
                             style={[
                               styles.dropdownItem,
-                              selectedPoliceStation === station.name && styles.dropdownItemSelected
+                              selectedPoliceStation === station.name &&
+                                styles.dropdownItemSelected,
                             ]}
                             onPress={() => {
                               setSelectedPoliceStation(station.name);
@@ -774,17 +900,22 @@ export default function SearchScreen() {
                               setPoliceStationSearchQuery('');
                             }}
                           >
-                            <Text style={[
-                              styles.dropdownItemText,
-                              selectedPoliceStation === station.name && styles.dropdownItemTextSelected
-                            ]}>
+                            <Text
+                              style={[
+                                styles.dropdownItemText,
+                                selectedPoliceStation === station.name &&
+                                  styles.dropdownItemTextSelected,
+                              ]}
+                            >
                               {station.name}
                             </Text>
                           </TouchableOpacity>
                         ))}
                         {filteredPoliceStations.length === 0 && (
                           <View style={styles.noResultsDropdown}>
-                            <Text style={styles.noResultsDropdownText}>No police stations found</Text>
+                            <Text style={styles.noResultsDropdownText}>
+                              No police stations found
+                            </Text>
                           </View>
                         )}
                       </ScrollView>
@@ -792,16 +923,16 @@ export default function SearchScreen() {
                   )}
                 </View>
               )}
-              
+
               <View style={styles.modalActions}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.modalCancelButton}
                   onPress={() => setShowLocationModal(false)}
                 >
                   <Text style={styles.modalCancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={styles.modalApplyButton}
                   onPress={applyLocationFilter}
                 >
@@ -812,6 +943,16 @@ export default function SearchScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Progressive Permission Request Modal */}
+      <ContextualPermissionRequest
+        visible={isVisible}
+        request={currentRequest}
+        onAccept={handleAccept}
+        onDecline={handleDecline}
+        onSkip={handleSkip}
+        onCustomize={handleCustomize}
+      />
     </SafeAreaView>
   );
 }
