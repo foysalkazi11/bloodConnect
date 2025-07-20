@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -21,11 +22,14 @@ import {
   CircleCheck as CheckCircle,
   Circle as XCircle,
   CircleHelp as HelpCircle,
+  Edit,
+  Trash2,
 } from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { ValidatedInput } from '@/components/ValidatedInput';
 import { supabase } from '@/lib/supabase';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -54,13 +58,20 @@ export default function ClubEventsScreen() {
   const [events, setEvents] = useState<ClubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ClubEvent | null>(null);
   const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>(
     'upcoming'
   );
   const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
-    event_type: 'meeting' as const,
+    event_type: 'meeting' as
+      | 'meeting'
+      | 'blood_drive'
+      | 'training'
+      | 'social'
+      | 'other',
     start_time: '',
     end_time: '',
     location: '',
@@ -69,11 +80,21 @@ export default function ClubEventsScreen() {
     max_attendees: '',
   });
 
+  // Validation state
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    {}
+  );
+
   // Permission and role state
   const [userRole, setUserRole] = useState<
     'owner' | 'admin' | 'moderator' | 'member' | null
   >(null);
   const [canCreateEvent, setCanCreateEvent] = useState(false);
+  const [canEditEvent, setCanEditEvent] = useState(false);
+  const [canDeleteEvent, setCanDeleteEvent] = useState(false);
   const [clubData, setClubData] = useState<any>(null);
 
   // Date picker state
@@ -121,6 +142,8 @@ export default function ClubEventsScreen() {
       if (user.id === id) {
         setUserRole('owner');
         setCanCreateEvent(true);
+        setCanEditEvent(true);
+        setCanDeleteEvent(true);
         return;
       }
 
@@ -149,6 +172,10 @@ export default function ClubEventsScreen() {
       setUserRole(memberData.role);
       // Only owners and admins can create events
       setCanCreateEvent(memberData.role === 'admin');
+      setCanEditEvent(
+        memberData.role === 'admin' || memberData.role === 'moderator'
+      );
+      setCanDeleteEvent(memberData.role === 'admin');
     } catch (error) {
       console.error('Error checking permissions:', error);
       setUserRole(null);
@@ -331,6 +358,78 @@ export default function ClubEventsScreen() {
     }
   };
 
+  // Helper function to handle field touches
+  const handleFieldTouch = (fieldName: string) => {
+    setTouchedFields((prev) => ({ ...prev, [fieldName]: true }));
+  };
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setNewEvent((prev) => ({ ...prev, [fieldName]: value }));
+    // Clear error when user starts typing
+    if (validationErrors[fieldName]) {
+      setValidationErrors((prev) => ({ ...prev, [fieldName]: '' }));
+    }
+  };
+
+  // Validation functions
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    // Title validation
+    if (!newEvent.title.trim()) {
+      errors.title = 'Title is required';
+    } else if (newEvent.title.trim().length < 3) {
+      errors.title = 'Title must be at least 3 characters';
+    } else if (newEvent.title.trim().length > 100) {
+      errors.title = 'Title must be less than 100 characters';
+    }
+
+    // Description validation
+    if (newEvent.description && newEvent.description.length > 500) {
+      errors.description = 'Description must be less than 500 characters';
+    }
+
+    // Location validation (if not virtual)
+    if (!newEvent.is_virtual && !newEvent.location.trim()) {
+      errors.location = 'Location is required for in-person events';
+    } else if (newEvent.location && newEvent.location.length > 200) {
+      errors.location = 'Location must be less than 200 characters';
+    }
+
+    // Meeting link validation (if virtual)
+    if (newEvent.is_virtual && newEvent.meeting_link) {
+      const urlPattern =
+        /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      if (!urlPattern.test(newEvent.meeting_link)) {
+        errors.meeting_link = 'Please enter a valid URL';
+      }
+    }
+
+    // Max attendees validation
+    if (newEvent.max_attendees) {
+      const maxAttendees = parseInt(newEvent.max_attendees);
+      if (isNaN(maxAttendees) || maxAttendees <= 0) {
+        errors.max_attendees = 'Max attendees must be a positive number';
+      } else if (maxAttendees > 1000) {
+        errors.max_attendees = 'Max attendees cannot exceed 1000';
+      }
+    }
+
+    // Date/time validation
+    if (!startDateTime) {
+      errors.start_time = 'Start time is required';
+    }
+    if (!endDateTime) {
+      errors.end_time = 'End time is required';
+    }
+    if (startDateTime && endDateTime && endDateTime <= startDateTime) {
+      errors.end_time = 'End time must be after start time';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateEvent = async () => {
     if (!canCreateEvent) {
       showNotification({
@@ -342,35 +441,39 @@ export default function ClubEventsScreen() {
       return;
     }
 
-    if (!newEvent.title.trim() || !startDateTime || !endDateTime) {
-      showNotification({
-        type: 'error',
-        title: 'Validation Error',
-        message: 'Please fill in title, start time, and end time',
-        duration: 4000,
-      });
-      return;
-    }
+    // Mark all fields as touched before validation
+    setTouchedFields({
+      title: true,
+      description: true,
+      location: true,
+      meeting_link: true,
+      max_attendees: true,
+      start_time: true,
+      end_time: true,
+    });
 
-    if (endDateTime <= startDateTime) {
+    // Validate form
+    if (!validateForm()) {
+      const firstError = Object.values(validationErrors)[0];
       showNotification({
         type: 'error',
         title: 'Validation Error',
-        message: 'End time must be after start time',
+        message: firstError || 'Please fix the errors and try again',
         duration: 4000,
       });
       return;
     }
 
     try {
+      // At this point, validation has passed, so startDateTime and endDateTime are guaranteed to be non-null
       const eventData = {
         club_id: id,
         organizer_id: user?.id,
         title: newEvent.title.trim(),
         description: newEvent.description.trim(),
         event_type: newEvent.event_type,
-        start_time: startDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
+        start_time: startDateTime!.toISOString(),
+        end_time: endDateTime!.toISOString(),
         location: newEvent.location.trim() || null,
         is_virtual: newEvent.is_virtual,
         meeting_link: newEvent.meeting_link.trim() || null,
@@ -430,6 +533,8 @@ export default function ClubEventsScreen() {
       setStartDateTime(null);
       setEndDateTime(null);
       setShowCreateModal(false);
+      setValidationErrors({});
+      setTouchedFields({});
 
       showNotification({
         type: 'success',
@@ -443,6 +548,199 @@ export default function ClubEventsScreen() {
         type: 'error',
         title: 'Error',
         message: 'Failed to create event',
+        duration: 4000,
+      });
+    }
+  };
+
+  const handleEditEvent = (event: ClubEvent) => {
+    setEditingEvent(event);
+    setNewEvent({
+      title: event.title,
+      description: event.description || '',
+      event_type: event.event_type as
+        | 'meeting'
+        | 'blood_drive'
+        | 'training'
+        | 'social'
+        | 'other',
+      start_time: event.start_time,
+      end_time: event.end_time,
+      location: event.location || '',
+      is_virtual: event.is_virtual,
+      meeting_link: event.meeting_link || '',
+      max_attendees: event.max_attendees ? event.max_attendees.toString() : '',
+    });
+    setStartDateTime(new Date(event.start_time));
+    setEndDateTime(new Date(event.end_time));
+    setShowEditModal(true);
+  };
+
+  const handleDeleteEvent = (eventId: string) => {
+    Alert.alert(
+      'Delete Event',
+      'Are you sure you want to delete this event? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteEvent(eventId),
+        },
+      ]
+    );
+  };
+
+  const deleteEvent = async (eventId: string) => {
+    try {
+      const { error } = await supabase
+        .from('club_events')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) {
+        console.error('Error deleting event:', error);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to delete event',
+          duration: 4000,
+        });
+        return;
+      }
+
+      showNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Event deleted successfully',
+        duration: 3000,
+      });
+
+      // Reload events
+      loadEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to delete event',
+        duration: 4000,
+      });
+    }
+  };
+
+  const handleUpdateEvent = async () => {
+    if (!editingEvent) return;
+
+    // Mark all fields as touched before validation
+    setTouchedFields({
+      title: true,
+      description: true,
+      location: true,
+      meeting_link: true,
+      max_attendees: true,
+      start_time: true,
+      end_time: true,
+    });
+
+    // Validate form
+    if (!validateForm()) {
+      const firstError = Object.values(validationErrors)[0];
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: firstError || 'Please fix the errors and try again',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Validate date/time
+    if (!startDateTime || !endDateTime) {
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'Start and end times are required',
+        duration: 4000,
+      });
+      return;
+    }
+
+    if (endDateTime <= startDateTime) {
+      showNotification({
+        type: 'error',
+        title: 'Validation Error',
+        message: 'End time must be after start time',
+        duration: 4000,
+      });
+      return;
+    }
+
+    try {
+      const eventData = {
+        title: newEvent.title.trim(),
+        description: newEvent.description.trim(),
+        event_type: newEvent.event_type,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        location: newEvent.location.trim() || null,
+        is_virtual: newEvent.is_virtual,
+        meeting_link: newEvent.meeting_link.trim() || null,
+        max_attendees: newEvent.max_attendees
+          ? parseInt(newEvent.max_attendees)
+          : null,
+      };
+
+      const { error } = await supabase
+        .from('club_events')
+        .update(eventData)
+        .eq('id', editingEvent.id);
+
+      if (error) {
+        console.error('Error updating event:', error);
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to update event',
+          duration: 4000,
+        });
+        return;
+      }
+
+      showNotification({
+        type: 'success',
+        title: 'Success',
+        message: 'Event updated successfully',
+        duration: 3000,
+      });
+
+      // Reset form and close modal
+      setShowEditModal(false);
+      setEditingEvent(null);
+      setNewEvent({
+        title: '',
+        description: '',
+        event_type: 'meeting',
+        start_time: '',
+        end_time: '',
+        location: '',
+        is_virtual: false,
+        meeting_link: '',
+        max_attendees: '',
+      });
+      setStartDateTime(null);
+      setEndDateTime(null);
+      setValidationErrors({});
+      setTouchedFields({});
+
+      // Reload events
+      loadEvents();
+    } catch (error) {
+      console.error('Error updating event:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to update event',
         duration: 4000,
       });
     }
@@ -491,6 +789,11 @@ export default function ClubEventsScreen() {
         newDate.setHours(startDateTime.getHours(), startDateTime.getMinutes());
       }
       setStartDateTime(newDate);
+      handleFieldTouch('start_time');
+      // Clear error when user selects a date
+      if (validationErrors.start_time) {
+        setValidationErrors((prev) => ({ ...prev, start_time: '' }));
+      }
 
       if (Platform.OS === 'ios') {
         setShowStartDatePicker(false);
@@ -523,6 +826,11 @@ export default function ClubEventsScreen() {
         newDate.setHours(endDateTime.getHours(), endDateTime.getMinutes());
       }
       setEndDateTime(newDate);
+      handleFieldTouch('end_time');
+      // Clear error when user selects a date
+      if (validationErrors.end_time) {
+        setValidationErrors((prev) => ({ ...prev, end_time: '' }));
+      }
 
       if (Platform.OS === 'ios') {
         setShowEndDatePicker(false);
@@ -560,6 +868,11 @@ export default function ClubEventsScreen() {
     if (value) {
       const newDate = new Date(value);
       setStartDateTime(newDate);
+      handleFieldTouch('start_time');
+      // Clear error when user selects a date
+      if (validationErrors.start_time) {
+        setValidationErrors((prev) => ({ ...prev, start_time: '' }));
+      }
     }
   };
 
@@ -568,6 +881,11 @@ export default function ClubEventsScreen() {
     if (value) {
       const newDate = new Date(value);
       setEndDateTime(newDate);
+      handleFieldTouch('end_time');
+      // Clear error when user selects a date
+      if (validationErrors.end_time) {
+        setValidationErrors((prev) => ({ ...prev, end_time: '' }));
+      }
     }
   };
 
@@ -654,6 +972,20 @@ export default function ClubEventsScreen() {
       default:
         return null;
     }
+  };
+
+  const canEditEventItem = (event: ClubEvent) => {
+    if (!user) return false;
+    if (user.id === id) return true; // Club owner can edit all
+    if (user.id === event.organizer_id) return canEditEvent; // Organizer can edit if they have permission
+    return false;
+  };
+
+  const canDeleteEventItem = (event: ClubEvent) => {
+    if (!user) return false;
+    if (user.id === id) return true; // Club owner can delete all
+    if (user.id === event.organizer_id) return true; // Organizer can always delete their own events
+    return canDeleteEvent; // Admins can delete any event
   };
 
   if (loading) {
@@ -877,6 +1209,35 @@ export default function ClubEventsScreen() {
                   <Text style={styles.joinMeetingText}>Join Meeting</Text>
                 </TouchableOpacity>
               )}
+
+            {/* Edit/Delete Actions */}
+            {(canEditEventItem(event) || canDeleteEventItem(event)) && (
+              <View style={styles.eventActions}>
+                {canEditEventItem(event) && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleEditEvent(event)}
+                  >
+                    <Edit size={20} color="#3B82F6" />
+                    <Text style={[styles.actionText, { color: '#3B82F6' }]}>
+                      Edit
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {canDeleteEventItem(event) && (
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleDeleteEvent(event.id)}
+                  >
+                    <Trash2 size={20} color="#EF4444" />
+                    <Text style={[styles.actionText, { color: '#EF4444' }]}>
+                      Delete
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
         ))}
 
@@ -902,7 +1263,13 @@ export default function ClubEventsScreen() {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowCreateModal(false);
+                setValidationErrors({});
+                setTouchedFields({});
+              }}
+            >
               <Text style={styles.modalCancelText}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>New Event</Text>
@@ -925,18 +1292,17 @@ export default function ClubEventsScreen() {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Title *</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter event title"
-                placeholderTextColor="#9CA3AF"
-                value={newEvent.title}
-                onChangeText={(text) =>
-                  setNewEvent({ ...newEvent, title: text })
-                }
-              />
-            </View>
+            <ValidatedInput
+              label="Title"
+              value={newEvent.title}
+              onChangeText={(text) => handleFieldChange('title', text)}
+              onBlur={() => handleFieldTouch('title')}
+              error={validationErrors.title}
+              touched={touchedFields.title}
+              placeholder="Enter event title"
+              maxLength={100}
+              required
+            />
 
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>Type</Text>
@@ -970,20 +1336,19 @@ export default function ClubEventsScreen() {
               </View>
             </View>
 
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Description</Text>
-              <TextInput
-                style={styles.textAreaInput}
-                placeholder="Describe your event..."
-                placeholderTextColor="#9CA3AF"
-                value={newEvent.description}
-                onChangeText={(text) =>
-                  setNewEvent({ ...newEvent, description: text })
-                }
-                multiline
-                textAlignVertical="top"
-              />
-            </View>
+            <ValidatedInput
+              label="Description"
+              value={newEvent.description}
+              onChangeText={(text) => handleFieldChange('description', text)}
+              onBlur={() => handleFieldTouch('description')}
+              error={validationErrors.description}
+              touched={touchedFields.description}
+              placeholder="Describe your event..."
+              multiline
+              maxLength={500}
+              helpText={`${newEvent.description.length}/500 characters`}
+              style={{ minHeight: 80 }}
+            />
 
             <View style={styles.inputSection}>
               <Text style={styles.inputLabel}>Start Time *</Text>
@@ -1000,7 +1365,10 @@ export default function ClubEventsScreen() {
                       width: '100%',
                       padding: '12px 16px',
                       borderRadius: '12px',
-                      border: '1px solid #E5E7EB',
+                      border:
+                        validationErrors.start_time && touchedFields.start_time
+                          ? '2px solid #EF4444'
+                          : '1px solid #E5E7EB',
                       backgroundColor: '#F9FAFB',
                       fontSize: '16px',
                       fontFamily: 'Inter-Regular',
@@ -1034,8 +1402,16 @@ export default function ClubEventsScreen() {
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={styles.datePickerButton}
-                      onPress={() => setShowStartDatePicker(true)}
+                      style={[
+                        styles.datePickerButton,
+                        validationErrors.start_time &&
+                          touchedFields.start_time &&
+                          styles.inputError,
+                      ]}
+                      onPress={() => {
+                        setShowStartDatePicker(true);
+                        handleFieldTouch('start_time');
+                      }}
                     >
                       <Calendar size={20} color="#6B7280" />
                       <Text style={styles.datePickerButtonText}>
@@ -1062,6 +1438,11 @@ export default function ClubEventsScreen() {
                   )}
                 </>
               )}
+              {validationErrors.start_time && touchedFields.start_time && (
+                <Text style={styles.errorText}>
+                  {validationErrors.start_time}
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputSection}>
@@ -1079,7 +1460,10 @@ export default function ClubEventsScreen() {
                       width: '100%',
                       padding: '12px 16px',
                       borderRadius: '12px',
-                      border: '1px solid #E5E7EB',
+                      border:
+                        validationErrors.end_time && touchedFields.end_time
+                          ? '2px solid #EF4444'
+                          : '1px solid #E5E7EB',
                       backgroundColor: '#F9FAFB',
                       fontSize: '16px',
                       fontFamily: 'Inter-Regular',
@@ -1113,8 +1497,16 @@ export default function ClubEventsScreen() {
                     </View>
                   ) : (
                     <TouchableOpacity
-                      style={styles.datePickerButton}
-                      onPress={() => setShowEndDatePicker(true)}
+                      style={[
+                        styles.datePickerButton,
+                        validationErrors.end_time &&
+                          touchedFields.end_time &&
+                          styles.inputError,
+                      ]}
+                      onPress={() => {
+                        setShowEndDatePicker(true);
+                        handleFieldTouch('end_time');
+                      }}
                     >
                       <Calendar size={20} color="#6B7280" />
                       <Text style={styles.datePickerButtonText}>
@@ -1180,6 +1572,11 @@ export default function ClubEventsScreen() {
                   )}
                 </>
               )}
+              {validationErrors.end_time && touchedFields.end_time && (
+                <Text style={styles.errorText}>
+                  {validationErrors.end_time}
+                </Text>
+              )}
             </View>
 
             <View style={styles.inputSection}>
@@ -1204,48 +1601,434 @@ export default function ClubEventsScreen() {
             </View>
 
             {newEvent.is_virtual ? (
-              <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>Meeting Link</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="https://meet.google.com/..."
-                  placeholderTextColor="#9CA3AF"
-                  value={newEvent.meeting_link}
-                  onChangeText={(text) =>
-                    setNewEvent({ ...newEvent, meeting_link: text })
-                  }
-                  keyboardType="url"
-                  autoCapitalize="none"
-                />
-              </View>
+              <ValidatedInput
+                label="Meeting Link"
+                value={newEvent.meeting_link}
+                onChangeText={(text) => handleFieldChange('meeting_link', text)}
+                onBlur={() => handleFieldTouch('meeting_link')}
+                error={validationErrors.meeting_link}
+                touched={touchedFields.meeting_link}
+                placeholder="https://meet.google.com/..."
+                keyboardType="url"
+                autoCapitalize="none"
+                helpText="Optional - Link for virtual meeting"
+              />
             ) : (
-              <View style={styles.inputSection}>
-                <Text style={styles.inputLabel}>Location</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Enter event location"
-                  placeholderTextColor="#9CA3AF"
-                  value={newEvent.location}
-                  onChangeText={(text) =>
-                    setNewEvent({ ...newEvent, location: text })
-                  }
-                />
-              </View>
+              <ValidatedInput
+                label="Location"
+                value={newEvent.location}
+                onChangeText={(text) => handleFieldChange('location', text)}
+                onBlur={() => handleFieldTouch('location')}
+                error={validationErrors.location}
+                touched={touchedFields.location}
+                placeholder="Enter event location"
+                maxLength={200}
+                required={!newEvent.is_virtual}
+                helpText="Required for in-person events"
+              />
             )}
 
+            <ValidatedInput
+              label="Max Attendees"
+              value={newEvent.max_attendees}
+              onChangeText={(text) => handleFieldChange('max_attendees', text)}
+              onBlur={() => handleFieldTouch('max_attendees')}
+              error={validationErrors.max_attendees}
+              touched={touchedFields.max_attendees}
+              placeholder="Enter maximum number of attendees"
+              keyboardType="numeric"
+              helpText="Optional - Maximum 1000 attendees"
+            />
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Edit Event Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowEditModal(false);
+                setEditingEvent(null);
+                setValidationErrors({});
+                setTouchedFields({});
+              }}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Edit Event</Text>
+            <TouchableOpacity
+              onPress={handleUpdateEvent}
+              disabled={
+                !newEvent.title.trim() || !startDateTime || !endDateTime
+              }
+            >
+              <Text
+                style={[
+                  styles.modalCreateText,
+                  (!newEvent.title.trim() || !startDateTime || !endDateTime) &&
+                    styles.modalCreateTextDisabled,
+                ]}
+              >
+                Update
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <ValidatedInput
+              label="Title"
+              value={newEvent.title}
+              onChangeText={(text) => handleFieldChange('title', text)}
+              onBlur={() => handleFieldTouch('title')}
+              error={validationErrors.title}
+              touched={touchedFields.title}
+              placeholder="Enter event title"
+              maxLength={100}
+              required
+            />
+
             <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Max Attendees (Optional)</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="Enter maximum number of attendees"
-                placeholderTextColor="#9CA3AF"
-                value={newEvent.max_attendees}
-                onChangeText={(text) =>
-                  setNewEvent({ ...newEvent, max_attendees: text })
-                }
-                keyboardType="numeric"
-              />
+              <Text style={styles.inputLabel}>Type</Text>
+              <View style={styles.typeSelector}>
+                {['meeting', 'blood_drive', 'training', 'social', 'other'].map(
+                  (type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.typeOption,
+                        newEvent.event_type === type && styles.typeOptionActive,
+                        { borderColor: getEventTypeColor(type) },
+                      ]}
+                      onPress={() =>
+                        setNewEvent({ ...newEvent, event_type: type as any })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.typeOptionText,
+                          newEvent.event_type === type && {
+                            color: getEventTypeColor(type),
+                          },
+                        ]}
+                      >
+                        {getEventTypeLabel(type)}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                )}
+              </View>
             </View>
+
+            <ValidatedInput
+              label="Description"
+              value={newEvent.description}
+              onChangeText={(text) => handleFieldChange('description', text)}
+              onBlur={() => handleFieldTouch('description')}
+              error={validationErrors.description}
+              touched={touchedFields.description}
+              placeholder="Describe your event..."
+              multiline
+              maxLength={500}
+              helpText={`${newEvent.description.length}/500 characters`}
+              style={{ minHeight: 80 }}
+            />
+
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>Start Time *</Text>
+
+              {Platform.OS === 'web' ? (
+                // Web: HTML5 datetime-local input
+                <View style={styles.webDateContainer}>
+                  <input
+                    type="datetime-local"
+                    value={formatDateForWeb(startDateTime)}
+                    onChange={handleWebStartDateChange}
+                    min={formatDateForWeb(new Date())}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border:
+                        validationErrors.start_time && touchedFields.start_time
+                          ? '2px solid #EF4444'
+                          : '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '16px',
+                      fontFamily: 'Inter-Regular',
+                      color: '#111827',
+                      outline: 'none',
+                    }}
+                  />
+                  {startDateTime && (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={() => setStartDateTime(null)}
+                    >
+                      <Text style={styles.clearDateText}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                // Mobile: Native date/time pickers
+                <>
+                  {startDateTime ? (
+                    <View style={styles.dateDisplayContainer}>
+                      <Text style={styles.dateDisplayText}>
+                        {formatDateTime(startDateTime)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={() => setStartDateTime(null)}
+                      >
+                        <Text style={styles.clearDateText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.datePickerButton,
+                        validationErrors.start_time &&
+                          touchedFields.start_time &&
+                          styles.inputError,
+                      ]}
+                      onPress={() => {
+                        setShowStartDatePicker(true);
+                        handleFieldTouch('start_time');
+                      }}
+                    >
+                      <Calendar size={20} color="#6B7280" />
+                      <Text style={styles.datePickerButtonText}>
+                        Select Start Date & Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {startDateTime && (
+                    <TouchableOpacity
+                      style={[styles.datePickerButton, styles.updateDateButton]}
+                      onPress={() => setShowStartDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#DC2626" />
+                      <Text
+                        style={[
+                          styles.datePickerButtonText,
+                          { color: '#DC2626' },
+                        ]}
+                      >
+                        Change Start Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+              {validationErrors.start_time && touchedFields.start_time && (
+                <Text style={styles.errorText}>
+                  {validationErrors.start_time}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.inputSection}>
+              <Text style={styles.inputLabel}>End Time *</Text>
+
+              {Platform.OS === 'web' ? (
+                // Web: HTML5 datetime-local input
+                <View style={styles.webDateContainer}>
+                  <input
+                    type="datetime-local"
+                    value={formatDateForWeb(endDateTime)}
+                    onChange={handleWebEndDateChange}
+                    min={formatDateForWeb(startDateTime || new Date())}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border:
+                        validationErrors.end_time && touchedFields.end_time
+                          ? '2px solid #EF4444'
+                          : '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      fontSize: '16px',
+                      fontFamily: 'Inter-Regular',
+                      color: '#111827',
+                      outline: 'none',
+                    }}
+                  />
+                  {endDateTime && (
+                    <TouchableOpacity
+                      style={styles.clearDateButton}
+                      onPress={() => setEndDateTime(null)}
+                    >
+                      <Text style={styles.clearDateText}>Clear</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : (
+                // Mobile: Native date/time pickers
+                <>
+                  {endDateTime ? (
+                    <View style={styles.dateDisplayContainer}>
+                      <Text style={styles.dateDisplayText}>
+                        {formatDateTime(endDateTime)}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={() => setEndDateTime(null)}
+                      >
+                        <Text style={styles.clearDateText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.datePickerButton,
+                        validationErrors.end_time &&
+                          touchedFields.end_time &&
+                          styles.inputError,
+                      ]}
+                      onPress={() => {
+                        setShowEndDatePicker(true);
+                        handleFieldTouch('end_time');
+                      }}
+                    >
+                      <Calendar size={20} color="#6B7280" />
+                      <Text style={styles.datePickerButtonText}>
+                        Select End Date & Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {endDateTime && (
+                    <TouchableOpacity
+                      style={[styles.datePickerButton, styles.updateDateButton]}
+                      onPress={() => setShowEndDatePicker(true)}
+                    >
+                      <Calendar size={20} color="#DC2626" />
+                      <Text
+                        style={[
+                          styles.datePickerButtonText,
+                          { color: '#DC2626' },
+                        ]}
+                      >
+                        Change End Time
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Date Pickers */}
+                  {showStartDatePicker && (
+                    <DateTimePicker
+                      value={startDateTime || new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleStartDateChange}
+                      minimumDate={new Date()}
+                    />
+                  )}
+
+                  {showStartTimePicker && (
+                    <DateTimePicker
+                      value={startDateTime || new Date()}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleStartTimeChange}
+                    />
+                  )}
+
+                  {showEndDatePicker && (
+                    <DateTimePicker
+                      value={endDateTime || startDateTime || new Date()}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleEndDateChange}
+                      minimumDate={startDateTime || new Date()}
+                    />
+                  )}
+
+                  {showEndTimePicker && (
+                    <DateTimePicker
+                      value={endDateTime || new Date()}
+                      mode="time"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={handleEndTimeChange}
+                    />
+                  )}
+                </>
+              )}
+              {validationErrors.end_time && touchedFields.end_time && (
+                <Text style={styles.errorText}>
+                  {validationErrors.end_time}
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.inputSection}>
+              <TouchableOpacity
+                style={styles.virtualToggle}
+                onPress={() =>
+                  setNewEvent({ ...newEvent, is_virtual: !newEvent.is_virtual })
+                }
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    newEvent.is_virtual && styles.checkboxActive,
+                  ]}
+                >
+                  {newEvent.is_virtual && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={styles.virtualToggleText}>Virtual Event</Text>
+              </TouchableOpacity>
+            </View>
+
+            {newEvent.is_virtual ? (
+              <ValidatedInput
+                label="Meeting Link"
+                value={newEvent.meeting_link}
+                onChangeText={(text) => handleFieldChange('meeting_link', text)}
+                onBlur={() => handleFieldTouch('meeting_link')}
+                error={validationErrors.meeting_link}
+                touched={touchedFields.meeting_link}
+                placeholder="https://meet.google.com/..."
+                keyboardType="url"
+                autoCapitalize="none"
+                helpText="Optional - Link for virtual meeting"
+              />
+            ) : (
+              <ValidatedInput
+                label="Location"
+                value={newEvent.location}
+                onChangeText={(text) => handleFieldChange('location', text)}
+                onBlur={() => handleFieldTouch('location')}
+                error={validationErrors.location}
+                touched={touchedFields.location}
+                placeholder="Enter event location"
+                maxLength={200}
+                required={!newEvent.is_virtual}
+                helpText="Required for in-person events"
+              />
+            )}
+
+            <ValidatedInput
+              label="Max Attendees"
+              value={newEvent.max_attendees}
+              onChangeText={(text) => handleFieldChange('max_attendees', text)}
+              onBlur={() => handleFieldTouch('max_attendees')}
+              error={validationErrors.max_attendees}
+              touched={touchedFields.max_attendees}
+              placeholder="Enter maximum number of attendees"
+              keyboardType="numeric"
+              helpText="Optional - Maximum 1000 attendees"
+            />
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1652,5 +2435,32 @@ const styles = StyleSheet.create({
   },
   webDateContainer: {
     position: 'relative',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 2,
+  },
+  errorText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 6,
+    flex: 1,
+  },
+  actionText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
   },
 });
