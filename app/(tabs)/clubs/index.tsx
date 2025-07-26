@@ -25,6 +25,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import AppHeader from '@/components/AppHeader';
+import useProgressivePermissions from '@/hooks/useProgressivePermissions';
+import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
 
 interface Club {
   id: string;
@@ -50,6 +52,15 @@ export default function ClubsScreen() {
   const { t } = useI18n();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
+  const {
+    currentRequest,
+    isVisible,
+    triggerPermissionRequest,
+    handleAccept,
+    handleDecline,
+    handleSkip,
+    handleCustomize,
+  } = useProgressivePermissions();
   const [clubs, setClubs] = useState<Club[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -287,6 +298,16 @@ export default function ClubsScreen() {
           title: 'Request Sent',
           message: 'Your request to join the club has been sent',
           duration: 3000,
+        });
+
+        // Trigger permission request for club notifications
+        triggerPermissionRequest({
+          trigger: 'club_join',
+          clubId: clubId,
+          metadata: {
+            clubName: clubs.find((c) => c.id === clubId)?.name,
+            userBloodGroup: profile.blood_group,
+          },
         });
       }
     } catch (error) {
@@ -658,6 +679,16 @@ export default function ClubsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Progressive Permission Request Modal */}
+      <ContextualPermissionRequest
+        visible={isVisible}
+        request={currentRequest}
+        onAccept={handleAccept}
+        onDecline={handleDecline}
+        onSkip={handleSkip}
+        onCustomize={handleCustomize}
+      />
     </View>
   );
 }
