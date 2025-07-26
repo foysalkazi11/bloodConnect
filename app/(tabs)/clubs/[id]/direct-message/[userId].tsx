@@ -29,6 +29,8 @@ import {
   Conversation,
 } from '@/services/chatService';
 import { supabase } from '@/lib/supabase';
+import useProgressivePermissions from '@/hooks/useProgressivePermissions';
+import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
 
 interface DirectMessageUI extends DirectMessage {
   is_own: boolean;
@@ -38,6 +40,15 @@ export default function DirectMessageScreen() {
   const { id, userId } = useLocalSearchParams();
   const { user, profile } = useAuth();
   const { showNotification } = useNotification();
+  const {
+    currentRequest,
+    isVisible,
+    triggerPermissionRequest,
+    handleAccept,
+    handleDecline,
+    handleSkip,
+    handleCustomize,
+  } = useProgressivePermissions();
 
   const [messages, setMessages] = useState<DirectMessageUI[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -199,6 +210,18 @@ export default function DirectMessageScreen() {
         userId as string,
         messageContent
       );
+
+      // Trigger permission request for direct messages (only for first message in conversation)
+      if (messages.filter((msg) => msg.is_own).length === 0) {
+        triggerPermissionRequest({
+          trigger: 'first_message',
+          userId: userId as string,
+          metadata: {
+            recipientName: recipientName,
+            conversationId: conversation.conversation_id,
+          },
+        });
+      }
 
       // Scroll to bottom
       setTimeout(() => {
@@ -425,6 +448,16 @@ export default function DirectMessageScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Progressive Permission Request Modal */}
+      <ContextualPermissionRequest
+        visible={isVisible}
+        request={currentRequest}
+        onAccept={handleAccept}
+        onDecline={handleDecline}
+        onSkip={handleSkip}
+        onCustomize={handleCustomize}
+      />
     </SafeAreaView>
   );
 }

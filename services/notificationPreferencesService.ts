@@ -139,11 +139,19 @@ export class NotificationPreferencesService {
         .from('notification_priority_config')
         .select('*')
         .eq('notification_type', notificationType)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows
 
       if (error) {
         console.error('Error fetching priority config:', error);
-        return null;
+        return this.getDefaultPriorityConfig(notificationType);
+      }
+
+      // If no data found, return default config
+      if (!data) {
+        console.log(
+          `No priority config found for ${notificationType}, using default`
+        );
+        return this.getDefaultPriorityConfig(notificationType);
       }
 
       // Cache the result
@@ -152,7 +160,7 @@ export class NotificationPreferencesService {
       return data;
     } catch (error) {
       console.error('Error in getPriorityConfig:', error);
-      return null;
+      return this.getDefaultPriorityConfig(notificationType);
     }
   }
 
@@ -221,6 +229,75 @@ export class NotificationPreferencesService {
   }
 
   /**
+   * Get default priority configuration for notification type
+   */
+  private getDefaultPriorityConfig(
+    notificationType: string
+  ): NotificationPriorityConfig {
+    // Default configurations for different notification types
+    const defaults: Record<string, NotificationPriorityConfig> = {
+      social_interaction: {
+        id: 'default-social',
+        notification_type: 'social_interaction',
+        priority_level: 'low',
+        default_channels: ['in_app'],
+        requires_permission: false,
+        can_be_batched: true,
+        max_delay_minutes: 15,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      direct_message: {
+        id: 'default-dm',
+        notification_type: 'direct_message',
+        priority_level: 'medium',
+        default_channels: ['push'],
+        requires_permission: true,
+        can_be_batched: false,
+        max_delay_minutes: 5,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      club_message: {
+        id: 'default-club',
+        notification_type: 'club_message',
+        priority_level: 'low',
+        default_channels: ['in_app'],
+        requires_permission: false,
+        can_be_batched: true,
+        max_delay_minutes: 15,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      emergency_blood_request: {
+        id: 'default-emergency',
+        notification_type: 'emergency_blood_request',
+        priority_level: 'urgent',
+        default_channels: ['push', 'in_app'],
+        requires_permission: true,
+        can_be_batched: false,
+        max_delay_minutes: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    };
+
+    return (
+      defaults[notificationType] || {
+        id: 'default-generic',
+        notification_type: notificationType,
+        priority_level: 'medium',
+        default_channels: ['in_app'],
+        requires_permission: false,
+        can_be_batched: true,
+        max_delay_minutes: 30,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    );
+  }
+
+  /**
    * Get default notification preferences for a user
    */
   private getDefaultPreferences(userId: string): NotificationPreferences {
@@ -256,6 +333,17 @@ export class NotificationPreferencesService {
     const cacheKey = `prefs_${userId}`;
     this.preferencesCache.delete(cacheKey);
     this.cacheExpiry.delete(cacheKey);
+  }
+
+  /**
+   * Clear priority config cache for a specific notification type
+   */
+  clearPriorityConfigCache(notificationType?: string): void {
+    if (notificationType) {
+      this.priorityConfigCache.delete(notificationType);
+    } else {
+      this.priorityConfigCache.clear();
+    }
   }
 
   /**
