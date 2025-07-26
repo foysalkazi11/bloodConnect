@@ -1228,7 +1228,7 @@ export default function ClubEventsScreen() {
                 {canDeleteEventItem(event) && (
                   <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={() => handleDeleteEvent(event.id)}
+                    onPress={() => deleteEvent(event.id)}
                   >
                     <Trash2 size={20} color="#EF4444" />
                     <Text style={[styles.actionText, { color: '#EF4444' }]}>
