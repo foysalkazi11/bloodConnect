@@ -25,10 +25,11 @@
     <key>CFBundleURLTypes</key>
     <array>
       <dict>
+        <key>CFBundleURLName</key>
+        <string>bloodconnect</string>
         <key>CFBundleURLSchemes</key>
         <array>
           <string>bloodconnect</string>
-          <string>com.foysalkazi11.bloodconnect</string>
         </array>
       </dict>
     </array>
