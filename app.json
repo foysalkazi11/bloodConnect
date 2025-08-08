@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "scheme": "bloodconnect",
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
@@ -33,10 +34,7 @@
               "scheme": "bloodconnect"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "permissions": [
@@ -48,14 +46,11 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.foysalkazi11.bloodconnect",
-      "deploymentTarget": "17.4",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "bloodconnect",
-            "CFBundleURLSchemes": [
-              "bloodconnect"
-            ]
+            "CFBundleURLSchemes": ["bloodconnect"]
           }
         ]
       }
@@ -74,6 +69,7 @@
           "mayInitWithUrl": false
         }
       ],
+      "@react-native-google-signin/google-signin",
       [
         "expo-notifications",
         {

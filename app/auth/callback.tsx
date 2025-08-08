@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,24 +31,10 @@ export default function AuthCallbackScreen() {
   const [canRetry, setCanRetry] = React.useState(false);
   const [callbackType, setCallbackType] =
     React.useState<CallbackType>('unknown');
+  const [isProcessing, setIsProcessing] = React.useState(false);
 
-  useEffect(() => {
-    console.log('AuthCallback: Component mounted');
-    console.log('AuthCallback: URL params:', params);
-
-    if (Platform.OS === 'web') {
-      console.log('AuthCallback: Current URL:', window.location.href);
-    }
-
-    // Add a small delay to ensure the component is fully mounted
-    const timer = setTimeout(() => {
-      handleAuthCallback();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const determineCallbackType = (): CallbackType => {
+  // Define callback type determination function
+  const determineCallbackType = useCallback((): CallbackType => {
     if (Platform.OS === 'web') {
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -73,13 +59,50 @@ export default function AuthCallbackScreen() {
       if (code || state) {
         return 'oauth';
       }
+    } else {
+      // For mobile with the new Google provider approach,
+      // we mainly get authorization codes, not tokens
+      console.log('AuthCallback: Checking mobile deep link parameters...');
+      console.log('AuthCallback: Available params:', params);
+
+      // Check for authorization code (new approach)
+      const hasCode = params.code || params['code'];
+      const hasState = params.state || params['state'];
+
+      // Check for legacy token parameters (fallback)
+      const hasAccessToken = params.access_token || params['access_token'];
+      const hasRefreshToken = params.refresh_token || params['refresh_token'];
+
+      console.log('AuthCallback: Mobile OAuth params:', {
+        hasCode: !!hasCode,
+        hasState: !!hasState,
+        hasAccessToken: !!hasAccessToken,
+        hasRefreshToken: !!hasRefreshToken,
+      });
+
+      // If we have OAuth-related parameters, this is an OAuth callback
+      if (hasCode || hasState || hasAccessToken || hasRefreshToken) {
+        console.log('AuthCallback: Detected OAuth callback based on params');
+        return 'oauth';
+      }
+
+      // For mobile deep links to /auth/callback without specific params,
+      // assume OAuth (most common case)
+      console.log('AuthCallback: Assuming OAuth for mobile deep link');
+      return 'oauth';
     }
 
-    return 'email_verification'; // Default to email verification for mobile
-  };
+    return 'email_verification'; // Fallback
+  }, [params]);
 
-  const handleAuthCallback = async () => {
+  const handleAuthCallback = useCallback(async () => {
+    if (isProcessing) {
+      console.log('AuthCallback: Already processing, ignoring duplicate call');
+      return;
+    }
+
     console.log('AuthCallback: Starting callback process...');
+    setIsProcessing(true);
     setStatus('loading');
     setCanRetry(false);
 
@@ -120,8 +143,10 @@ export default function AuthCallbackScreen() {
           duration: 5000,
         });
       }
+    } finally {
+      setIsProcessing(false);
     }
-  };
+  }, [isProcessing, callbackType, showNotification, determineCallbackType]);
 
   const handleOAuthCallback = async () => {
     console.log('AuthCallback: Processing OAuth callback...');
@@ -130,20 +155,56 @@ export default function AuthCallbackScreen() {
     if (Platform.OS === 'web') {
       await handleWebOAuthCallback();
     } else {
-      // For mobile, the session should already be set by the AuthService
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      // For mobile with the new Google provider approach,
+      // the session should already be set by the authService
+      console.log('AuthCallback: Checking for existing session...');
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-      if (session) {
-        await handleSuccessfulAuth(session.user, 'oauth');
-      } else {
-        throw new Error('No session found after OAuth');
+        if (error) {
+          console.error('AuthCallback: Session check error:', error);
+          throw new Error(error.message);
+        }
+
+        if (session?.user) {
+          console.log(
+            'AuthCallback: Found existing session, user:',
+            session.user.id
+          );
+          await handleSuccessfulAuth(session.user, 'oauth');
+        } else {
+          // If no session, wait a bit for AuthProvider to initialize
+          console.log(
+            'AuthCallback: No session found, waiting for AuthProvider...'
+          );
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          const {
+            data: { session: retrySession },
+            error: retryError,
+          } = await supabase.auth.getSession();
+
+          if (retryError) {
+            throw new Error(retryError.message);
+          }
+
+          if (retrySession?.user) {
+            console.log(
+              'AuthCallback: Found session after retry, user:',
+              retrySession.user.id
+            );
+            await handleSuccessfulAuth(retrySession.user, 'oauth');
+          } else {
+            throw new Error('No session found after OAuth');
+          }
+        }
+      } catch (error) {
+        console.error('AuthCallback: Mobile OAuth callback error:', error);
+        throw error;
       }
     }
   };
@@ -296,7 +357,7 @@ export default function AuthCallbackScreen() {
 
       await handleSuccessfulAuth(user, 'email_verification');
     } else {
-      throw new Error(result?.message || 'Verification failed');
+      throw new Error('Verification failed');
     }
   };
 
@@ -304,7 +365,28 @@ export default function AuthCallbackScreen() {
     user: any,
     type: 'oauth' | 'email_verification'
   ) => {
+    // Wrap the entire success flow in a timeout
+    const successTimeout = setTimeout(() => {
+      console.log(
+        'AuthCallback: handleSuccessfulAuth timed out, forcing redirect...'
+      );
+      setStatus('success');
+      setMessage('Authentication successful! Redirecting...');
+
+      // Force redirect after timeout
+      setTimeout(() => {
+        console.log('AuthCallback: Forced redirect to /(tabs) after timeout');
+        router.replace('/(tabs)');
+      }, 1000);
+    }, 15000); // 15 second total timeout
+
     try {
+      console.log(
+        'AuthCallback: handleSuccessfulAuth started for type:',
+        type,
+        'user:',
+        user.id
+      );
       setStatus('success');
 
       if (type === 'oauth') {
@@ -330,12 +412,50 @@ export default function AuthCallbackScreen() {
         });
       }
 
+      console.log('AuthCallback: About to check user profile...');
       // Check if user profile exists, if not they need to complete their profile
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
+      let existingProfile, profileError;
+
+      try {
+        // Add timeout to profile check as well
+        const profilePromise = supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(
+            () => reject(new Error('Profile check timeout after 8 seconds')),
+            8000
+          );
+        });
+
+        const result = (await Promise.race([
+          profilePromise,
+          timeoutPromise,
+        ])) as any;
+        existingProfile = result.data;
+        profileError = result.error;
+
+        console.log('AuthCallback: Profile check completed:', {
+          hasProfile: !!existingProfile,
+          error: profileError?.code,
+          errorMessage: profileError?.message,
+        });
+      } catch (error) {
+        console.error('AuthCallback: Profile check failed:', error);
+        profileError = error;
+        existingProfile = null;
+
+        // If profile check times out, assume no profile and proceed with creation
+        if (error instanceof Error && error.message.includes('timeout')) {
+          console.log(
+            'AuthCallback: Profile check timed out, assuming no profile exists'
+          );
+          profileError = { code: 'PGRST116', message: 'No rows returned' };
+        }
+      }
 
       if (profileError && profileError.code === 'PGRST116') {
         // Profile doesn't exist, need to complete profile
@@ -344,37 +464,89 @@ export default function AuthCallbackScreen() {
         );
 
         if (type === 'oauth') {
-          // For OAuth users, get account type from session storage
-          const accountType =
-            typeof window !== 'undefined'
-              ? sessionStorage.getItem('pendingAccountType') || 'donor'
-              : 'donor';
+          // For OAuth users, get account type from session storage (web only)
+          let accountType = 'donor'; // Default for mobile
+          if (
+            Platform.OS === 'web' &&
+            typeof window !== 'undefined' &&
+            window.sessionStorage
+          ) {
+            accountType =
+              sessionStorage.getItem('pendingAccountType') || 'donor';
+          }
+
+          console.log(
+            'AuthCallback: Creating profile for OAuth user with accountType:',
+            accountType
+          );
 
           // Create basic profile for OAuth users
-          const { error: insertError } = await supabase
-            .from('user_profiles')
-            .insert({
-              user_id: user.id,
+          let insertError = null;
+          try {
+            console.log('AuthCallback: Creating profile for OAuth user...');
+            const insertPromise = supabase.from('user_profiles').insert({
+              id: user.id,
               email: user.email,
               name:
                 user.user_metadata?.full_name || user.user_metadata?.name || '',
               user_type: accountType,
+              phone: '', // Required field
+              country: 'BANGLADESH', // Default value
               avatar_url: user.user_metadata?.avatar_url,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });
 
-          if (insertError) {
-            console.error('Error creating user profile:', insertError);
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(
+                () =>
+                  reject(new Error('Profile creation timeout after 8 seconds')),
+                8000
+              );
+            });
+
+            const result = (await Promise.race([
+              insertPromise,
+              timeoutPromise,
+            ])) as any;
+            insertError = result.error;
+
+            console.log('AuthCallback: Profile creation result:', {
+              success: !insertError,
+              error: insertError,
+            });
+          } catch (error) {
+            console.error('AuthCallback: Profile creation failed:', error);
+            insertError = error;
           }
 
-          // Clean up session storage
-          if (typeof window !== 'undefined' && window.sessionStorage) {
+          if (insertError) {
+            console.error(
+              'AuthCallback: Error creating user profile:',
+              insertError
+            );
+
+            // If profile creation fails, still proceed to main app
+            console.log(
+              'AuthCallback: Profile creation failed, but proceeding to main app'
+            );
+          } else {
+            console.log('AuthCallback: Profile created successfully');
+          }
+
+          // Clean up session storage (web only)
+          if (
+            Platform.OS === 'web' &&
+            typeof window !== 'undefined' &&
+            window.sessionStorage
+          ) {
             sessionStorage.removeItem('pendingAccountType');
           }
 
+          console.log('AuthCallback: Redirecting to main app in 1.5s...');
           // OAuth users can go directly to main app
           setTimeout(() => {
+            console.log('AuthCallback: Executing redirect to /(tabs)');
             router.replace('/(tabs)');
           }, 1500);
         } else {
@@ -397,14 +569,18 @@ export default function AuthCallbackScreen() {
         }, 2000);
       }
     } catch (error) {
-      console.error('Error handling successful auth:', error);
+      console.error('AuthCallback: Error in handleSuccessfulAuth:', error);
       setStatus('error');
       setMessage('Authentication successful but profile setup failed');
 
       // Still redirect to main app
       setTimeout(() => {
+        console.log('AuthCallback: Fallback redirect to /(tabs) after error');
         router.replace('/(tabs)');
       }, 2000);
+    } finally {
+      // Clear the timeout since we completed or failed
+      clearTimeout(successTimeout);
     }
   };
 
@@ -417,6 +593,45 @@ export default function AuthCallbackScreen() {
     console.log('AuthCallback: Go to sign in requested');
     router.replace('/auth');
   };
+
+  // useEffect to handle component mounting and parameter processing
+  useEffect(() => {
+    console.log('AuthCallback: Component mounted/updated');
+    console.log('AuthCallback: URL params:', params);
+
+    if (Platform.OS === 'web') {
+      console.log('AuthCallback: Current URL:', window.location.href);
+    }
+
+    // Only proceed if we have meaningful params or if this is web
+    const hasOAuthParams =
+      Platform.OS === 'web' ||
+      !!(
+        params &&
+        (params.code ||
+          params.access_token ||
+          params.refresh_token ||
+          params.token_type)
+      );
+
+    console.log('AuthCallback: Has OAuth params or is web:', hasOAuthParams);
+    console.log('AuthCallback: Is processing:', isProcessing);
+
+    if (hasOAuthParams && !isProcessing) {
+      // Add a small delay to ensure the component is fully mounted
+      const timer = setTimeout(() => {
+        handleAuthCallback();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    } else if (isProcessing) {
+      console.log('AuthCallback: Already processing, skipping...');
+    } else {
+      console.log(
+        'AuthCallback: No OAuth params found, waiting for proper redirect...'
+      );
+    }
+  }, [params, isProcessing, handleAuthCallback]);
 
   const getIcon = () => {
     switch (status) {

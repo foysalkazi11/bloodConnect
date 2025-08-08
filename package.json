@@ -9,7 +9,17 @@
     "lint": "expo lint",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "prebuild": "expo prebuild --clean"
+    "prebuild": "expo prebuild --clean",
+    "dev:client": "expo start --dev-client",
+    "dev:client:local": "expo start --dev-client --local",
+    "android:build": "eas build --platform android --profile preview",
+    "ios:build": "eas build --platform ios --profile preview",
+    "android:submit": "eas submit --platform android --profile preview",
+    "ios:submit": "eas submit --platform ios --profile preview",
+    "android:publish": "eas submit --platform android --profile production",
+    "ios:publish": "eas submit --platform ios --profile production",
+    "android:build:local": "eas build -p android --profile development --local",
+    "ios:build:local": "eas build -p ios --profile development --local"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",
@@ -17,6 +27,7 @@
     "@expo/vector-icons": "^14.1.0",
     "@lucide/lab": "^0.1.2",
     "@react-native-community/datetimepicker": "8.4.1",
+    "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/native": "^7.0.14",
     "@supabase/supabase-js": "^2.39.0",
@@ -28,6 +39,7 @@
     "expo-camera": "~16.1.10",
     "expo-constants": "~17.1.6",
     "expo-crypto": "~14.1.5",
+    "expo-dev-client": "~5.2.4",
     "expo-device": "~7.1.4",
     "expo-font": "~13.3.2",
     "expo-haptics": "~14.1.4",
@@ -66,5 +78,12 @@
     "prettier-plugin-tailwindcss": "^0.5.14",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.8.3"
+  },
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false
+      }
+    }
   }
 }

@@ -1,8 +1,6 @@
 import { supabase, UserProfile } from '@/lib/supabase';
 import { Platform } from 'react-native';
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import * as Crypto from 'expo-crypto';
 import { makeRedirectUri } from 'expo-auth-session';
 import Constants from 'expo-constants';
 
@@ -40,15 +38,31 @@ class AuthService {
         const origin = window.location.origin;
         return `${origin}/auth/callback`;
       }
-      // Fallback for SSR or edge cases
+      // Check if we're in production
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (isProduction) {
+        return (
+          process.env.EXPO_PUBLIC_PRODUCTION_REDIRECT_URL ||
+          'https://your-production-domain.com/auth/callback'
+        );
+      }
+      // Fallback for development
       return 'http://localhost:8081/auth/callback';
     } else {
-      // For mobile, use Expo's makeRedirectUri
-      return makeRedirectUri({
-        scheme: 'bloodconnect',
-        path: 'auth/callback',
-        preferLocalhost: true,
-      });
+      // For mobile, check if we're in Expo Go or standalone
+      if (this.isExpoGo()) {
+        // Use Expo's auth proxy for Expo Go
+        return makeRedirectUri({
+          preferLocalhost: false,
+        });
+      } else {
+        // Use custom scheme for standalone builds
+        return makeRedirectUri({
+          scheme: 'bloodconnect',
+          path: 'auth/callback',
+          preferLocalhost: false,
+        });
+      }
     }
   }
 
@@ -474,289 +488,49 @@ class AuthService {
 
   async signInWithGoogle() {
     try {
-      if (Platform.OS === 'web') {
-        return await this.signInWithGoogleWeb();
-      } else {
-        if (this.isExpoGo()) {
-          return await this.signInWithGoogleExpoGo();
-        } else {
-          return await this.signInWithGoogleStandalone();
-        }
-      }
-    } catch (error) {
-      console.error('Google sign in error:', error);
-      throw error;
-    }
-  }
-
-  private async signInWithGoogleWeb() {
-    const redirectUrl = this.getRedirectUrl();
-    console.log('AuthService: Google OAuth redirect URL:', redirectUrl);
-
-    // Store account type preference for OAuth users
-    if (typeof window !== 'undefined' && window.sessionStorage) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const accountType = urlParams.get('accountType') || 'donor';
-      sessionStorage.setItem('pendingAccountType', accountType);
-    }
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    });
-
-    if (error) {
-      console.error('Google OAuth error:', error);
-      throw new Error(`Google sign-in failed: ${error.message}`);
-    }
-
-    console.log('Google OAuth initiated successfully');
-    return data;
-  }
-  private async signInWithGoogleExpoGo() {
-    try {
-      // For Expo Go, use auth.expo.io proxy
-      const redirectUri = makeRedirectUri({
-        useProxy: true,
-      });
-
-      console.log('Expo Go OAuth redirect URI:', redirectUri);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUri,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Google OAuth error:', error);
-        throw new Error(`Google sign-in failed: ${error.message}`);
-      }
-
-      // Open the OAuth URL
-      if (data.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectUri
-        );
-
-        if (result.type === 'success') {
-          // The session should be automatically set by Supabase
-          const { data: sessionData, error: sessionError } =
-            await supabase.auth.getSession();
-
-          if (sessionError) {
-            throw new Error(sessionError.message);
-          }
-
-          return {
-            user: sessionData.session?.user,
-            session: sessionData.session,
-          };
-        } else if (result.type === 'cancel') {
-          throw new Error('OAuth was cancelled');
-        } else {
-          throw new Error('OAuth failed');
-        }
-      }
-
-      throw new Error('No OAuth URL received');
-    } catch (error) {
-      console.error('Expo Go Google OAuth error:', error);
-      throw error;
-    }
-  }
-  private async signInWithGoogleStandalone() {
-    try {
-      // For standalone/built apps, use custom scheme
-      const redirectUri = makeRedirectUri({
-        scheme: 'bloodconnect',
-        path: 'auth/callback',
-      });
-
-      console.log('Standalone OAuth redirect URI:', redirectUri);
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUri,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) {
-        console.error('Google OAuth error:', error);
-        throw new Error(`Google sign-in failed: ${error.message}`);
-      }
-
-      // Open the OAuth URL
-      if (data.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectUri
-        );
-
-        if (result.type === 'success') {
-          // Parse the callback URL to extract tokens
-          const url = result.url;
-          const params = this.parseCallbackUrl(url);
-
-          if (params.error) {
-            throw new Error(`OAuth error: ${params.error}`);
-          }
-
-          if (params.access_token && params.refresh_token) {
-            // Set the session in Supabase
-            const { data: sessionData, error: sessionError } =
-              await supabase.auth.setSession({
-                access_token: params.access_token,
-                refresh_token: params.refresh_token,
-              });
-
-            if (sessionError) {
-              throw new Error(sessionError.message);
-            }
-
-            console.log(
-              'Standalone Google OAuth successful:',
-              sessionData.user?.id
-            );
-            return {
-              user: sessionData.user,
-              session: sessionData.session,
-            };
-          } else {
-            throw new Error('No tokens received from OAuth');
-          }
-        } else if (result.type === 'cancel') {
-          throw new Error('OAuth was cancelled');
-        } else {
-          throw new Error('OAuth failed');
-        }
-      }
-
-      throw new Error('No OAuth URL received');
-    } catch (error) {
-      console.error('Standalone Google OAuth error:', error);
-      throw error;
-    }
-  }
-  private parseCallbackUrl(url: string): { [key: string]: string } {
-    const params: { [key: string]: string } = {};
-
-    try {
-      // Handle both hash (#) and query (?) parameters
-      const urlObj = new URL(url);
-
-      // Check hash first (common for OAuth)
-      if (urlObj.hash) {
-        const hashParams = new URLSearchParams(urlObj.hash.substring(1));
-        hashParams.forEach((value, key) => {
-          params[key] = value;
-        });
-      }
-
-      // Check query parameters
-      urlObj.searchParams.forEach((value, key) => {
-        params[key] = value;
-      });
-    } catch (error) {
-      console.error('Error parsing callback URL:', error);
-    }
-
-    return params;
-  }
-
-  private async signInWithGoogleMobile() {
-    try {
-      // Create the OAuth request
-      const redirectUri = AuthSession.makeRedirectUri({
-        scheme: 'bloodconnect',
-        path: 'auth/callback',
-      });
-
-      console.log('Mobile OAuth redirect URI:', redirectUri);
-
-      // Generate state parameter for security
-      const state = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        Math.random().toString(36),
-        { encoding: Crypto.CryptoEncoding.HEX }
+      console.log(
+        'AuthService: Google OAuth method called (delegating to hook-based implementation)'
       );
 
-      // Get your Supabase project URL
-      const supabaseUrl = 'https://ctuspyegqmzgjnhnerqt.supabase.co';
+      if (Platform.OS === 'web') {
+        // For web, use Supabase's OAuth method directly
+        const redirectUri = this.getRedirectUrl();
+        console.log('AuthService: Web OAuth redirect URI:', redirectUri);
 
-      // Create the authorization URL
-      const authUrl =
-        `${supabaseUrl}/auth/v1/authorize` +
-        `?provider=google` +
-        `&redirect_to=${encodeURIComponent(redirectUri)}` +
-        `&state=${state}`;
+        // Store account type preference for OAuth users
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search);
+          const accountType = urlParams.get('accountType') || 'donor';
+          sessionStorage.setItem('pendingAccountType', accountType);
+        }
 
-      console.log('Authorization URL:', authUrl);
-
-      // Start the OAuth session
-      const result = await AuthSession.startAsync({
-        authUrl,
-        returnUrl: redirectUri,
-      });
-
-      console.log('OAuth result:', result);
-
-      if (result.type === 'success') {
-        // Extract tokens from the result
-        const { url } = result;
-        const urlParams = new URLSearchParams(new URL(url).hash.substring(1));
-
-        const accessToken = urlParams.get('access_token');
-        const refreshToken = urlParams.get('refresh_token');
-        const error = urlParams.get('error');
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUri,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
 
         if (error) {
-          throw new Error(`OAuth error: ${error}`);
+          throw new Error(`Google sign-in failed: ${error.message}`);
         }
 
-        if (accessToken && refreshToken) {
-          // Set the session in Supabase
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            throw new Error(sessionError.message);
-          }
-
-          console.log('Mobile Google OAuth successful:', data.user?.id);
-          return {
-            user: data.user,
-            session: data.session,
-          };
-        } else {
-          throw new Error('No tokens received from OAuth');
-        }
-      } else if (result.type === 'cancel') {
-        throw new Error('OAuth was cancelled');
+        console.log('AuthService: Web OAuth initiated successfully');
+        return data;
       } else {
-        throw new Error('OAuth failed');
+        // For mobile, this method should not be called directly
+        // Components should use the useGoogleAuth hook instead
+        throw new Error(
+          'Google OAuth on mobile should use the useGoogleAuth hook. ' +
+            'This method is only for web compatibility.'
+        );
       }
     } catch (error) {
-      console.error('Mobile Google OAuth error:', error);
+      console.error('AuthService: Google sign in error:', error);
       throw error;
     }
   }
