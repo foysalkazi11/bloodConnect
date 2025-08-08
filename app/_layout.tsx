@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
@@ -14,6 +14,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { I18nProvider } from '@/providers/I18nProvider';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+
+// Complete the authentication session when the app is opened via deep link
+WebBrowser.maybeCompleteAuthSession();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +37,61 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+
+      // Handle OAuth callback
+      if (
+        url.includes('bloodconnect://auth/callback') ||
+        url.includes('/auth/callback')
+      ) {
+        // Parse URL parameters from the deep link
+        try {
+          const urlObj = new URL(url);
+          const params = new URLSearchParams(urlObj.hash.substring(1)); // Get hash parameters
+
+          // Build query string for router
+          const queryParams: Record<string, string> = {};
+          params.forEach((value, key) => {
+            queryParams[key] = value;
+          });
+
+          console.log('Parsed deep link params:', queryParams);
+
+          // Navigate with parsed parameters
+          if (Object.keys(queryParams).length > 0) {
+            router.push({
+              pathname: '/auth/callback',
+              params: queryParams,
+            });
+          } else {
+            router.push('/auth/callback');
+          }
+        } catch (error) {
+          console.error('Error parsing deep link:', error);
+          // Fallback to basic navigation
+          router.push('/auth/callback');
+        }
+      }
+    };
+
+    // Handle deep links when app is already open
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    // Handle deep link when app is opened from closed state
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;

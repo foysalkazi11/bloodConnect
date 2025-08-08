@@ -1,14 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 
-const supabaseUrl = 'https://ctuspyegqmzgjnhnerqt.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0dXNweWVncW16Z2puaG5lcnF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMTMyMDIsImV4cCI6MjA2NjY4OTIwMn0.5N4FFsYwDpcYaAxKz3n31N7rfz1yBTSMeosMAWWssuw';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    ...(Platform.OS !== 'web' ? { detectSessionInUrl: false } : {}),
     persistSession: true,
     autoRefreshToken: true,
+    // Allow session detection for OAuth callbacks
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });
 
@@ -31,6 +32,7 @@ export interface UserProfile {
   is_available?: boolean;
   created_at: string;
   updated_at: string;
+  avatar_url?: string;
 }
 
 export interface Club {

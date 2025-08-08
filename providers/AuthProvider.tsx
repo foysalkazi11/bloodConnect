@@ -1,11 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useCallback } from 'react';
+import { Platform } from 'react-native';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { UserProfile } from '@/lib/supabase';
 import { router } from 'expo-router';
 import notificationService from '@/services/notificationService';
 import { pushNotificationService } from '@/services/pushNotificationService';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 interface AuthContextType {
   user: User | null;
@@ -42,6 +45,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Use the Google Auth hook (always call hook to follow Rules of Hooks)
+  const googleAuth = useGoogleAuth();
 
   const isEmailVerified = user?.email_confirmed_at != null;
 
@@ -380,6 +386,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           console.log('AuthProvider: No current user found');
           clearAuthState();
+
+          // Attempt silent Google sign-in on native to restore session seamlessly
+          if (Platform.OS !== 'web') {
+            try {
+              const hasPrev = GoogleSignin.hasPreviousSignIn();
+              if (hasPrev) {
+                console.log('AuthProvider: Trying Google silent sign-in...');
+                try {
+                  await GoogleSignin.signInSilently();
+                } catch (e) {
+                  // ignore; we'll still try to fetch tokens below
+                }
+                const tokens = await GoogleSignin.getTokens();
+                if (tokens?.idToken) {
+                  const { error } = await (
+                    await import('@/lib/supabase')
+                  ).supabase.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: tokens.idToken,
+                  });
+                  if (error) {
+                    console.error(
+                      'AuthProvider: Silent Google sign-in failed:',
+                      error
+                    );
+                  } else {
+                    console.log(
+                      'AuthProvider: Silent Google sign-in succeeded'
+                    );
+                    // auth state listener will populate state shortly
+                  }
+                }
+              }
+            } catch (e) {
+              console.error(
+                'AuthProvider: Silent Google sign-in attempt error:',
+                e
+              );
+            }
+          }
         }
       } catch (error: any) {
         console.error('AuthProvider: Error getting initial session:', error);
@@ -541,12 +587,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
-      await authService.signInWithGoogle();
+      if (Platform.OS === 'web') {
+        // Use AuthService for web
+        await authService.signInWithGoogle();
+      } else {
+        // Expo rule: Check if request is ready before prompting
+        if (!googleAuth.isReady) {
+          throw new Error(
+            'Google authentication is not ready. Please wait and try again.'
+          );
+        }
+        // Use the hook for mobile
+        await googleAuth.signInWithGoogle();
+      }
     } catch (error) {
       setLoading(false);
       throw error;
     }
-  }, []);
+  }, [googleAuth]);
 
   const signOut = useCallback(async () => {
     console.log('AuthProvider: signOut called');
@@ -565,6 +623,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Clear local state first to provide immediate UI feedback
       clearAuthState();
+
+      // Also sign out of Google on native so next launch doesn't reuse OS session
+      if (Platform.OS !== 'web') {
+        try {
+          await GoogleSignin.signOut();
+        } catch (e) {
+          console.error('AuthProvider: Google signOut failed (ignored):', e);
+        }
+      }
 
       // Call the auth service to sign out
       await authService.signOut();
@@ -654,7 +721,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
 
           // Try again with minimal required fields if first attempt fails
-          const minimalUpdates = {
+          const minimalUpdates: any = {
             email: updates.email || user.email || profile?.email || '',
             name: updates.name || profile?.name || user.email || '',
             user_type: updates.user_type || profile?.user_type || 'donor',
