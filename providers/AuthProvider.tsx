@@ -3,8 +3,8 @@ import { useCallback } from 'react';
 import { Platform } from 'react-native';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
-import { UserProfile } from '@/lib/supabase';
-import { router } from 'expo-router';
+import { UserProfile, supabase } from '@/lib/supabase';
+import { router, usePathname } from 'expo-router';
 import notificationService from '@/services/notificationService';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
@@ -45,9 +45,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
-
   // Use the Google Auth hook (always call hook to follow Rules of Hooks)
   const googleAuth = useGoogleAuth();
+  // Current route (works on web and native)
+  const pathname = usePathname();
 
   const isEmailVerified = user?.email_confirmed_at != null;
 
@@ -106,16 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 1. Profile exists
     // 2. Profile is incomplete
     // 3. We're not already on the complete-profile page
-    if (
-      userProfile &&
-      !isProfileComplete(userProfile) &&
-      typeof window !== 'undefined'
-    ) {
+    if (userProfile && !isProfileComplete(userProfile)) {
       console.log(
         'AuthProvider: Profile incomplete, redirecting to complete-profile'
       );
 
-      const currentPath = window.location.pathname;
+      const currentPath = pathname || '';
       // Prevent redirect if already on complete-profile or auth pages
       if (
         currentPath !== '/complete-profile' &&
@@ -123,14 +120,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       ) {
         router.replace('/complete-profile');
       }
+    } else {
+      router.replace('/');
     }
   };
 
   const isCompletingProfile = () => {
-    return (
-      typeof window !== 'undefined' &&
-      window.location.pathname === '/complete-profile'
-    );
+    return (pathname || '') === '/complete-profile';
   };
 
   const clearAuthState = () => {
@@ -168,11 +164,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearAuthState();
 
       // Redirect to auth page if not already there
-      if (typeof window !== 'undefined') {
-        const currentPath = window.location.pathname;
-        if (!currentPath.startsWith('/auth/')) {
-          router.replace('/auth');
-        }
+      const currentPath = pathname || '';
+      if (!currentPath.startsWith('/auth/')) {
+        router.replace('/auth');
       }
       return true;
     }
@@ -386,7 +380,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } else {
           console.log('AuthProvider: No current user found');
           clearAuthState();
-
           // Attempt silent Google sign-in on native to restore session seamlessly
           if (Platform.OS !== 'web') {
             try {
@@ -400,9 +393,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }
                 const tokens = await GoogleSignin.getTokens();
                 if (tokens?.idToken) {
-                  const { error } = await (
-                    await import('@/lib/supabase')
-                  ).supabase.auth.signInWithIdToken({
+                  const { error } = await supabase.auth.signInWithIdToken({
                     provider: 'google',
                     token: tokens.idToken,
                   });
@@ -499,15 +490,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   'AuthProvider: Profile incomplete, redirecting to complete-profile'
                 );
 
-                if (typeof window !== 'undefined') {
-                  const currentPath = window.location.pathname;
-                  // Prevent redirect if already on complete-profile or auth pages
-                  if (
-                    currentPath !== '/complete-profile' &&
-                    !currentPath.startsWith('/auth/')
-                  ) {
-                    router.replace('/complete-profile');
-                  }
+                const currentPath = pathname || '';
+                // Prevent redirect if already on complete-profile or auth pages
+                if (
+                  currentPath !== '/complete-profile' &&
+                  !currentPath.startsWith('/auth/')
+                ) {
+                  router.replace('/complete-profile');
                 }
               } else {
                 // Activate donor availability after profile completion
@@ -531,6 +520,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     );
                     handleAuthenticationError(error);
                   }
+                } else {
+                  router.replace('/');
                 }
               }
             }
@@ -623,7 +614,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Clear local state first to provide immediate UI feedback
       clearAuthState();
-
       // Also sign out of Google on native so next launch doesn't reuse OS session
       if (Platform.OS !== 'web') {
         try {
@@ -721,7 +711,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
 
           // Try again with minimal required fields if first attempt fails
-          const minimalUpdates: any = {
+          const minimalUpdates: Partial<UserProfile> = {
             email: updates.email || user.email || profile?.email || '',
             name: updates.name || profile?.name || user.email || '',
             user_type: updates.user_type || profile?.user_type || 'donor',

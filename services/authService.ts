@@ -1,11 +1,5 @@
 import { supabase, UserProfile } from '@/lib/supabase';
 import { Platform } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
-import Constants from 'expo-constants';
-
-// Configure WebBrowser for OAuth
-WebBrowser.maybeCompleteAuthSession();
 
 export interface SignUpData {
   email: string;
@@ -31,43 +25,23 @@ export interface SignInData {
 }
 
 class AuthService {
-  private getRedirectUrl(): string {
-    if (Platform.OS === 'web') {
-      // For web, use the current origin
-      if (typeof window !== 'undefined') {
-        const origin = window.location.origin;
+  private getRedirectUrl() {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin;
+      console.log('AuthService: Current origin:', origin);
+
+      // For development, use the exact URL format that Supabase expects
+      if (
+        origin.includes('webcontainer-api.io') ||
+        origin.includes('localhost')
+      ) {
+        // Use the current origin for OAuth redirects
         return `${origin}/auth/callback`;
       }
-      // Check if we're in production
-      const isProduction = process.env.NODE_ENV === 'production';
-      if (isProduction) {
-        return (
-          process.env.EXPO_PUBLIC_PRODUCTION_REDIRECT_URL ||
-          'https://your-production-domain.com/auth/callback'
-        );
-      }
-      // Fallback for development
-      return 'http://localhost:8081/auth/callback';
-    } else {
-      // For mobile, check if we're in Expo Go or standalone
-      if (this.isExpoGo()) {
-        // Use Expo's auth proxy for Expo Go
-        return makeRedirectUri({
-          preferLocalhost: false,
-        });
-      } else {
-        // Use custom scheme for standalone builds
-        return makeRedirectUri({
-          scheme: 'bloodconnect',
-          path: 'auth/callback',
-          preferLocalhost: false,
-        });
-      }
-    }
-  }
 
-  private isExpoGo(): boolean {
-    return Constants.appOwnership === 'expo';
+      return `${origin}/auth/callback`;
+    }
+    return 'http://localhost:8081/auth/callback';
   }
 
   private parseRateLimitError(error: any): {
@@ -151,41 +125,39 @@ class AuthService {
     try {
       console.log('AuthService: Clearing all storage data...');
 
-      if (Platform.OS === 'web') {
-        // Clear localStorage
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const keysToRemove = [];
-          for (let i = 0; i < window.localStorage.length; i++) {
-            const key = window.localStorage.key(i);
-            if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
-              keysToRemove.push(key);
-            }
+      // Clear localStorage
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove = [];
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const key = window.localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+            keysToRemove.push(key);
           }
-          keysToRemove.forEach((key) => {
-            console.log('Removing localStorage key:', key);
-            window.localStorage.removeItem(key);
-          });
         }
+        keysToRemove.forEach((key) => {
+          console.log('Removing localStorage key:', key);
+          window.localStorage.removeItem(key);
+        });
+      }
 
-        // Clear sessionStorage
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-          const sessionKeysToRemove = [];
-          for (let i = 0; i < window.sessionStorage.length; i++) {
-            const key = window.sessionStorage.key(i);
-            if (
-              key &&
-              (key.startsWith('sb-') ||
-                key.includes('supabase') ||
-                key === 'pendingAccountType')
-            ) {
-              sessionKeysToRemove.push(key);
-            }
+      // Clear sessionStorage
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const sessionKeysToRemove = [];
+        for (let i = 0; i < window.sessionStorage.length; i++) {
+          const key = window.sessionStorage.key(i);
+          if (
+            key &&
+            (key.startsWith('sb-') ||
+              key.includes('supabase') ||
+              key === 'pendingAccountType')
+          ) {
+            sessionKeysToRemove.push(key);
           }
-          sessionKeysToRemove.forEach((key) => {
-            console.log('Removing sessionStorage key:', key);
-            window.sessionStorage.removeItem(key);
-          });
         }
+        sessionKeysToRemove.forEach((key) => {
+          console.log('Removing sessionStorage key:', key);
+          window.sessionStorage.removeItem(key);
+        });
       }
 
       console.log('AuthService: Storage data cleared successfully');
@@ -289,11 +261,7 @@ class AuthService {
       console.log('AuthService: Using redirect URL:', redirectUrl);
 
       // Store signup data in sessionStorage for later profile creation
-      if (
-        Platform.OS === 'web' &&
-        typeof window !== 'undefined' &&
-        window.sessionStorage
-      ) {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
         sessionStorage.setItem(
           'pendingSignupData',
           JSON.stringify({
@@ -374,11 +342,7 @@ class AuthService {
       console.error('Sign up error:', error);
 
       // Clear pending signup data on error
-      if (
-        Platform.OS === 'web' &&
-        typeof window !== 'undefined' &&
-        window.sessionStorage
-      ) {
+      if (typeof window !== 'undefined' && window.sessionStorage) {
         sessionStorage.removeItem('pendingSignupData');
       }
 
@@ -488,49 +452,36 @@ class AuthService {
 
   async signInWithGoogle() {
     try {
-      console.log(
-        'AuthService: Google OAuth method called (delegating to hook-based implementation)'
-      );
+      const redirectUrl = this.getRedirectUrl();
+      console.log('AuthService: Google OAuth redirect URL:', redirectUrl);
 
-      if (Platform.OS === 'web') {
-        // For web, use Supabase's OAuth method directly
-        const redirectUri = this.getRedirectUrl();
-        console.log('AuthService: Web OAuth redirect URI:', redirectUri);
-
-        // Store account type preference for OAuth users
-        if (typeof window !== 'undefined') {
-          const urlParams = new URLSearchParams(window.location.search);
-          const accountType = urlParams.get('accountType') || 'donor';
-          sessionStorage.setItem('pendingAccountType', accountType);
-        }
-
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: redirectUri,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            },
-          },
-        });
-
-        if (error) {
-          throw new Error(`Google sign-in failed: ${error.message}`);
-        }
-
-        console.log('AuthService: Web OAuth initiated successfully');
-        return data;
-      } else {
-        // For mobile, this method should not be called directly
-        // Components should use the useGoogleAuth hook instead
-        throw new Error(
-          'Google OAuth on mobile should use the useGoogleAuth hook. ' +
-            'This method is only for web compatibility.'
-        );
+      // Store account type preference for OAuth users
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountType = urlParams.get('accountType') || 'donor';
+        sessionStorage.setItem('pendingAccountType', accountType);
       }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Google OAuth error:', error);
+        throw new Error(`Google sign-in failed: ${error.message}`);
+      }
+
+      console.log('Google OAuth initiated successfully');
+      return data;
     } catch (error) {
-      console.error('AuthService: Google sign in error:', error);
+      console.error('Google sign in error:', error);
       throw error;
     }
   }
@@ -773,70 +724,64 @@ class AuthService {
   async handleEmailVerification() {
     try {
       console.log('AuthService: Handling email verification...');
+      console.log('Current URL:', window.location.href);
 
-      if (Platform.OS === 'web') {
-        console.log('Current URL:', window.location.href);
+      // Get the current URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
-        // Get the current URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(
-          window.location.hash.substring(1)
-        );
+      const accessToken =
+        urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken =
+        urlParams.get('refresh_token') || hashParams.get('refresh_token');
+      const error = urlParams.get('error') || hashParams.get('error');
+      const errorDescription =
+        urlParams.get('error_description') ||
+        hashParams.get('error_description');
+      const errorCode =
+        urlParams.get('error_code') || hashParams.get('error_code');
 
-        const accessToken =
-          urlParams.get('access_token') || hashParams.get('access_token');
-        const refreshToken =
-          urlParams.get('refresh_token') || hashParams.get('refresh_token');
-        const error = urlParams.get('error') || hashParams.get('error');
-        const errorDescription =
-          urlParams.get('error_description') ||
-          hashParams.get('error_description');
-        const errorCode =
-          urlParams.get('error_code') || hashParams.get('error_code');
+      console.log('URL params:', {
+        accessToken: !!accessToken,
+        refreshToken: !!refreshToken,
+        error,
+        errorDescription,
+        errorCode,
+      });
 
-        console.log('URL params:', {
-          accessToken: !!accessToken,
-          refreshToken: !!refreshToken,
-          error,
-          errorDescription,
-          errorCode,
+      // Check for errors first
+      if (error) {
+        console.log('Verification error detected:', error, errorDescription);
+        if (
+          error === 'access_denied' &&
+          (errorCode === 'otp_expired' || errorDescription?.includes('expired'))
+        ) {
+          throw new Error(
+            'Email verification link has expired. Please request a new one.'
+          );
+        }
+        throw new Error(errorDescription || 'Email verification failed');
+      }
+
+      // If we have tokens, set the session
+      if (accessToken && refreshToken) {
+        console.log('Setting session with tokens...');
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
         });
 
-        // Check for errors first
-        if (error) {
-          console.log('Verification error detected:', error, errorDescription);
-          if (
-            error === 'access_denied' &&
-            (errorCode === 'otp_expired' ||
-              errorDescription?.includes('expired'))
-          ) {
-            throw new Error(
-              'Email verification link has expired. Please request a new one.'
-            );
-          }
-          throw new Error(errorDescription || 'Email verification failed');
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error(sessionError.message);
         }
 
-        // If we have tokens, set the session
-        if (accessToken && refreshToken) {
-          console.log('Setting session with tokens...');
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error('Session error:', sessionError);
-            throw new Error(sessionError.message);
-          }
-
-          console.log('Session set successfully:', data.user?.id);
-          return {
-            success: true,
-            user: data.user,
-            session: data.session,
-          };
-        }
+        console.log('Session set successfully:', data.user?.id);
+        return {
+          success: true,
+          user: data.user,
+          session: data.session,
+        };
       }
 
       // Check if user is already authenticated

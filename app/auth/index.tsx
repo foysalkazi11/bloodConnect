@@ -1,9 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Heart, ArrowLeft, Mail } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
@@ -12,25 +18,26 @@ import { useAuth } from '@/providers/AuthProvider';
 export default function SignInScreen() {
   const { t } = useI18n();
   const { showNotification } = useNotification();
-  const { signIn, signInWithGoogle, loading, resetPassword, resendEmailVerification } = useAuth();
-  
   const {
-    data,
-    errors,
-    touched,
-    updateField,
-    touchField,
-    validateAll,
-  } = useFormValidation(
-    { email: '', password: '' },
-    {
-      email: CommonValidationRules.email,
-      password: {
-        required: true,
-        minLength: 6, // Less strict for sign in
-      },
-    }
-  );
+    signIn,
+    signInWithGoogle,
+    loading,
+    resetPassword,
+    resendEmailVerification,
+  } = useAuth();
+  const pathname = usePathname();
+
+  const { data, errors, touched, updateField, touchField, validateAll } =
+    useFormValidation(
+      { email: '', password: '' },
+      {
+        email: CommonValidationRules.email,
+        password: {
+          required: true,
+          minLength: 6, // Less strict for sign in
+        },
+      }
+    );
 
   const handleSignIn = async () => {
     if (!validateAll()) {
@@ -45,21 +52,24 @@ export default function SignInScreen() {
 
     try {
       await signIn(data.email, data.password);
-      
+
       showNotification({
         type: 'success',
         title: 'Welcome Back!',
         message: 'You have successfully signed in.',
         duration: 3000,
       });
-      
-      router.replace('/(tabs)');
+
+      // Navigation handled centrally by AuthProvider based on profile completeness
     } catch (error) {
       // Clear password field for security after failed login
       updateField('password', '');
-      
-      const errorMessage = error instanceof Error ? error.message : 'Please check your credentials and try again.';
-      
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Please check your credentials and try again.';
+
       // Check if it's an email verification error
       if (errorMessage.includes('verify your email')) {
         showNotification({
@@ -93,14 +103,17 @@ export default function SignInScreen() {
       showNotification({
         type: 'success',
         title: 'Verification Email Sent',
-        message: 'We\'ve sent a new verification link to your email address.',
+        message: "We've sent a new verification link to your email address.",
         duration: 4000,
       });
     } catch (error) {
       showNotification({
         type: 'error',
         title: 'Failed to Send Email',
-        message: error instanceof Error ? error.message : 'Failed to resend verification email.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to resend verification email.',
         duration: 5000,
       });
     }
@@ -109,20 +122,23 @@ export default function SignInScreen() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
-      
+
       showNotification({
         type: 'success',
         title: 'Welcome!',
         message: 'You have successfully signed in with Google.',
         duration: 3000,
       });
-      
-      router.replace('/(tabs)');
+
+      // Navigation handled centrally by AuthProvider based on profile completeness
     } catch (error) {
       showNotification({
         type: 'error',
         title: 'Google Sign In Failed',
-        message: error instanceof Error ? error.message : 'Failed to sign in with Google.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to sign in with Google.',
         duration: 5000,
       });
     }
@@ -137,7 +153,8 @@ export default function SignInScreen() {
       showNotification({
         type: 'info',
         title: 'Enter Your Email',
-        message: 'Please enter your email address first, then try forgot password.',
+        message:
+          'Please enter your email address first, then try forgot password.',
         duration: 4000,
       });
       return;
@@ -148,14 +165,17 @@ export default function SignInScreen() {
       showNotification({
         type: 'success',
         title: 'Reset Email Sent',
-        message: 'We\'ve sent a password reset link to your email address.',
+        message: "We've sent a password reset link to your email address.",
         duration: 6000,
       });
     } catch (error) {
       showNotification({
         type: 'error',
         title: 'Reset Failed',
-        message: error instanceof Error ? error.message : 'Failed to send reset email.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to send reset email.',
         duration: 5000,
       });
     }
@@ -171,7 +191,7 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -185,7 +205,9 @@ export default function SignInScreen() {
           <View style={styles.headerContent}>
             <Heart size={48} color="#DC2626" />
             <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue helping save lives</Text>
+            <Text style={styles.subtitle}>
+              Sign in to continue helping save lives
+            </Text>
           </View>
         </View>
 
@@ -218,12 +240,20 @@ export default function SignInScreen() {
             required
           />
 
-          <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
-            <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={handleForgotPassword}
+          >
+            <Text style={styles.forgotPasswordText}>
+              {t('auth.forgotPassword')}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.signInButton, loading && styles.signInButtonDisabled]}
+          <TouchableOpacity
+            style={[
+              styles.signInButton,
+              loading && styles.signInButtonDisabled,
+            ]}
             onPress={handleSignIn}
             disabled={loading}
           >
@@ -237,7 +267,8 @@ export default function SignInScreen() {
         <View style={styles.verificationNotice}>
           <Mail size={20} color="#3B82F6" />
           <Text style={styles.verificationText}>
-            New to BloodConnect? You'll need to verify your email after signing up.
+            New to BloodConnect? You&apos;ll need to verify your email after
+            signing up.
           </Text>
         </View>
 
@@ -250,12 +281,14 @@ export default function SignInScreen() {
           </View>
 
           <View style={styles.socialButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.socialButton}
               onPress={handleGoogleSignIn}
               disabled={loading}
             >
-              <Text style={styles.socialButtonText}>{t('auth.signInWithGoogle')}</Text>
+              <Text style={styles.socialButtonText}>
+                {t('auth.signInWithGoogle')}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

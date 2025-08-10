@@ -14,7 +14,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { I18nProvider } from '@/providers/I18nProvider';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { AuthProvider } from '@/providers/AuthProvider';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 
 // Complete the authentication session when the app is opened via deep link
@@ -46,6 +46,11 @@ export default function RootLayout() {
         url.includes('bloodconnect://auth/callback') ||
         url.includes('/auth/callback')
       ) {
+        // On web, let Supabase handle session from URL; avoid router redirects that
+        // can strip the hash parameters before Supabase processes them
+        if (Platform.OS === 'web') {
+          return;
+        }
         // Parse URL parameters from the deep link
         try {
           const urlObj = new URL(url);
@@ -76,20 +81,25 @@ export default function RootLayout() {
       }
     };
 
-    // Handle deep links when app is already open
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      handleDeepLink(url);
-    });
+    // Handle deep links when app is already open (native only)
+    const subscription =
+      Platform.OS !== 'web'
+        ? Linking.addEventListener('url', ({ url }) => {
+            handleDeepLink(url);
+          })
+        : (null as any);
 
-    // Handle deep link when app is opened from closed state
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        handleDeepLink(url);
-      }
-    });
+    // Handle deep link when app is opened from closed state (native only)
+    if (Platform.OS !== 'web') {
+      Linking.getInitialURL().then((url) => {
+        if (url) {
+          handleDeepLink(url);
+        }
+      });
+    }
 
     return () => {
-      subscription?.remove();
+      subscription?.remove?.();
     };
   }, []);
 

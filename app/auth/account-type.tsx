@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Heart, ArrowLeft, Users } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
@@ -36,86 +42,116 @@ export default function AccountTypeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ArrowLeft size={24} color="#111827" />
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Heart size={32} color="#DC2626" />
-          <Text style={styles.headerTitle}>Join BloodConnect</Text>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <ArrowLeft size={24} color="#111827" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Heart size={32} color="#DC2626" />
+            <Text style={styles.headerTitle}>Join BloodConnect</Text>
+          </View>
+          <View style={styles.stepIndicator}>
+            <Text style={styles.stepText}>1/3</Text>
+          </View>
         </View>
-        <View style={styles.stepIndicator}>
-          <Text style={styles.stepText}>1/3</Text>
-        </View>
-      </View>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Choose Account Type</Text>
-        <Text style={styles.subtitle}>Select what best describes you</Text>
-        
-        <View style={styles.accountTypeContainer}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Choose Account Type</Text>
+          <Text style={styles.subtitle}>Select what best describes you</Text>
+
+          <View style={styles.accountTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.accountTypeCard,
+                selectedType === 'donor' && styles.accountTypeCardActive,
+              ]}
+              onPress={() => setSelectedType('donor')}
+            >
+              <Heart
+                size={48}
+                color={selectedType === 'donor' ? '#FFFFFF' : '#DC2626'}
+              />
+              <Text
+                style={[
+                  styles.accountTypeTitle,
+                  selectedType === 'donor' && styles.accountTypeTextActive,
+                ]}
+              >
+                Blood Donor
+              </Text>
+              <Text
+                style={[
+                  styles.accountTypeDescription,
+                  selectedType === 'donor' &&
+                    styles.accountTypeDescriptionActive,
+                ]}
+              >
+                Help save lives by donating blood to those in need. Connect with
+                hospitals and blood banks in your area.
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.accountTypeCard,
+                selectedType === 'club' && styles.accountTypeCardActive,
+              ]}
+              onPress={() => setSelectedType('club')}
+            >
+              <Users
+                size={48}
+                color={selectedType === 'club' ? '#FFFFFF' : '#DC2626'}
+              />
+              <Text
+                style={[
+                  styles.accountTypeTitle,
+                  selectedType === 'club' && styles.accountTypeTextActive,
+                ]}
+              >
+                Blood Donation Club
+              </Text>
+              <Text
+                style={[
+                  styles.accountTypeDescription,
+                  selectedType === 'club' &&
+                    styles.accountTypeDescriptionActive,
+                ]}
+              >
+                Organize blood drives, manage donation activities, and build a
+                community of donors.
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
           <TouchableOpacity
             style={[
-              styles.accountTypeCard,
-              selectedType === 'donor' && styles.accountTypeCardActive
+              styles.nextButton,
+              !selectedType && styles.nextButtonDisabled,
             ]}
-            onPress={() => setSelectedType('donor')}
+            onPress={handleNext}
+            disabled={!selectedType}
           >
-            <Heart size={48} color={selectedType === 'donor' ? '#FFFFFF' : '#DC2626'} />
-            <Text style={[
-              styles.accountTypeTitle,
-              selectedType === 'donor' && styles.accountTypeTextActive
-            ]}>
-              Blood Donor
-            </Text>
-            <Text style={[
-              styles.accountTypeDescription,
-              selectedType === 'donor' && styles.accountTypeDescriptionActive
-            ]}>
-              Help save lives by donating blood to those in need. Connect with hospitals and blood banks in your area.
-            </Text>
+            <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.accountTypeCard,
-              selectedType === 'club' && styles.accountTypeCardActive
-            ]}
-            onPress={() => setSelectedType('club')}
-          >
-            <Users size={48} color={selectedType === 'club' ? '#FFFFFF' : '#DC2626'} />
-            <Text style={[
-              styles.accountTypeTitle,
-              selectedType === 'club' && styles.accountTypeTextActive
-            ]}>
-              Blood Donation Club
+          <View style={styles.signInSection}>
+            <Text style={styles.signInText}>
+              {t('auth.alreadyHaveAccount')}
             </Text>
-            <Text style={[
-              styles.accountTypeDescription,
-              selectedType === 'club' && styles.accountTypeDescriptionActive
-            ]}>
-              Organize blood drives, manage donation activities, and build a community of donors.
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/auth')}>
+              <Text style={styles.signInLink}>{t('auth.signIn')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[styles.nextButton, !selectedType && styles.nextButtonDisabled]}
-          onPress={handleNext}
-          disabled={!selectedType}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.signInSection}>
-          <Text style={styles.signInText}>{t('auth.alreadyHaveAccount')}</Text>
-          <TouchableOpacity onPress={() => router.push('/auth')}>
-            <Text style={styles.signInLink}>{t('auth.signIn')}</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -124,6 +160,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     flexDirection: 'row',
@@ -213,6 +255,7 @@ const styles = StyleSheet.create({
     color: '#FEE2E2',
   },
   footer: {
+    paddingTop: 20,
     paddingHorizontal: 24,
     paddingBottom: 32,
     gap: 20,
