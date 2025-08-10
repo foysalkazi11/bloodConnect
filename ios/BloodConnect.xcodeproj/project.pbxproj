@@ -7,29 +7,29 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1263AB45DBDCECC86BF76E73 /* libPods-BloodConnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B7670B6D460D5593EA43AAA4 /* libPods-BloodConnect.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		23409C09D7240BDE1B595D43 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55229B29BF6E51F1DBDD34DD /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		77196C3C402A588B5DBE41D5 /* libPods-BloodConnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D9CDB3125731C9F129E12B3 /* libPods-BloodConnect.a */; };
+		809FB11C5E7FAAD11034AE4A /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9A554F2DD35C9D7201840F /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E70708441EDEB4D969734E0E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0263437F47C41E750BEB911F /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F70054B0116BD2062EE18EAF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 887C5FA9E9D509D5DBBB4252 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0263437F47C41E750BEB911F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = BloodConnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* BloodConnect.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BloodConnect.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BloodConnect/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = BloodConnect/Info.plist; sourceTree = "<group>"; };
-		47E4E024D8254DDBFE7F0D0A /* Pods-BloodConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BloodConnect.release.xcconfig"; path = "Target Support Files/Pods-BloodConnect/Pods-BloodConnect.release.xcconfig"; sourceTree = "<group>"; };
-		55229B29BF6E51F1DBDD34DD /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-BloodConnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		6D9CDB3125731C9F129E12B3 /* libPods-BloodConnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BloodConnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		887C5FA9E9D509D5DBBB4252 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = BloodConnect/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = BloodConnect/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B7670B6D460D5593EA43AAA4 /* libPods-BloodConnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BloodConnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		D2A268DB61DFB06AD506E5C3 /* Pods-BloodConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BloodConnect.debug.xcconfig"; path = "Target Support Files/Pods-BloodConnect/Pods-BloodConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		EFBFCB328FDBA67119CB0F6A /* Pods-BloodConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BloodConnect.debug.xcconfig"; path = "Target Support Files/Pods-BloodConnect/Pods-BloodConnect.debug.xcconfig"; sourceTree = "<group>"; };
+		ED2A1BA7BCD0A9B451886670 /* Pods-BloodConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BloodConnect.release.xcconfig"; path = "Target Support Files/Pods-BloodConnect/Pods-BloodConnect.release.xcconfig"; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BloodConnect/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* BloodConnect-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "BloodConnect-Bridging-Header.h"; path = "BloodConnect/BloodConnect-Bridging-Header.h"; sourceTree = "<group>"; };
+		FD9A554F2DD35C9D7201840F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-BloodConnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,21 +37,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1263AB45DBDCECC86BF76E73 /* libPods-BloodConnect.a in Frameworks */,
+				77196C3C402A588B5DBE41D5 /* libPods-BloodConnect.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0205878F6A99836C5365927C /* BloodConnect */ = {
-			isa = PBXGroup;
-			children = (
-				55229B29BF6E51F1DBDD34DD /* ExpoModulesProvider.swift */,
-			);
-			name = BloodConnect;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* BloodConnect */ = {
 			isa = PBXGroup;
 			children = (
@@ -61,26 +53,26 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				0263437F47C41E750BEB911F /* PrivacyInfo.xcprivacy */,
+				887C5FA9E9D509D5DBBB4252 /* PrivacyInfo.xcprivacy */,
 			);
 			name = BloodConnect;
+			sourceTree = "<group>";
+		};
+		1CD4946FE72E9676B4460441 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				F2FA45BE304F5D2EE94F7AD8 /* BloodConnect */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				B7670B6D460D5593EA43AAA4 /* libPods-BloodConnect.a */,
+				6D9CDB3125731C9F129E12B3 /* libPods-BloodConnect.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		6E8125E11DAD0B80C335F6C4 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				0205878F6A99836C5365927C /* BloodConnect */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -97,8 +89,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				A6B3349C7636BCD089FB30AB /* Pods */,
-				6E8125E11DAD0B80C335F6C4 /* ExpoModulesProviders */,
+				C931DD7DC886C4C231F52E4C /* Pods */,
+				1CD4946FE72E9676B4460441 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -113,16 +105,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A6B3349C7636BCD089FB30AB /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				EFBFCB328FDBA67119CB0F6A /* Pods-BloodConnect.debug.xcconfig */,
-				47E4E024D8254DDBFE7F0D0A /* Pods-BloodConnect.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +112,24 @@
 			);
 			name = Supporting;
 			path = BloodConnect/Supporting;
+			sourceTree = "<group>";
+		};
+		C931DD7DC886C4C231F52E4C /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				D2A268DB61DFB06AD506E5C3 /* Pods-BloodConnect.debug.xcconfig */,
+				ED2A1BA7BCD0A9B451886670 /* Pods-BloodConnect.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		F2FA45BE304F5D2EE94F7AD8 /* BloodConnect */ = {
+			isa = PBXGroup;
+			children = (
+				FD9A554F2DD35C9D7201840F /* ExpoModulesProvider.swift */,
+			);
+			name = BloodConnect;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BloodConnect" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				AA1A90FA1CE78877C5FD0D15 /* [Expo] Configure project */,
+				3B9138EE8EA653A57AD875E1 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				802EE069D924262350831699 /* [CP] Embed Pods Frameworks */,
+				13A01DEC1B99C701F2515051 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				E70708441EDEB4D969734E0E /* PrivacyInfo.xcprivacy in Resources */,
+				F70054B0116BD2062EE18EAF /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -239,6 +239,43 @@
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
+		};
+		13A01DEC1B99C701F2515051 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-BloodConnect/Pods-BloodConnect-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BloodConnect/Pods-BloodConnect-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		3B9138EE8EA653A57AD875E1 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-BloodConnect/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -298,43 +335,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BloodConnect/Pods-BloodConnect-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		802EE069D924262350831699 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-BloodConnect/Pods-BloodConnect-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BloodConnect/Pods-BloodConnect-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		AA1A90FA1CE78877C5FD0D15 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-BloodConnect/expo-configure-project.sh\"\n";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -343,7 +343,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				23409C09D7240BDE1B595D43 /* ExpoModulesProvider.swift in Sources */,
+				809FB11C5E7FAAD11034AE4A /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,7 +352,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = EFBFCB328FDBA67119CB0F6A /* Pods-BloodConnect.debug.xcconfig */;
+			baseConfigurationReference = D2A268DB61DFB06AD506E5C3 /* Pods-BloodConnect.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -388,7 +388,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 47E4E024D8254DDBFE7F0D0A /* Pods-BloodConnect.release.xcconfig */;
+			baseConfigurationReference = ED2A1BA7BCD0A9B451886670 /* Pods-BloodConnect.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

@@ -10,7 +10,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild --clean",
-    "dev:client": "expo start --dev-client",
+    "dev:client": "expo start --dev-client -c",
     "dev:client:local": "expo start --dev-client --local",
     "android:build": "eas build --platform android --profile preview",
     "ios:build": "eas build --platform ios --profile preview",

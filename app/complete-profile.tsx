@@ -22,7 +22,7 @@ import { useAuth } from '@/providers/AuthProvider';
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const USER_TYPES = [
   { label: 'Blood Donor', value: 'donor' },
-  { label: 'Blood Donation Club', value: 'club' }
+  { label: 'Blood Donation Club', value: 'club' },
 ];
 
 export default function CompleteProfileScreen() {
@@ -78,7 +78,13 @@ export default function CompleteProfileScreen() {
   useEffect(() => {
     const initializeProfile = async () => {
       // Check for profile existence AND initialization flag to prevent infinite loops
-      if (user && user.email_confirmed_at && !profile && !initializationAttempted.current && !loading) {
+      if (
+        user &&
+        user.email_confirmed_at &&
+        !profile &&
+        !initializationAttempted.current &&
+        !loading
+      ) {
         console.log(
           'CompleteProfile: User authenticated but no profile, initializing...'
         );
@@ -132,7 +138,6 @@ export default function CompleteProfileScreen() {
           console.log('CompleteProfile: Creating initial profile...');
           await updateProfile(initialData);
           console.log('CompleteProfile: Initial profile created');
-          
         } catch (error) {
           console.error(
             'CompleteProfile: Failed to initialize profile:',
@@ -266,8 +271,8 @@ export default function CompleteProfileScreen() {
 
   // Prevent navigation away if profile is incomplete (web only)
   useEffect(() => {
-   // Skip this effect if there's no user or if we're still loading
-   if (!user || loading) return;
+    // Skip this effect if there's no user or if we're still loading
+    if (!user || loading) return;
 
     const preventNavigation = (e: BeforeUnloadEvent) => {
       // Only prevent navigation if we're in the middle of completing a profile
@@ -295,7 +300,7 @@ export default function CompleteProfileScreen() {
         typeof window !== 'undefined' &&
         window.removeEventListener
       ) {
-       console.log('CompleteProfile: Removing beforeunload listener');
+        console.log('CompleteProfile: Removing beforeunload listener');
         window.removeEventListener('beforeunload', preventNavigation);
       }
     };
@@ -306,7 +311,9 @@ export default function CompleteProfileScreen() {
     console.log('Starting profile completion...');
 
     if (isSubmitting) {
-      console.log('CompleteProfile: Already submitting, preventing duplicate submission');
+      console.log(
+        'CompleteProfile: Already submitting, preventing duplicate submission'
+      );
       return;
     }
 
@@ -475,7 +482,6 @@ export default function CompleteProfileScreen() {
           <Text style={styles.headerSubtitle}>
             Help us set up your {accountType} profile
           </Text>
-          
         </View>
 
         {/* Account Type Selection (if not already set) */}
@@ -532,7 +538,7 @@ export default function CompleteProfileScreen() {
         {profile?.user_type && (
           <View style={styles.userTypeSelector}>
             <Text style={styles.userTypeSelectorLabel}>Account Type</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.userTypeSelectorButton}
               onPress={() => setShowUserTypeModal(true)}
             >
@@ -545,7 +551,9 @@ export default function CompleteProfileScreen() {
                 ) : (
                   <>
                     <Users size={20} color="#DC2626" />
-                    <Text style={styles.userTypeSelectorText}>Blood Donation Club</Text>
+                    <Text style={styles.userTypeSelectorText}>
+                      Blood Donation Club
+                    </Text>
                   </>
                 )}
               </View>
@@ -561,40 +569,55 @@ export default function CompleteProfileScreen() {
           animationType="fade"
           onRequestClose={() => setShowUserTypeModal(false)}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.modalOverlay}
             activeOpacity={1}
             onPress={() => setShowUserTypeModal(false)}
           >
             <View style={styles.modalContainer}>
               <Text style={styles.modalTitle}>Select Account Type</Text>
-              
+
               <View style={styles.modalContent}>
                 {USER_TYPES.map((type) => (
                   <TouchableOpacity
                     key={type.value}
                     style={[
                       styles.modalOption,
-                      accountType === type.value && styles.modalOptionSelected
+                      accountType === type.value && styles.modalOptionSelected,
                     ]}
-                    onPress={() => handleUserTypeChange(type.value as 'donor' | 'club')}
+                    onPress={() =>
+                      handleUserTypeChange(type.value as 'donor' | 'club')
+                    }
                   >
                     {type.value === 'donor' ? (
-                      <User size={24} color={accountType === type.value ? '#FFFFFF' : '#DC2626'} />
+                      <User
+                        size={24}
+                        color={
+                          accountType === type.value ? '#FFFFFF' : '#DC2626'
+                        }
+                      />
                     ) : (
-                      <Users size={24} color={accountType === type.value ? '#FFFFFF' : '#DC2626'} />
+                      <Users
+                        size={24}
+                        color={
+                          accountType === type.value ? '#FFFFFF' : '#DC2626'
+                        }
+                      />
                     )}
-                    <Text style={[
-                      styles.modalOptionText,
-                      accountType === type.value && styles.modalOptionTextSelected
-                    ]}>
+                    <Text
+                      style={[
+                        styles.modalOptionText,
+                        accountType === type.value &&
+                          styles.modalOptionTextSelected,
+                      ]}
+                    >
                       {type.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setShowUserTypeModal(false)}
               >
