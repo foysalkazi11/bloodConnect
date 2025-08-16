@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Search as SearchIcon,
-  Filter,
   MapPin,
   Phone,
   Mail,
@@ -28,6 +27,7 @@ import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import { useNotification } from '@/components/NotificationSystem';
 import useProgressivePermissions from '@/hooks/useProgressivePermissions';
+import { useSmartInterstitial } from '@/hooks/useSmartInterstitial';
 import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
 
 const BLOOD_GROUPS = ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -78,6 +78,7 @@ export default function SearchScreen() {
     handleSkip,
     handleCustomize,
   } = useProgressivePermissions();
+  const smartInterstitial = useSmartInterstitial();
   const [selectedBloodGroup, setSelectedBloodGroup] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
@@ -102,6 +103,7 @@ export default function SearchScreen() {
   const [error, setError] = useState<string | null>(null);
   const pageSize = 10;
   const flatListRef = useRef<FlatList>(null);
+  const filterCountRef = useRef(0);
 
   // Load districts from the data file
   useEffect(() => {
@@ -143,6 +145,24 @@ export default function SearchScreen() {
   // Initial data load
   useEffect(() => {
     loadDonors();
+  }, []);
+
+  // Show first-time interstitial ad
+  useEffect(() => {
+    // Show interstitial ad on first visit to search page
+    const timer = setTimeout(() => {
+      smartInterstitial.showSearchAd();
+    }, 2000); // 2 second delay to let the page load
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Reset filter count when component unmounts
+  useEffect(() => {
+    return () => {
+      filterCountRef.current = 0;
+      smartInterstitial.resetSearchCount();
+    };
   }, []);
 
   // Apply filters when they change
@@ -363,6 +383,17 @@ export default function SearchScreen() {
     }
 
     setFilteredDonors(filtered);
+
+    // Count filter applications and show interstitial ad every 5th time
+    filterCountRef.current++;
+    console.log(`Filter applied ${filterCountRef.current} times`);
+
+    if (smartInterstitial.shouldShowSearchAd()) {
+      // Show interstitial ad after a small delay to let results render
+      setTimeout(() => {
+        smartInterstitial.showSearchAd();
+      }, 1000);
+    }
   };
 
   const handleRefresh = () => {
@@ -502,7 +533,12 @@ export default function SearchScreen() {
     }
   };
 
-  const renderDonorItem = ({ item }: { item: Donor }) => (
+  // Render donor items without ads
+  const renderDonorItem = ({ item }: { item: Donor; index: number }) => {
+    return renderDonorCard(item);
+  };
+
+  const renderDonorCard = (item: Donor) => (
     <View style={styles.donorCard}>
       <View style={styles.donorHeader}>
         {item.avatar_url ? (

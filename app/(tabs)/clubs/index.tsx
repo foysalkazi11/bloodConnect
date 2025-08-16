@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   Alert,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -27,6 +27,8 @@ import { useNotification } from '@/components/NotificationSystem';
 import AppHeader from '@/components/AppHeader';
 import useProgressivePermissions from '@/hooks/useProgressivePermissions';
 import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
+import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
+import { useSmartInterstitial } from '@/hooks/useSmartInterstitial';
 
 interface Club {
   id: string;
@@ -72,6 +74,8 @@ export default function ClubsScreen() {
   const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(
     null
   );
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const smartInterstitial = useSmartInterstitial();
 
   // Check if current user is a donor (not a club)
   const isDonor = profile?.user_type === 'donor';
@@ -309,6 +313,11 @@ export default function ClubsScreen() {
             userBloodGroup: profile.blood_group,
           },
         });
+
+        // Show interstitial ad after successful join request
+        setTimeout(() => {
+          smartInterstitial.showJoinAd();
+        }, 2000); // Delay to let the success notification show first
       }
     } catch (error) {
       console.error('Error joining club:', error);
@@ -512,7 +521,14 @@ export default function ClubsScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Search Bar */}
         <View style={styles.searchSection}>
           <View style={styles.searchInputContainer}>
@@ -678,7 +694,7 @@ export default function ClubsScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       {/* Progressive Permission Request Modal */}
       <ContextualPermissionRequest
@@ -689,6 +705,9 @@ export default function ClubsScreen() {
         onSkip={handleSkip}
         onCustomize={handleCustomize}
       />
+
+      {/* Smart Bottom Banner */}
+      <SmartBottomBanner scrollY={scrollY} enabled={clubs.length > 0} />
     </View>
   );
 }

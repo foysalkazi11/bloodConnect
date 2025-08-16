@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -16,6 +16,9 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import NotificationBell from '@/components/NotificationBell';
+import { BannerAdComponent } from '@/components/ads/AdMobComponents';
+import { AdDebugTrigger } from '@/components/ads/AdDebugPanel';
+import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { colors } from '@/theme';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -46,6 +49,7 @@ export default function HomeScreen() {
   const [recentDonations, setRecentDonations] = useState<RecentDonation[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
@@ -336,7 +340,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
         {/* Connection Error Banner */}
         {connectionError && (
           <View className="bg-warning-100 px-4 py-3 border-b border-warning-500">
@@ -559,7 +570,13 @@ export default function HomeScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* Ad Debug Panel (Development Only) */}
+      <AdDebugTrigger />
+
+      {/* Smart Bottom Banner */}
+      <SmartBottomBanner scrollY={scrollY} enabled={true} />
     </SafeAreaView>
   );
 }

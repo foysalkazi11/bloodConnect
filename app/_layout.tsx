@@ -16,6 +16,7 @@ import { NotificationProvider } from '@/components/NotificationSystem';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { Linking, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import { adMobService } from '@/services/adMobService';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 
 // Complete the authentication session when the app is opened via deep link
@@ -32,12 +33,26 @@ export default function RootLayout() {
     'Inter-SemiBold': Inter_600SemiBold,
     'Inter-Bold': Inter_700Bold,
   });
+  // Initialize AdMob
+  useEffect(() => {
+    const initializeAds = async () => {
+      try {
+        await adMobService.initialize();
+        console.log('AdMob initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize AdMob:', error);
+      }
+    };
+
+    initializeAds();
+  }, []);
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
   const hasHandledAuthLink = useRef(false);
   useEffect(() => {
     const handleDeepLink = (url: string) => {

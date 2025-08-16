@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -28,6 +29,7 @@ import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/components/NotificationSystem';
+import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { useProgressivePermissions } from '@/hooks/useProgressivePermissions';
 import { TextAvatar } from '@/components/TextAvatar';
 import * as ImagePicker from 'expo-image-picker';
@@ -70,6 +72,7 @@ export default function GalleryScreen() {
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadPosts();
@@ -722,7 +725,7 @@ export default function GalleryScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={posts}
           renderItem={renderPost}
           keyExtractor={(item) => item.id}
@@ -730,6 +733,11 @@ export default function GalleryScreen() {
           contentContainerStyle={styles.postsContainer}
           onRefresh={handleRefresh}
           refreshing={refreshing}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
         />
       )}
 
@@ -984,6 +992,9 @@ export default function GalleryScreen() {
           )}
         </SafeAreaView>
       </Modal>
+
+      {/* Smart Bottom Banner */}
+      <SmartBottomBanner scrollY={scrollY} enabled={posts.length > 0} />
     </SafeAreaView>
   );
 }
