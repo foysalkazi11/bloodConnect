@@ -1,7 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Heart, ArrowLeft, Mail, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle } from 'lucide-react-native';
+import {
+  Heart,
+  ArrowLeft,
+  Mail,
+  CircleCheck as CheckCircle,
+  Clock,
+  CircleAlert as AlertCircle,
+} from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ValidatedInput } from '@/components/ValidatedInput';
@@ -12,12 +25,13 @@ import { useAuth } from '@/providers/AuthProvider';
 export default function SignUpScreen() {
   const { t } = useI18n();
   const { showNotification } = useNotification();
-  const { signUp, signInWithGoogle, loading, resendEmailVerification } = useAuth();
+  const { signUp, signInWithGoogle, loading, resendEmailVerification } =
+    useAuth();
   const params = useLocalSearchParams();
-  
+
   // Get account type from params (from account type selection)
   const preSelectedAccountType = params.accountType as string;
-  
+
   const [accountType] = useState(preSelectedAccountType || '');
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [userEmail, setUserEmail] = useState('');
@@ -47,7 +61,7 @@ export default function SignUpScreen() {
     let interval: NodeJS.Timeout;
     if (rateLimitCooldown > 0) {
       interval = setInterval(() => {
-        setRateLimitCooldown(prev => {
+        setRateLimitCooldown((prev) => {
           if (prev <= 1) {
             return 0;
           }
@@ -69,7 +83,7 @@ export default function SignUpScreen() {
       password: CommonValidationRules.password,
       confirmPassword: CommonValidationRules.confirmPassword(authData.password),
     });
-    
+
     if (authTouched.confirmPassword) {
       touchAuthField('confirmPassword');
     }
@@ -77,12 +91,15 @@ export default function SignUpScreen() {
 
   const handleNext = () => {
     if (rateLimitCooldown > 0) {
-      showNotification({
-        type: 'warning',
-        title: 'Please Wait',
-        message: `You must wait ${rateLimitCooldown} seconds before trying again.`,
-        duration: 3000,
-      });
+      showNotification(
+        {
+          type: 'warning',
+          title: 'Please Wait',
+          message: `You must wait ${rateLimitCooldown} seconds before trying again.`,
+          duration: 3000,
+        },
+        true
+      );
       return;
     }
 
@@ -91,12 +108,15 @@ export default function SignUpScreen() {
     }
 
     if (!validateAuth()) {
-      showNotification({
-        type: 'error',
-        title: 'Validation Error',
-        message: 'Please fix the errors below and try again.',
-        duration: 4000,
-      });
+      showNotification(
+        {
+          type: 'error',
+          title: 'Validation Error',
+          message: 'Please fix the errors below and try again.',
+          duration: 4000,
+        },
+        true
+      );
       return;
     }
     handleSignUp();
@@ -108,9 +128,9 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (isSubmitting) return; // Prevent double submission
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const signUpData = {
         email: authData.email,
@@ -131,50 +151,79 @@ export default function SignUpScreen() {
       };
 
       const result = await signUp(signUpData);
-      
+
       if (result.needsEmailVerification) {
         setUserEmail(authData.email);
         setShowEmailVerification(true);
-        
-        showNotification({
-          type: 'info',
-          title: 'Verify Your Email',
-          message: 'We\'ve sent a verification link to your email address. Please check your inbox and click the link to activate your account.',
-          duration: 8000,
-        });
+
+        showNotification(
+          {
+            type: 'info',
+            title: 'Verify Your Email',
+            message:
+              "We've sent a verification link to your email address. Please check your inbox and click the link to activate your account.",
+            duration: 8000,
+          },
+          true
+        );
       } else {
         // If no email verification needed, redirect to profile completion
-        showNotification({
-          type: 'success',
-          title: 'Account Created!',
-          message: 'Welcome to BloodConnect! Please complete your profile.',
-          duration: 4000,
-        });
-        
+        showNotification(
+          {
+            type: 'success',
+            title: 'Account Created!',
+            message: 'Welcome to BloodConnect! Please complete your profile.',
+            duration: 4000,
+          },
+          true
+        );
+
         router.replace('/complete-profile');
       }
     } catch (error: any) {
       if (error?.isRateLimit) {
         setRateLimitCooldown(error.waitTime || 60);
-        showNotification({
-          type: 'warning',
-          title: 'Rate Limit Exceeded',
-          message: error.message,
-          duration: 6000,
-        });
+        showNotification(
+          {
+            type: 'warning',
+            title: 'Rate Limit Exceeded',
+            message: error.message,
+            duration: 6000,
+          },
+          true
+        );
       } else {
-        let errorMessage = 'Something went wrong. Please try again.';
-        
-        if (error instanceof Error) {
-          errorMessage = error.message;
+        // Normalize error payloads to always show the most helpful message
+        const errObj: any = error || {};
+        const errorCode: string | undefined = errObj.code;
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : typeof errObj.message === 'string'
+            ? errObj.message
+            : 'Something went wrong. Please try again.';
+
+        let title = 'Registration Failed';
+        if (
+          errorCode === 'user_already_exists' ||
+          /already registered|already exists/i.test(errorMessage)
+        ) {
+          title = 'Email Already Registered';
+        } else if (/password/i.test(errorMessage)) {
+          title = 'Invalid Password';
         }
-        
-        showNotification({
-          type: 'error',
-          title: 'Registration Failed',
-          message: errorMessage,
-          duration: 5000,
-        });
+
+        showNotification(
+          {
+            type: 'error',
+            title,
+            message: errorCode
+              ? `${errorMessage} (${errorCode})`
+              : errorMessage,
+            duration: 6000,
+          },
+          true
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -183,39 +232,55 @@ export default function SignUpScreen() {
 
   const handleResendVerification = async () => {
     if (rateLimitCooldown > 0) {
-      showNotification({
-        type: 'warning',
-        title: 'Please Wait',
-        message: `You must wait ${rateLimitCooldown} seconds before trying again.`,
-        duration: 3000,
-      });
+      showNotification(
+        {
+          type: 'warning',
+          title: 'Please Wait',
+          message: `You must wait ${rateLimitCooldown} seconds before trying again.`,
+          duration: 3000,
+        },
+        true
+      );
       return;
     }
 
     try {
       await resendEmailVerification(userEmail);
-      showNotification({
-        type: 'success',
-        title: 'Verification Email Sent',
-        message: 'We\'ve sent another verification link to your email address.',
-        duration: 4000,
-      });
+      showNotification(
+        {
+          type: 'success',
+          title: 'Verification Email Sent',
+          message:
+            "We've sent another verification link to your email address.",
+          duration: 4000,
+        },
+        true
+      );
     } catch (error: any) {
       if (error?.isRateLimit) {
         setRateLimitCooldown(error.waitTime || 60);
-        showNotification({
-          type: 'warning',
-          title: 'Rate Limit Exceeded',
-          message: error.message,
-          duration: 6000,
-        });
+        showNotification(
+          {
+            type: 'warning',
+            title: 'Rate Limit Exceeded',
+            message: error.message,
+            duration: 6000,
+          },
+          true
+        );
       } else {
-        showNotification({
-          type: 'error',
-          title: 'Failed to Send Email',
-          message: error instanceof Error ? error.message : 'Failed to resend verification email.',
-          duration: 5000,
-        });
+        showNotification(
+          {
+            type: 'error',
+            title: 'Failed to Send Email',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Failed to resend verification email.',
+            duration: 5000,
+          },
+          true
+        );
       }
     }
   };
@@ -226,24 +291,39 @@ export default function SignUpScreen() {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('pendingAccountType', accountType);
       }
-      
+
       await signInWithGoogle();
-      
-      showNotification({
-        type: 'success',
-        title: 'Welcome!',
-        message: 'You have successfully signed up with Google.',
-        duration: 3000,
-      });
-      
+
+      showNotification(
+        {
+          type: 'success',
+          title: 'Welcome!',
+          message: 'You have successfully signed up with Google.',
+          duration: 3000,
+        },
+        true
+      );
+
       // OAuth users will be redirected to complete-profile by AuthProvider
     } catch (error) {
-      showNotification({
-        type: 'error',
-        title: 'Google Sign Up Failed',
-        message: error instanceof Error ? error.message : 'Failed to sign up with Google.',
-        duration: 5000,
-      });
+      const errObj: any = error || {};
+      const errorCode: string | undefined = errObj.code;
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : typeof errObj.message === 'string'
+          ? errObj.message
+          : 'Failed to sign up with Google.';
+
+      showNotification(
+        {
+          type: 'error',
+          title: 'Google Sign Up Failed',
+          message: errorCode ? `${errorMessage} (${errorCode})` : errorMessage,
+          duration: 6000,
+        },
+        true
+      );
     }
   };
 
@@ -256,13 +336,13 @@ export default function SignUpScreen() {
             <View style={styles.verificationIcon}>
               <Mail size={64} color="#DC2626" />
             </View>
-            
+
             <Text style={styles.verificationTitle}>Check Your Email</Text>
             <Text style={styles.verificationMessage}>
               We've sent a verification link to{'\n'}
               <Text style={styles.emailText}>{userEmail}</Text>
             </Text>
-            
+
             <View style={styles.verificationSteps}>
               <View style={styles.stepItem}>
                 <CheckCircle size={20} color="#10B981" />
@@ -279,10 +359,10 @@ export default function SignUpScreen() {
             </View>
 
             <View style={styles.verificationActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
                   styles.resendButton,
-                  rateLimitCooldown > 0 && styles.resendButtonDisabled
+                  rateLimitCooldown > 0 && styles.resendButtonDisabled,
                 ]}
                 onPress={handleResendVerification}
                 disabled={loading || rateLimitCooldown > 0}
@@ -301,7 +381,7 @@ export default function SignUpScreen() {
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.signInButton}
                 onPress={() => router.push('/auth')}
               >
@@ -312,7 +392,8 @@ export default function SignUpScreen() {
             <View style={styles.verificationNote}>
               <AlertCircle size={16} color="#DC2626" />
               <Text style={styles.verificationNoteText}>
-                You must verify your email before you can complete your profile and start using BloodConnect.
+                You must verify your email before you can complete your profile
+                and start using BloodConnect.
               </Text>
             </View>
           </View>
@@ -325,7 +406,7 @@ export default function SignUpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -347,7 +428,7 @@ export default function SignUpScreen() {
         <View style={styles.content}>
           <Text style={styles.stepTitle}>Create Account</Text>
           <Text style={styles.stepSubtitle}>Enter your login credentials</Text>
-          
+
           <View style={styles.form}>
             <ValidatedInput
               label={t('auth.email')}
@@ -396,22 +477,24 @@ export default function SignUpScreen() {
             </View>
 
             <View style={styles.socialButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.socialButton}
                 onPress={handleGoogleSignUp}
                 disabled={loading}
               >
-                <Text style={styles.socialButtonText}>{t('auth.signInWithGoogle')}</Text>
+                <Text style={styles.socialButtonText}>
+                  {t('auth.signInWithGoogle')}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         <View style={styles.footer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
-              styles.nextButton, 
-              isButtonDisabled && styles.nextButtonDisabled
+              styles.nextButton,
+              isButtonDisabled && styles.nextButtonDisabled,
             ]}
             onPress={handleNext}
             disabled={isButtonDisabled}
@@ -429,9 +512,11 @@ export default function SignUpScreen() {
               </Text>
             )}
           </TouchableOpacity>
-          
+
           <View style={styles.signInSection}>
-            <Text style={styles.signInText}>{t('auth.alreadyHaveAccount')}</Text>
+            <Text style={styles.signInText}>
+              {t('auth.alreadyHaveAccount')}
+            </Text>
             <TouchableOpacity onPress={() => router.push('/auth')}>
               <Text style={styles.signInLink}>{t('auth.signIn')}</Text>
             </TouchableOpacity>
