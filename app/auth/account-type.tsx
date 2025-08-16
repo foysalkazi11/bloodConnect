@@ -19,12 +19,15 @@ export default function AccountTypeScreen() {
 
   const handleNext = () => {
     if (!selectedType) {
-      showNotification({
-        type: 'error',
-        title: 'Selection Required',
-        message: 'Please select an account type to continue.',
-        duration: 4000,
-      });
+      showNotification(
+        {
+          type: 'error',
+          title: 'Selection Required',
+          message: 'Please select an account type to continue.',
+          duration: 4000,
+        },
+        true
+      );
       return;
     }
 

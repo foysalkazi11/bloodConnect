@@ -1,11 +1,17 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import { Platform } from 'react-native';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { UserProfile, supabase } from '@/lib/supabase';
 import { router, usePathname } from 'expo-router';
-import notificationService from '@/services/notificationService';
+import { notificationService } from '@/services/notificationService';
 import { pushNotificationService } from '@/services/pushNotificationService';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
@@ -23,6 +29,7 @@ interface AuthContextType {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   resendEmailVerification: (email: string) => Promise<void>;
+  handleSessionUpdate: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,90 +57,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Current route (works on web and native)
   const pathname = usePathname();
 
+  // Track processed auth sessions to prevent duplicate processing
+  const processedSessionRef = useRef<string | null>(null);
+
   const isEmailVerified = user?.email_confirmed_at != null;
 
   // Check if profile is complete
-  const isProfileComplete = (profile: UserProfile | null): boolean => {
-    if (!profile) return false;
+  const isProfileComplete = useCallback(
+    (profile: UserProfile | null): boolean => {
+      if (!profile) return false;
 
-    // Check if name is empty, just whitespace, or same as email (temporary name)
-    if (
-      !profile.name ||
-      profile.name.trim().length === 0 ||
-      profile.name === profile.email
-    ) {
-      return false;
-    }
-
-    const requiredFields = ['name', 'phone', 'user_type', 'country'];
-
-    // Check basic required fields
-    for (const field of requiredFields) {
-      const value = profile[field as keyof UserProfile];
-      if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-        return false;
-      }
-    }
-
-    // Check location-specific requirements
-    if (profile.country === 'BANGLADESH') {
-      if (!profile.district || !profile.police_station) {
-        return false;
-      }
-    } else {
-      if (!profile.state || !profile.city) {
-        return false;
-      }
-    }
-
-    // Check donor-specific requirements
-    if (profile.user_type === 'donor' && !profile.blood_group) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleProfileRedirection = (
-    userProfile: UserProfile | null,
-    currentUser: User
-  ) => {
-    // Only redirect if user is verified
-    if (!currentUser.email_confirmed_at) {
-      return;
-    }
-
-    // Only redirect if:
-    // 1. Profile exists
-    // 2. Profile is incomplete
-    // 3. We're not already on the complete-profile page
-    if (userProfile && !isProfileComplete(userProfile)) {
-      console.log(
-        'AuthProvider: Profile incomplete, redirecting to complete-profile'
-      );
-
-      const currentPath = pathname || '';
-      // Prevent redirect if already on complete-profile or auth pages
+      // Check if name is empty, just whitespace, or same as email (temporary name)
       if (
-        currentPath !== '/complete-profile' &&
-        !currentPath.startsWith('/auth/')
+        !profile.name ||
+        profile.name.trim().length === 0 ||
+        profile.name === profile.email
       ) {
-        router.replace('/complete-profile');
+        return false;
       }
-    } else {
-      router.replace('/');
-    }
-  };
 
-  const isCompletingProfile = () => {
-    return (pathname || '') === '/complete-profile';
-  };
+      const requiredFields = ['name', 'phone', 'user_type', 'country'];
+
+      // Check basic required fields
+      for (const field of requiredFields) {
+        const value = profile[field as keyof UserProfile];
+        if (
+          !value ||
+          (typeof value === 'string' && value.trim().length === 0)
+        ) {
+          return false;
+        }
+      }
+
+      // Check location-specific requirements
+      if (profile.country === 'BANGLADESH') {
+        if (!profile.district || !profile.police_station) {
+          return false;
+        }
+      } else {
+        if (!profile.state || !profile.city) {
+          return false;
+        }
+      }
+
+      // Check donor-specific requirements
+      if (profile.user_type === 'donor' && !profile.blood_group) {
+        return false;
+      }
+
+      return true;
+    },
+    []
+  );
 
   const clearAuthState = () => {
     console.log('AuthProvider: Clearing auth state...');
     setUser(null);
     setSession(null);
     setProfile(null);
+
+    // Clear processed session tracking
+    processedSessionRef.current = null;
 
     // Cleanup notification service
     try {
@@ -146,223 +130,266 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const handleAuthenticationError = (error: any) => {
-    console.error('AuthProvider: Authentication error detected:', error);
+  const handleAuthenticationError = useCallback(
+    (error: any) => {
+      console.error('AuthProvider: Authentication error detected:', error);
 
-    // Check if the error indicates authentication issues
-    const errorMessage = error?.message || '';
-    const isAuthError =
-      errorMessage.includes('Authentication required') ||
-      errorMessage.includes('JWT') ||
-      errorMessage.includes('user_not_found') ||
-      errorMessage.includes('Invalid JWT');
+      // Check if the error indicates authentication issues
+      const errorMessage = error?.message || '';
+      const isAuthError =
+        errorMessage.includes('Authentication required') ||
+        errorMessage.includes('JWT') ||
+        errorMessage.includes('user_not_found') ||
+        errorMessage.includes('Invalid JWT');
 
-    if (isAuthError) {
-      console.log(
-        'AuthProvider: Clearing auth state due to authentication error'
-      );
-      clearAuthState();
+      if (isAuthError) {
+        console.log(
+          'AuthProvider: Clearing auth state due to authentication error'
+        );
+        clearAuthState();
 
-      // Redirect to auth page if not already there
-      const currentPath = pathname || '';
-      if (!currentPath.startsWith('/auth/')) {
-        router.replace('/auth');
+        // Redirect to auth page if not already there
+        const currentPath = pathname || '';
+        if (!currentPath.startsWith('/auth/')) {
+          router.replace('/auth');
+        }
+        return true;
       }
-      return true;
-    }
 
-    return false;
-  };
+      return false;
+    },
+    [pathname]
+  );
 
-  const ensureProfileExists = async (currentUser: User) => {
-    try {
+  const ensureProfileExists = useCallback(
+    async (currentUser: User) => {
+      try {
+        console.log(
+          'AuthProvider: Ensuring profile exists for user:',
+          currentUser.id
+        );
+
+        // First, verify the session is still valid
+        // const { session: currentSession } =
+        //   await authService.getCurrentUserAndSession();
+        // console.log('AuthProvider: Current session:', currentSession);
+        // if (!currentSession || !currentSession.user) {
+        //   console.log(
+        //     'AuthProvider: No valid session found during profile check'
+        //   );
+        //   return null;
+        // }
+
+        let userProfile = null;
+        console.log(
+          'AuthProvider: Fetching profile for user: one',
+          currentUser.id
+        );
+        try {
+          userProfile = await authService.getUserProfile(currentUser.id);
+        } catch (profileError: any) {
+          console.log('AuthProvider: Error fetching profile:', profileError);
+
+          // Handle case where profile doesn't exist (404 or no rows returned)
+          const errorMessage = profileError?.message || '';
+          if (
+            errorMessage.includes('no rows returned') ||
+            errorMessage.includes('PGRST116') ||
+            profileError?.status === 404
+          ) {
+            console.log(
+              'AuthProvider: Profile does not exist, will create one'
+            );
+            userProfile = null;
+          } else if (handleAuthenticationError(profileError)) {
+            return null;
+          } else {
+            throw profileError;
+          }
+        }
+
+        if (!userProfile) {
+          console.log(
+            'AuthProvider: No profile found, checking for pending signup data...'
+          );
+
+          // Check if we have pending signup data from registration
+          let pendingData = null;
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            const pendingDataStr = sessionStorage.getItem('pendingSignupData');
+            if (pendingDataStr) {
+              try {
+                pendingData = JSON.parse(pendingDataStr);
+                sessionStorage.removeItem('pendingSignupData');
+              } catch (e) {
+                console.error('Failed to parse pending signup data:', e);
+              }
+            }
+          }
+
+          // Create initial profile
+          const initialProfileData: Partial<UserProfile> = {
+            email: currentUser.email || '',
+            user_type: pendingData?.userType || 'donor',
+            country: pendingData?.country || 'BANGLADESH',
+            name: pendingData?.name || currentUser.email || '', // Use email as temporary name
+            phone: pendingData?.phone || '',
+            is_available: false,
+          };
+
+          // Add optional fields if available
+          if (pendingData?.bloodGroup && pendingData.userType === 'donor') {
+            (initialProfileData as any).blood_group = pendingData.bloodGroup;
+          }
+          if (pendingData?.district)
+            initialProfileData.district = pendingData.district;
+          if (pendingData?.policeStation)
+            initialProfileData.police_station = pendingData.policeStation;
+          if (pendingData?.state) initialProfileData.state = pendingData.state;
+          if (pendingData?.city) initialProfileData.city = pendingData.city;
+          if (pendingData?.address)
+            initialProfileData.address = pendingData.address;
+          if (pendingData?.website)
+            initialProfileData.website = pendingData.website;
+          if (pendingData?.description)
+            initialProfileData.description = pendingData.description;
+
+          console.log(
+            'AuthProvider: Creating initial profile with data:',
+            initialProfileData
+          );
+
+          try {
+            // Verify session is still valid before creating profile
+            const { session: sessionCheck } =
+              await authService.getCurrentUserAndSession();
+            if (!sessionCheck || !sessionCheck.user) {
+              console.log(
+                'AuthProvider: Session invalid before profile creation'
+              );
+              return null;
+            }
+
+            userProfile = await authService.updateProfile(
+              currentUser.id,
+              initialProfileData
+            );
+            console.log('AuthProvider: Initial profile created successfully');
+          } catch (error: any) {
+            console.error(
+              'AuthProvider: Failed to create initial profile:',
+              error
+            );
+
+            // Handle authentication errors during profile creation
+            if (handleAuthenticationError(error)) {
+              return null;
+            }
+
+            // Don't throw - let the user complete profile manually
+            console.log(
+              'AuthProvider: Will let user complete profile manually'
+            );
+          }
+        }
+
+        return userProfile;
+      } catch (error: any) {
+        console.error('AuthProvider: Error ensuring profile exists:', error);
+
+        // Handle authentication errors
+        if (handleAuthenticationError(error)) {
+          return null;
+        }
+
+        return null;
+      }
+    },
+    [handleAuthenticationError]
+  );
+
+  // Handle successful authentication (called after sign-in or session recovery)
+  const handleSuccessfulAuth = useCallback(
+    async (currentUser: User, currentSession: Session) => {
       console.log(
-        'AuthProvider: Ensuring profile exists for user:',
+        'AuthProvider: Handling successful auth for user:',
         currentUser.id
       );
 
-      // First, verify the session is still valid
-      const { session: currentSession } =
-        await authService.getCurrentUserAndSession();
-      if (!currentSession || !currentSession.user) {
-        console.log(
-          'AuthProvider: No valid session found during profile check'
-        );
-        return null;
+      // Prevent re-execution if we already processed this session
+      const sessionKey = `${currentUser.id}-${currentSession.access_token}`;
+      if (processedSessionRef.current === sessionKey) {
+        console.log('AuthProvider: Session already processed, skipping...');
+        setLoading(false);
+        return;
       }
 
-      let userProfile = null;
+      // Mark this session as processed
+      processedSessionRef.current = sessionKey;
 
+      setUser(currentUser);
+      setSession(currentSession);
+
+      // Initialize notification service for the user
       try {
-        userProfile = await authService.getUserProfile(currentUser.id);
-      } catch (profileError: any) {
-        console.log('AuthProvider: Error fetching profile:', profileError);
-
-        // Handle case where profile doesn't exist (404 or no rows returned)
-        const errorMessage = profileError?.message || '';
-        if (
-          errorMessage.includes('no rows returned') ||
-          errorMessage.includes('PGRST116') ||
-          profileError?.status === 404
-        ) {
-          console.log('AuthProvider: Profile does not exist, will create one');
-          userProfile = null;
-        } else if (handleAuthenticationError(profileError)) {
-          return null;
-        } else {
-          throw profileError;
-        }
+        await notificationService.initialize(currentUser.id);
+      } catch (error) {
+        console.error(
+          'AuthProvider: Failed to initialize notification service:',
+          error
+        );
       }
 
-      if (!userProfile) {
-        console.log(
-          'AuthProvider: No profile found, checking for pending signup data...'
+      // Initialize push notification service for the user
+      try {
+        await pushNotificationService.initialize(currentUser.id);
+      } catch (error) {
+        console.error(
+          'AuthProvider: Failed to initialize push notification service:',
+          error
         );
+      }
 
-        // Check if we have pending signup data from registration
-        let pendingData = null;
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-          const pendingDataStr = sessionStorage.getItem('pendingSignupData');
-          if (pendingDataStr) {
-            try {
-              pendingData = JSON.parse(pendingDataStr);
-              sessionStorage.removeItem('pendingSignupData');
-            } catch (e) {
-              console.error('Failed to parse pending signup data:', e);
-            }
-          }
-        }
-
-        // Create initial profile
-        const initialProfileData: Partial<UserProfile> = {
-          email: currentUser.email || '',
-          user_type: pendingData?.userType || 'donor',
-          country: pendingData?.country || 'BANGLADESH',
-          name: pendingData?.name || currentUser.email || '', // Use email as temporary name
-          phone: pendingData?.phone || '',
-          is_available: false,
-        };
-
-        // Add optional fields if available
-        if (pendingData?.bloodGroup && pendingData.userType === 'donor') {
-          (initialProfileData as any).blood_group = pendingData.bloodGroup;
-        }
-        if (pendingData?.district)
-          initialProfileData.district = pendingData.district;
-        if (pendingData?.policeStation)
-          initialProfileData.police_station = pendingData.policeStation;
-        if (pendingData?.state) initialProfileData.state = pendingData.state;
-        if (pendingData?.city) initialProfileData.city = pendingData.city;
-        if (pendingData?.address)
-          initialProfileData.address = pendingData.address;
-        if (pendingData?.website)
-          initialProfileData.website = pendingData.website;
-        if (pendingData?.description)
-          initialProfileData.description = pendingData.description;
-
-        console.log(
-          'AuthProvider: Creating initial profile with data:',
-          initialProfileData
-        );
-
+      // Only fetch/create profile if email is verified
+      if (currentUser.email_confirmed_at) {
+        console.log('AuthProvider: Email is verified, fetching profile...');
         try {
-          // Verify session is still valid before creating profile
-          const { session: sessionCheck } =
-            await authService.getCurrentUserAndSession();
-          if (!sessionCheck || !sessionCheck.user) {
-            console.log(
-              'AuthProvider: Session invalid before profile creation'
-            );
-            return null;
-          }
-
-          userProfile = await authService.updateProfile(
-            currentUser.id,
-            initialProfileData
-          );
-          console.log('AuthProvider: Initial profile created successfully');
-        } catch (error: any) {
-          console.error(
-            'AuthProvider: Failed to create initial profile:',
-            error
-          );
-
-          // Handle authentication errors during profile creation
-          if (handleAuthenticationError(error)) {
-            return null;
-          }
-
-          // Don't throw - let the user complete profile manually
-          console.log('AuthProvider: Will let user complete profile manually');
-        }
-      }
-
-      return userProfile;
-    } catch (error: any) {
-      console.error('AuthProvider: Error ensuring profile exists:', error);
-
-      // Handle authentication errors
-      if (handleAuthenticationError(error)) {
-        return null;
-      }
-
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        console.log('AuthProvider: Getting initial session...');
-        const { user: currentUser, session: currentSession } =
-          await authService.getCurrentUserAndSession();
-
-        if (currentUser && currentSession) {
-          console.log('AuthProvider: Found current user:', currentUser.id);
-          setUser(currentUser);
-          setSession(currentSession);
-
-          // Initialize notification service for the user
-          try {
-            await notificationService.initialize(currentUser.id);
-          } catch (error) {
-            console.error(
-              'AuthProvider: Failed to initialize notification service:',
-              error
-            );
-          }
-
-          // Initialize push notification service for the user
-          try {
-            await pushNotificationService.initialize(currentUser.id);
-          } catch (error) {
-            console.error(
-              'AuthProvider: Failed to initialize push notification service:',
-              error
-            );
-          }
-
-          // Only fetch/create profile if email is verified
-          if (currentUser.email_confirmed_at) {
-            const userProfile = await ensureProfileExists(currentUser);
+          const userProfile = await ensureProfileExists(currentUser);
+          if (userProfile) {
             setProfile(userProfile);
 
-            // Handle profile completion redirection
-            if (userProfile) {
-              handleProfileRedirection(userProfile, currentUser);
+            // Force profile completion redirection
+            if (!isProfileComplete(userProfile)) {
+              console.log(
+                'AuthProvider: Profile incomplete, redirecting to complete-profile'
+              );
 
-              // Activate donor availability after profile completion
+              const currentPath = pathname || '';
+              // Prevent redirect if already on complete-profile or auth pages
               if (
-                isProfileComplete(userProfile) &&
+                currentPath !== '/complete-profile' &&
+                !currentPath.startsWith('/auth/')
+              ) {
+                router.replace('/complete-profile');
+              }
+            } else {
+              // Profile is complete - handle post-completion logic
+              console.log('AuthProvider: Profile is complete');
+
+              // Activate donor availability after profile completion (only if not already available)
+              if (
                 userProfile.user_type === 'donor' &&
                 !userProfile.is_available
               ) {
                 try {
                   await authService.updateProfile(currentUser.id, {
                     is_available: true,
-                    email: currentUser.email || userProfile.email, // Ensure email is included
+                    email: currentUser.email || userProfile.email,
                   });
+                  console.log(
+                    'AuthProvider: Fetching profile for user: updated availability',
+                    currentUser.id
+                  );
                   const updatedProfile = await authService.getUserProfile(
                     currentUser.id
                   );
@@ -375,8 +402,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   handleAuthenticationError(error);
                 }
               }
+
+              // Redirect to home if user is coming from auth pages (sign-in flow)
+              const currentPath = pathname || '';
+              if (
+                currentPath.startsWith('/auth') ||
+                currentPath === '/complete-profile'
+              ) {
+                console.log(
+                  'AuthProvider: Complete profile detected after sign-in, redirecting to home'
+                );
+                router.replace('/');
+              }
+              // Otherwise, let user stay on current page (navigation within app)
             }
           }
+        } catch (error: any) {
+          console.error('AuthProvider: Error loading profile:', error);
+          if (!handleAuthenticationError(error)) {
+            setProfile(null);
+          }
+        }
+      } else {
+        setProfile(null);
+      }
+
+      setLoading(false);
+    },
+    [
+      pathname,
+      ensureProfileExists,
+      handleAuthenticationError,
+      isProfileComplete,
+    ]
+  );
+
+  // Handle session changes (called when email is verified via callback)
+  const handleSessionUpdate = useCallback(async () => {
+    try {
+      const { user: currentUser, session: currentSession } =
+        await authService.getCurrentUserAndSession();
+
+      if (currentUser && currentSession) {
+        await handleSuccessfulAuth(currentUser, currentSession);
+      } else {
+        clearAuthState();
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('AuthProvider: Error updating session:', error);
+      handleAuthenticationError(error);
+      setLoading(false);
+    }
+  }, [handleSuccessfulAuth, handleAuthenticationError]);
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        // Skip initial session check if we're on the callback page
+        // The callback page will handle session initialization
+        const currentPath = pathname || '';
+        if (currentPath.includes('/auth/callback')) {
+          console.log(
+            'AuthProvider: Skipping initial session check on callback page'
+          );
+          setLoading(false);
+          return;
+        }
+
+        console.log('AuthProvider: Getting initial session...');
+        const { user: currentUser, session: currentSession } =
+          await authService.getCurrentUserAndSession();
+
+        if (currentUser && currentSession) {
+          console.log('AuthProvider: Found current user:', currentUser.id);
+          await handleSuccessfulAuth(currentUser, currentSession);
         } else {
           console.log('AuthProvider: No current user found');
           clearAuthState();
@@ -388,7 +489,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.log('AuthProvider: Trying Google silent sign-in...');
                 try {
                   await GoogleSignin.signInSilently();
-                } catch (e) {
+                } catch {
                   // ignore; we'll still try to fetch tokens below
                 }
                 const tokens = await GoogleSignin.getTokens();
@@ -406,7 +507,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     console.log(
                       'AuthProvider: Silent Google sign-in succeeded'
                     );
-                    // auth state listener will populate state shortly
+                    // Session will be handled by handleSuccessfulAuth above
                   }
                 }
               }
@@ -427,160 +528,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     getInitialSession();
+  }, [handleSuccessfulAuth, handleAuthenticationError, pathname]);
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = authService.onAuthStateChange(async (event, session) => {
-      console.log(
-        'AuthProvider: Auth state changed:',
-        event,
-        session?.user?.id || 'no user'
-      );
-
-      // Don't process auth changes if we're in the middle of signing out
-      if (isSigningOut && event === 'SIGNED_OUT') {
-        console.log(
-          'AuthProvider: Ignoring SIGNED_OUT event during sign out process'
-        );
-        return;
-      }
-
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (event === 'SIGNED_OUT' || !session?.user) {
-        console.log('AuthProvider: User signed out, clearing state');
-        clearAuthState();
+  const signIn = useCallback(
+    async (email: string, password: string) => {
+      setLoading(true);
+      try {
+        const result = await authService.signIn({ email, password });
+        if (result.user && result.session) {
+          await handleSuccessfulAuth(result.user, result.session);
+        }
+      } catch (error) {
         setLoading(false);
-        return;
+        throw error;
       }
+    },
+    [handleSuccessfulAuth]
+  );
 
-      if (session?.user) {
-        // Initialize notification service for the user
-        try {
-          await notificationService.initialize(session.user.id);
-        } catch (error) {
-          console.error(
-            'AuthProvider: Failed to initialize notification service:',
-            error
+  const signUp = useCallback(
+    async (data: any) => {
+      setLoading(true);
+      try {
+        const result = await authService.signUp(data);
+
+        // If user doesn't need email verification (e.g., OAuth), they're immediately signed in
+        if (!result.needsEmailVerification && result.session && result.user) {
+          console.log(
+            'AuthProvider: User immediately signed in, handling auth...'
           );
-        }
-
-        // Initialize push notification service for the user
-        try {
-          await pushNotificationService.initialize(session.user.id);
-        } catch (error) {
-          console.error(
-            'AuthProvider: Failed to initialize push notification service:',
-            error
-          );
-        }
-
-        // Only fetch/create profile if email is verified
-        if (session.user.email_confirmed_at) {
-          try {
-            const userProfile = await ensureProfileExists(session.user);
-            if (userProfile) {
-              setProfile(userProfile);
-
-              // Force profile completion redirection
-              if (!isProfileComplete(userProfile)) {
-                console.log(
-                  'AuthProvider: Profile incomplete, redirecting to complete-profile'
-                );
-
-                const currentPath = pathname || '';
-                // Prevent redirect if already on complete-profile or auth pages
-                if (
-                  currentPath !== '/complete-profile' &&
-                  !currentPath.startsWith('/auth/')
-                ) {
-                  router.replace('/complete-profile');
-                }
-              } else {
-                // Activate donor availability after profile completion
-                if (
-                  userProfile.user_type === 'donor' &&
-                  !userProfile.is_available
-                ) {
-                  try {
-                    await authService.updateProfile(session.user.id, {
-                      is_available: true,
-                      email: session.user.email || userProfile.email, // Ensure email is included
-                    });
-                    const updatedProfile = await authService.getUserProfile(
-                      session.user.id
-                    );
-                    setProfile(updatedProfile);
-                  } catch (error: any) {
-                    console.error(
-                      'AuthProvider: Failed to activate donor availability:',
-                      error
-                    );
-                    handleAuthenticationError(error);
-                  }
-                } else {
-                  router.replace('/');
-                }
-              }
-            }
-          } catch (error: any) {
-            console.error('AuthProvider: Error loading profile:', error);
-            if (!handleAuthenticationError(error)) {
-              setProfile(null);
-            }
-          }
+          await handleSuccessfulAuth(result.user, result.session);
         } else {
-          setProfile(null);
+          setLoading(false);
         }
+
+        return { needsEmailVerification: result.needsEmailVerification };
+      } catch (error) {
+        setLoading(false);
+        throw error;
       }
-
-      setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [isSigningOut]);
-
-  const signIn = useCallback(async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      await authService.signIn({ email, password });
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  }, []);
-
-  const signUp = useCallback(async (data: any) => {
-    setLoading(true);
-    try {
-      const result = await authService.signUp(data);
-
-      // If user doesn't need email verification (e.g., OAuth), they're immediately signed in
-      if (!result.needsEmailVerification && result.session) {
-        // Profile should already be created in signUp method
-        console.log(
-          'AuthProvider: User immediately signed in, profile should exist'
-        );
-      }
-
-      setLoading(false);
-      return { needsEmailVerification: result.needsEmailVerification };
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  }, []);
+    },
+    [handleSuccessfulAuth]
+  );
 
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
       if (Platform.OS === 'web') {
-        // Use AuthService for web
+        // Use AuthService for web - this will redirect to callback page
         await authService.signInWithGoogle();
+        // Don't handle auth here for web, it will be handled in callback
       } else {
         // Expo rule: Check if request is ready before prompting
         if (!googleAuth.isReady) {
@@ -589,13 +586,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           );
         }
         // Use the hook for mobile
-        await googleAuth.signInWithGoogle();
+        const result = await googleAuth.signInWithGoogle();
+        if (result?.user && result?.session) {
+          await handleSuccessfulAuth(result.user, result.session);
+        }
       }
     } catch (error) {
       setLoading(false);
       throw error;
     }
-  }, [googleAuth]);
+  }, [googleAuth, handleSuccessfulAuth]);
 
   const signOut = useCallback(async () => {
     console.log('AuthProvider: signOut called');
@@ -614,6 +614,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Clear local state first to provide immediate UI feedback
       clearAuthState();
+
       // Also sign out of Google on native so next launch doesn't reuse OS session
       if (Platform.OS !== 'web') {
         try {
@@ -627,6 +628,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await authService.signOut();
 
       console.log('AuthProvider: Sign out completed successfully');
+
+      // Ensure we're on the auth page after sign out
+      router.replace('/auth');
     } catch (error: any) {
       console.error('AuthProvider: Sign out error:', error);
       // Even if there's an error, we should clear the local state
@@ -640,7 +644,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsSigningOut(false);
       setLoading(false);
     }
-  }, [isSigningOut]);
+  }, [isSigningOut, handleAuthenticationError]);
 
   const updateProfile = useCallback(
     async (updates: Partial<UserProfile>) => {
@@ -750,7 +754,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw error;
       }
     },
-    [user, profile]
+    [user, profile, handleAuthenticationError]
   );
 
   const resetPassword = useCallback(async (email: string) => {
@@ -782,6 +786,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updateProfile,
     resetPassword,
     resendEmailVerification,
+    handleSessionUpdate,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

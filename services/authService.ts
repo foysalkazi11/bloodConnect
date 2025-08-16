@@ -26,22 +26,20 @@ export interface SignInData {
 
 class AuthService {
   private getRedirectUrl() {
-    if (typeof window !== 'undefined') {
+    // Native: always deep link into the app using our custom scheme
+    if (Platform.OS !== 'web') {
+      return 'bloodconnect://auth/callback';
+    }
+
+    // Web: use current origin
+    if (typeof window !== 'undefined' && window.location?.origin) {
       const origin = window.location.origin;
       console.log('AuthService: Current origin:', origin);
-
-      // For development, use the exact URL format that Supabase expects
-      if (
-        origin.includes('webcontainer-api.io') ||
-        origin.includes('localhost')
-      ) {
-        // Use the current origin for OAuth redirects
-        return `${origin}/auth/callback`;
-      }
-
       return `${origin}/auth/callback`;
     }
-    return 'http://localhost:8081/auth/callback';
+
+    // Fallback (should rarely be used)
+    return 'bloodconnect://auth/callback';
   }
 
   private parseRateLimitError(error: any): {
@@ -605,6 +603,7 @@ class AuthService {
         .single();
 
       if (error) {
+        console.log('Profile fetch error:', error);
         // Handle permission denied errors gracefully
         if (
           error.code === '42501' ||
@@ -627,6 +626,11 @@ class AuthService {
       return data;
     } catch (error) {
       console.error('Get user profile error:', error);
+      // If it's a timeout or network error, return null instead of throwing
+      if (error instanceof Error && error.message.includes('timed out')) {
+        console.log('Profile fetch timed out, returning null');
+        return null;
+      }
       return null;
     }
   }
@@ -718,6 +722,21 @@ class AuthService {
       console.error('Update password error:', error);
       throw error;
     }
+  }
+
+  // Expose a helper to set session from tokens (used by native deep link flow)
+  async setSessionWithTokens(accessToken: string, refreshToken: string) {
+    console.log('AuthService: Setting session with tokens...');
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) {
+      console.error('AuthService: Session set error:', error);
+      throw new Error(error.message);
+    }
+    console.log('AuthService: Session set successfully, user:', data?.user?.id);
+    return data;
   }
 
   // Handle email verification callback
