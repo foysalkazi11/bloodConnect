@@ -1129,7 +1129,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.signUpButton}
-            onPress={() => router.push('/auth/signup')}
+            onPress={() => router.push('/auth/account-type')}
           >
             <RNText style={styles.signUpButtonText}>{t('auth.signUp')}</RNText>
           </TouchableOpacity>

@@ -26,77 +26,90 @@ export interface SignInData {
 
 class AuthService {
   private getRedirectUrl() {
-    if (typeof window !== 'undefined') {
+    // Native: always deep link into the app using our custom scheme
+    if (Platform.OS !== 'web') {
+      return 'bloodconnect://auth/callback';
+    }
+
+    // Web: use current origin
+    if (typeof window !== 'undefined' && window.location?.origin) {
       const origin = window.location.origin;
       console.log('AuthService: Current origin:', origin);
-      
-      // For development, use the exact URL format that Supabase expects
-      if (origin.includes('webcontainer-api.io') || origin.includes('localhost')) {
-        // Use the current origin for OAuth redirects
-        return `${origin}/auth/callback`;
-      }
-      
       return `${origin}/auth/callback`;
     }
-    return 'http://localhost:8081/auth/callback';
+
+    // Fallback (should rarely be used)
+    return 'bloodconnect://auth/callback';
   }
 
-  private parseRateLimitError(error: any): { isRateLimit: boolean; waitTime?: number; message: string } {
+  private parseRateLimitError(error: any): {
+    isRateLimit: boolean;
+    waitTime?: number;
+    message: string;
+  } {
     const errorMessage = error?.message || '';
     const errorBody = error?.body || '';
-    
+
     // Check for rate limit error patterns
     const rateLimitPatterns = [
       /For security purposes, you can only request this after (\d+) seconds?/i,
       /over_email_send_rate_limit/i,
-      /rate.?limit/i
+      /rate.?limit/i,
     ];
 
-    const isRateLimit = rateLimitPatterns.some(pattern => 
-      pattern.test(errorMessage) || pattern.test(errorBody)
+    const isRateLimit = rateLimitPatterns.some(
+      (pattern) => pattern.test(errorMessage) || pattern.test(errorBody)
     );
 
     if (isRateLimit) {
       // Try to extract wait time from error message
-      const waitTimeMatch = errorMessage.match(/after (\d+) seconds?/i) || 
-                           errorBody.match(/after (\d+) seconds?/i);
+      const waitTimeMatch =
+        errorMessage.match(/after (\d+) seconds?/i) ||
+        errorBody.match(/after (\d+) seconds?/i);
       const waitTime = waitTimeMatch ? parseInt(waitTimeMatch[1], 10) : 60;
 
       return {
         isRateLimit: true,
         waitTime,
-        message: `Too many requests. Please wait ${waitTime} seconds before trying again.`
+        message: `Too many requests. Please wait ${waitTime} seconds before trying again.`,
       };
     }
 
     return {
       isRateLimit: false,
-      message: errorMessage
+      message: errorMessage,
     };
   }
 
   private isInvalidRefreshTokenError(error: any): boolean {
     const errorMessage = error?.message || '';
     const errorBody = error?.body || '';
-    
+
     // Check for various refresh token error patterns
     const refreshTokenErrorPatterns = [
       /Invalid Refresh Token: Refresh Token Not Found/i,
       /refresh_token_not_found/i,
       /invalid_grant/i,
       /refresh token not found/i,
-      /invalid refresh token/i
+      /invalid refresh token/i,
     ];
 
-    return refreshTokenErrorPatterns.some(pattern => 
-      pattern.test(errorMessage) || pattern.test(errorBody)
+    return refreshTokenErrorPatterns.some(
+      (pattern) => pattern.test(errorMessage) || pattern.test(errorBody)
     );
   }
 
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number = 30000): Promise<T> {
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number = 30000
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        reject(new Error('Request timed out. Please check your connection and try again.'));
+        reject(
+          new Error(
+            'Request timed out. Please check your connection and try again.'
+          )
+        );
       }, timeoutMs);
 
       promise
@@ -109,7 +122,7 @@ class AuthService {
   private async clearAllStorageData() {
     try {
       console.log('AuthService: Clearing all storage data...');
-      
+
       // Clear localStorage
       if (typeof window !== 'undefined' && window.localStorage) {
         const keysToRemove = [];
@@ -119,7 +132,7 @@ class AuthService {
             keysToRemove.push(key);
           }
         }
-        keysToRemove.forEach(key => {
+        keysToRemove.forEach((key) => {
           console.log('Removing localStorage key:', key);
           window.localStorage.removeItem(key);
         });
@@ -130,11 +143,16 @@ class AuthService {
         const sessionKeysToRemove = [];
         for (let i = 0; i < window.sessionStorage.length; i++) {
           const key = window.sessionStorage.key(i);
-          if (key && (key.startsWith('sb-') || key.includes('supabase') || key === 'pendingAccountType')) {
+          if (
+            key &&
+            (key.startsWith('sb-') ||
+              key.includes('supabase') ||
+              key === 'pendingAccountType')
+          ) {
             sessionKeysToRemove.push(key);
           }
         }
-        sessionKeysToRemove.forEach(key => {
+        sessionKeysToRemove.forEach((key) => {
           console.log('Removing sessionStorage key:', key);
           window.sessionStorage.removeItem(key);
         });
@@ -149,13 +167,13 @@ class AuthService {
   private async clearStaleSession() {
     try {
       console.log('AuthService: Clearing stale session...');
-      
+
       // Clear any existing session
       await supabase.auth.signOut();
-      
+
       // Clear storage data
       await this.clearAllStorageData();
-      
+
       console.log('AuthService: Stale session cleared');
     } catch (error) {
       console.log('AuthService: Error clearing stale session:', error);
@@ -164,12 +182,22 @@ class AuthService {
 
   async getCurrentUserAndSession() {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (userError) {
         // Handle specific error cases
-        if (userError.message.includes('User from sub claim in JWT does not exist')) {
+        if (
+          userError.message.includes(
+            'User from sub claim in JWT does not exist'
+          )
+        ) {
           console.log('Stale JWT detected, clearing session...');
           await this.clearStaleSession();
           return { user: null, session: null };
@@ -189,7 +217,9 @@ class AuthService {
         console.error('Session error:', sessionError);
         // Check for refresh token errors in session error
         if (this.isInvalidRefreshTokenError(sessionError)) {
-          console.log('Invalid refresh token in session error, clearing session...');
+          console.log(
+            'Invalid refresh token in session error, clearing session...'
+          );
           await this.clearStaleSession();
           return { user: null, session: null };
         }
@@ -199,13 +229,17 @@ class AuthService {
       return { user, session };
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('User from sub claim in JWT does not exist')) {
+        if (
+          error.message.includes('User from sub claim in JWT does not exist')
+        ) {
           console.log('Stale JWT detected, clearing session...');
           await this.clearStaleSession();
           return { user: null, session: null };
         }
         if (this.isInvalidRefreshTokenError(error)) {
-          console.log('Invalid refresh token in catch block, clearing session...');
+          console.log(
+            'Invalid refresh token in catch block, clearing session...'
+          );
           await this.clearStaleSession();
           return { user: null, session: null };
         }
@@ -220,29 +254,32 @@ class AuthService {
   async signUp(data: SignUpData) {
     try {
       console.log('Starting signup process...');
-      
+
       const redirectUrl = this.getRedirectUrl();
       console.log('AuthService: Using redirect URL:', redirectUrl);
-      
+
       // Store signup data in sessionStorage for later profile creation
       if (typeof window !== 'undefined' && window.sessionStorage) {
-        sessionStorage.setItem('pendingSignupData', JSON.stringify({
-          name: data.name,
-          phone: data.phone,
-          userType: data.userType,
-          bloodGroup: data.bloodGroup,
-          country: data.country,
-          district: data.district,
-          policeStation: data.policeStation,
-          state: data.state,
-          city: data.city,
-          address: data.address,
-          website: data.website,
-          description: data.description,
-          clubName: data.clubName,
-        }));
+        sessionStorage.setItem(
+          'pendingSignupData',
+          JSON.stringify({
+            name: data.name,
+            phone: data.phone,
+            userType: data.userType,
+            bloodGroup: data.bloodGroup,
+            country: data.country,
+            district: data.district,
+            policeStation: data.policeStation,
+            state: data.state,
+            city: data.city,
+            address: data.address,
+            website: data.website,
+            description: data.description,
+            clubName: data.clubName,
+          })
+        );
       }
-      
+
       // 1. Create auth user with email confirmation required
       const authPromise = supabase.auth.signUp({
         email: data.email,
@@ -255,7 +292,10 @@ class AuthService {
         },
       });
 
-      const { data: authData, error: authError } = await this.withTimeout(authPromise, 15000);
+      const { data: authData, error: authError } = await this.withTimeout(
+        authPromise,
+        15000
+      );
 
       if (authError) {
         console.error('Auth signup error:', authError);
@@ -277,10 +317,10 @@ class AuthService {
 
       // Check if user is immediately signed in (e.g., OAuth or email confirmation disabled)
       const needsEmailVerification = !authData.user.email_confirmed_at;
-      
+
       if (!needsEmailVerification && authData.session) {
         console.log('User is immediately authenticated, creating profile...');
-        
+
         // Create profile immediately since user is authenticated
         try {
           await this.createInitialProfile(authData.user.id, data);
@@ -298,22 +338,32 @@ class AuthService {
       };
     } catch (error) {
       console.error('Sign up error:', error);
-      
+
       // Clear pending signup data on error
       if (typeof window !== 'undefined' && window.sessionStorage) {
         sessionStorage.removeItem('pendingSignupData');
       }
-      
+
       // Add more specific error handling
       if (error instanceof Error) {
-        if (error.message.includes('timeout') || error.message.includes('timed out')) {
-          throw new Error('The request is taking too long. Please check your internet connection and try again.');
+        if (
+          error.message.includes('timeout') ||
+          error.message.includes('timed out')
+        ) {
+          throw new Error(
+            'The request is taking too long. Please check your internet connection and try again.'
+          );
         }
-        if (error.message.includes('network') || error.message.includes('fetch')) {
-          throw new Error('Network error. Please check your internet connection and try again.');
+        if (
+          error.message.includes('network') ||
+          error.message.includes('fetch')
+        ) {
+          throw new Error(
+            'Network error. Please check your internet connection and try again.'
+          );
         }
       }
-      
+
       throw error;
     }
   }
@@ -324,7 +374,7 @@ class AuthService {
       email: data.email,
       user_type: data.userType,
       country: data.country,
-      name: data.userType === 'donor' ? data.name : (data.clubName || data.name),
+      name: data.userType === 'donor' ? data.name : data.clubName || data.name,
       phone: data.phone,
       is_available: false, // Will be set after profile completion
     };
@@ -357,18 +407,25 @@ class AuthService {
         password: data.password,
       });
 
-      const { data: authData, error } = await this.withTimeout(signInPromise, 10000);
+      const { data: authData, error } = await this.withTimeout(
+        signInPromise,
+        10000
+      );
 
       if (error) {
         // Handle expected authentication errors without logging to console
         if (error.message === 'Invalid login credentials') {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
+          throw new Error(
+            'Invalid email or password. Please check your credentials and try again.'
+          );
         }
-        
+
         if (error.message.includes('Email not confirmed')) {
-          throw new Error('Please verify your email address before signing in. Check your inbox for a verification link.');
+          throw new Error(
+            'Please verify your email address before signing in. Check your inbox for a verification link.'
+          );
         }
-        
+
         // Log other unexpected errors for debugging
         console.error('Unexpected sign in error:', error);
         throw new Error(error.message);
@@ -376,7 +433,9 @@ class AuthService {
 
       // Check if email is verified
       if (!authData.user?.email_confirmed_at) {
-        throw new Error('Please verify your email address before signing in. Check your inbox for a verification link.');
+        throw new Error(
+          'Please verify your email address before signing in. Check your inbox for a verification link.'
+        );
       }
 
       return {
@@ -393,14 +452,14 @@ class AuthService {
     try {
       const redirectUrl = this.getRedirectUrl();
       console.log('AuthService: Google OAuth redirect URL:', redirectUrl);
-      
+
       // Store account type preference for OAuth users
       if (typeof window !== 'undefined' && window.sessionStorage) {
         const urlParams = new URLSearchParams(window.location.search);
         const accountType = urlParams.get('accountType') || 'donor';
         sessionStorage.setItem('pendingAccountType', accountType);
       }
-      
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -428,8 +487,11 @@ class AuthService {
   async resendEmailVerification(email: string) {
     try {
       const redirectUrl = this.getRedirectUrl();
-      console.log('AuthService: Resend verification redirect URL:', redirectUrl);
-      
+      console.log(
+        'AuthService: Resend verification redirect URL:',
+        redirectUrl
+      );
+
       const resendPromise = supabase.auth.resend({
         type: 'signup',
         email: email,
@@ -459,10 +521,10 @@ class AuthService {
   async signOut() {
     try {
       console.log('AuthService: Starting sign out process...');
-      
+
       // Sign out from Supabase first
       const { error } = await supabase.auth.signOut({ scope: 'global' });
-      
+
       if (error) {
         console.error('AuthService: Supabase sign out error:', error);
         // Continue with cleanup even if server sign out fails
@@ -472,7 +534,6 @@ class AuthService {
       await this.clearAllStorageData();
 
       console.log('AuthService: Sign out completed successfully');
-      
     } catch (error) {
       console.error('AuthService: Sign out error:', error);
       // Clear storage even if there's an error
@@ -483,11 +544,16 @@ class AuthService {
 
   async getCurrentUser() {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
       if (error) {
         // Handle specific error cases
-        if (error.message.includes('User from sub claim in JWT does not exist')) {
+        if (
+          error.message.includes('User from sub claim in JWT does not exist')
+        ) {
           console.log('Stale JWT detected, clearing session...');
           await this.clearStaleSession();
           return null;
@@ -506,7 +572,9 @@ class AuthService {
       return user;
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message.includes('User from sub claim in JWT does not exist')) {
+        if (
+          error.message.includes('User from sub claim in JWT does not exist')
+        ) {
           console.log('Stale JWT detected, clearing session...');
           await this.clearStaleSession();
           return null;
@@ -527,7 +595,7 @@ class AuthService {
   async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
       console.log('Fetching user profile for ID:', userId);
-      
+
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -535,9 +603,15 @@ class AuthService {
         .single();
 
       if (error) {
+        console.log('Profile fetch error:', error);
         // Handle permission denied errors gracefully
-        if (error.code === '42501' || error.message.includes('permission denied')) {
-          console.log('Permission denied for user profile, user may need to re-authenticate');
+        if (
+          error.code === '42501' ||
+          error.message.includes('permission denied')
+        ) {
+          console.log(
+            'Permission denied for user profile, user may need to re-authenticate'
+          );
           return null;
         }
         // Handle case where profile doesn't exist yet
@@ -552,6 +626,11 @@ class AuthService {
       return data;
     } catch (error) {
       console.error('Get user profile error:', error);
+      // If it's a timeout or network error, return null instead of throwing
+      if (error instanceof Error && error.message.includes('timed out')) {
+        console.log('Profile fetch timed out, returning null');
+        return null;
+      }
       return null;
     }
   }
@@ -560,16 +639,19 @@ class AuthService {
     try {
       console.log('Updating profile for user:', userId);
       console.log('Profile updates to send:', updates);
-      
+
       // Ensure we have a valid user session
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
       if (userError || !user) {
         throw new Error('Authentication required. Please sign in again.');
       }
-      
+
       if (user.id !== userId) {
-        throw new Error('Unauthorized: Cannot update another user\'s profile.');
+        throw new Error("Unauthorized: Cannot update another user's profile.");
       }
 
       const updateData = {
@@ -579,11 +661,11 @@ class AuthService {
         email: updates.email || '',
         name: updates.name || '',
         user_type: updates.user_type || 'donor',
-        country: updates.country || 'BANGLADESH'
+        country: updates.country || 'BANGLADESH',
       };
 
       console.log('Sending update request to Supabase...');
-      
+
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert([{ id: userId, ...updateData }], { onConflict: 'id' })
@@ -613,7 +695,7 @@ class AuthService {
     try {
       const redirectUrl = this.getRedirectUrl();
       console.log('AuthService: Password reset redirect URL:', redirectUrl);
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${redirectUrl}?type=recovery`,
       });
@@ -642,29 +724,60 @@ class AuthService {
     }
   }
 
+  // Expose a helper to set session from tokens (used by native deep link flow)
+  async setSessionWithTokens(accessToken: string, refreshToken: string) {
+    console.log('AuthService: Setting session with tokens...');
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) {
+      console.error('AuthService: Session set error:', error);
+      throw new Error(error.message);
+    }
+    console.log('AuthService: Session set successfully, user:', data?.user?.id);
+    return data;
+  }
+
   // Handle email verification callback
   async handleEmailVerification() {
     try {
       console.log('AuthService: Handling email verification...');
       console.log('Current URL:', window.location.href);
-      
+
       // Get the current URL parameters
       const urlParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      
-      const accessToken = urlParams.get('access_token') || hashParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token') || hashParams.get('refresh_token');
-      const error = urlParams.get('error') || hashParams.get('error');
-      const errorDescription = urlParams.get('error_description') || hashParams.get('error_description');
-      const errorCode = urlParams.get('error_code') || hashParams.get('error_code');
 
-      console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, error, errorDescription, errorCode });
+      const accessToken =
+        urlParams.get('access_token') || hashParams.get('access_token');
+      const refreshToken =
+        urlParams.get('refresh_token') || hashParams.get('refresh_token');
+      const error = urlParams.get('error') || hashParams.get('error');
+      const errorDescription =
+        urlParams.get('error_description') ||
+        hashParams.get('error_description');
+      const errorCode =
+        urlParams.get('error_code') || hashParams.get('error_code');
+
+      console.log('URL params:', {
+        accessToken: !!accessToken,
+        refreshToken: !!refreshToken,
+        error,
+        errorDescription,
+        errorCode,
+      });
 
       // Check for errors first
       if (error) {
         console.log('Verification error detected:', error, errorDescription);
-        if (error === 'access_denied' && (errorCode === 'otp_expired' || errorDescription?.includes('expired'))) {
-          throw new Error('Email verification link has expired. Please request a new one.');
+        if (
+          error === 'access_denied' &&
+          (errorCode === 'otp_expired' || errorDescription?.includes('expired'))
+        ) {
+          throw new Error(
+            'Email verification link has expired. Please request a new one.'
+          );
         }
         throw new Error(errorDescription || 'Email verification failed');
       }
@@ -692,8 +805,11 @@ class AuthService {
 
       // Check if user is already authenticated
       console.log('Checking existing session...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       if (sessionError) {
         console.error('Session check error:', sessionError);
         throw new Error(sessionError.message);

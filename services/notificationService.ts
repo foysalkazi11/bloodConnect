@@ -56,11 +56,18 @@ class NotificationService {
 
   // Initialize the service for a user
   async initialize(userId: string) {
-    this.currentUserId = userId;
-    await this.setupRealtimeSubscriptions();
-    await this.refreshUnreadCount();
-    await this.loadNotificationHistory();
-    this.setupAppStateListener();
+    try {
+      this.currentUserId = userId;
+      await this.setupRealtimeSubscriptions();
+      await this.refreshUnreadCount();
+      await this.loadNotificationHistory();
+      this.setupAppStateListener();
+    } catch (error) {
+      console.error(
+        'notificationService.initialize error (non-blocking):',
+        error
+      );
+    }
   }
 
   // Cleanup when user logs out

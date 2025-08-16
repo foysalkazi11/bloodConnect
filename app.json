@@ -5,9 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bloodconnect",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "scheme": "bloodconnect",
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
@@ -40,11 +40,20 @@
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
-      ]
+      ],
+      "edgeToEdgeEnabled": true
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foysalkazi11.bloodconnect"
+      "bundleIdentifier": "com.foysalkazi11.bloodconnect",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLName": "bloodconnect",
+            "CFBundleURLSchemes": ["bloodconnect"]
+          }
+        ]
+      }
     },
     "web": {
       "bundler": "metro",
@@ -54,7 +63,13 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser",
+      [
+        "expo-web-browser",
+        {
+          "mayInitWithUrl": false
+        }
+      ],
+      "@react-native-google-signin/google-signin",
       [
         "expo-notifications",
         {
@@ -71,6 +86,7 @@
       "eas": {
         "projectId": "f51e542e-612c-4661-8be7-e918192b19b6"
       }
-    }
+    },
+    "owner": "foysalkazi"
   }
 }

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts } from 'expo-font';
@@ -14,6 +14,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { I18nProvider } from '@/providers/I18nProvider';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { Linking, Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as QueryParams from 'expo-auth-session/build/QueryParams';
+
+// Complete the authentication session when the app is opened via deep link
+WebBrowser.maybeCompleteAuthSession();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +38,75 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+  const hasHandledAuthLink = useRef(false);
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+
+      // Handle OAuth callback
+      if (
+        url.includes('bloodconnect://auth/callback') ||
+        url.includes('/auth/callback')
+      ) {
+        // On web, let Supabase handle session from URL; avoid router redirects that
+        // can strip the hash parameters before Supabase processes them
+        if (Platform.OS === 'web') {
+          return;
+        }
+        // Prevent handling the same auth callback multiple times
+        if (hasHandledAuthLink.current) {
+          return;
+        }
+        // Parse URL parameters using QueryParams utility
+        try {
+          const { params: qp, errorCode } = QueryParams.getQueryParams(url);
+          if (errorCode) {
+            console.warn('Deep link parse error:', errorCode);
+          }
+          const queryParams: Record<string, string> = {};
+          Object.entries(qp || {}).forEach(([key, value]) => {
+            if (typeof value === 'string') queryParams[key] = value;
+          });
+
+          console.log('Parsed deep link params:', queryParams);
+
+          // Navigate with parsed parameters
+          hasHandledAuthLink.current = true;
+          if (Object.keys(queryParams).length > 0) {
+            router.push({ pathname: '/auth/callback', params: queryParams });
+          } else {
+            router.push('/auth/callback');
+          }
+        } catch (error) {
+          console.error('Error parsing deep link:', error);
+          // Fallback to basic navigation
+          hasHandledAuthLink.current = true;
+          router.push('/auth/callback');
+        }
+      }
+    };
+
+    // Handle deep links when app is already open (native only)
+    const subscription =
+      Platform.OS !== 'web'
+        ? Linking.addEventListener('url', ({ url }) => {
+            handleDeepLink(url);
+          })
+        : (null as any);
+
+    // Handle deep link when app is opened from closed state (native only)
+    if (Platform.OS !== 'web') {
+      Linking.getInitialURL().then((url) => {
+        if (url) {
+          handleDeepLink(url);
+        }
+      });
+    }
+
+    return () => {
+      subscription?.remove?.();
+    };
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return null;
