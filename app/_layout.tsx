@@ -14,6 +14,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { I18nProvider } from '@/providers/I18nProvider';
 import { NotificationProvider } from '@/components/NotificationSystem';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { AdProvider } from '@/providers/AdProvider';
 import { Linking, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { adMobService } from '@/services/adMobService';
@@ -129,20 +130,22 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <NotificationProvider>
-        <I18nProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="auth" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="complete-profile"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-        </I18nProvider>
-      </NotificationProvider>
+      <AdProvider>
+        <NotificationProvider>
+          <I18nProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="complete-profile"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style="auto" />
+          </I18nProvider>
+        </NotificationProvider>
+      </AdProvider>
     </AuthProvider>
   );
 }

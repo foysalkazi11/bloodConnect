@@ -27,8 +27,9 @@ import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import { useNotification } from '@/components/NotificationSystem';
 import useProgressivePermissions from '@/hooks/useProgressivePermissions';
-import { useSmartInterstitial } from '@/hooks/useSmartInterstitial';
+import { useAds } from '@/providers/AdProvider';
 import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
+import { useDebounce } from '@/hooks/useDebounce';
 
 const BLOOD_GROUPS = ['All', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -78,7 +79,7 @@ export default function SearchScreen() {
     handleSkip,
     handleCustomize,
   } = useProgressivePermissions();
-  const smartInterstitial = useSmartInterstitial();
+  const { showSearchAd, showFirstTimeAd, resetSearchCount } = useAds();
   const [selectedBloodGroup, setSelectedBloodGroup] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAvailableOnly, setShowAvailableOnly] = useState(false);
@@ -104,6 +105,7 @@ export default function SearchScreen() {
   const pageSize = 10;
   const flatListRef = useRef<FlatList>(null);
   const filterCountRef = useRef(0);
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   // Load districts from the data file
   useEffect(() => {
@@ -151,7 +153,7 @@ export default function SearchScreen() {
   useEffect(() => {
     // Show interstitial ad on first visit to search page
     const timer = setTimeout(() => {
-      smartInterstitial.showFirstTimeAd();
+      showFirstTimeAd();
     }, 2000); // 2 second delay to let the page load
 
     return () => clearTimeout(timer);
@@ -161,7 +163,7 @@ export default function SearchScreen() {
   useEffect(() => {
     return () => {
       filterCountRef.current = 0;
-      smartInterstitial.resetSearchCount();
+      resetSearchCount();
     };
   }, []);
 
@@ -170,7 +172,7 @@ export default function SearchScreen() {
     applyFilters();
   }, [
     selectedBloodGroup,
-    searchQuery,
+    debouncedSearchQuery,
     showAvailableOnly,
     donors,
     locationFilter,
@@ -331,8 +333,8 @@ export default function SearchScreen() {
     }
 
     // Filter by search query (name or location)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter((donor) => {
         const nameMatch = donor.name.toLowerCase().includes(query);
         const districtMatch = donor.district?.toLowerCase().includes(query);
@@ -391,7 +393,7 @@ export default function SearchScreen() {
     if (filterCountRef.current % 5 === 0) {
       // Show interstitial ad after a small delay to let results render
       setTimeout(() => {
-        smartInterstitial.showSearchAd();
+        showSearchAd();
       }, 1000);
     }
   };

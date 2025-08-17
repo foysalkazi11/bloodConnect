@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { X, Settings, BarChart3, TestTube } from 'lucide-react-native';
 import { AdConfigService } from '@/services/adConfigService';
-import { useInterstitialAd } from './index';
+import { useAds } from '@/providers/AdProvider';
 
 interface AdDebugPanelProps {
   visible: boolean;
@@ -20,8 +20,9 @@ export const AdDebugPanel: React.FC<AdDebugPanelProps> = ({
   visible,
   onClose,
 }) => {
-  const { show, load, isLoaded, isLoading } = useInterstitialAd();
+  const { showFirstTimeAd, isLoaded, isLoading, loadAd, getStats } = useAds();
   const [config, setConfig] = useState(AdConfigService.getConfig());
+  const [stats, setStats] = useState(getStats());
 
   const updateConfig = (key: string, value: any) => {
     const newConfig = { ...config };
@@ -40,16 +41,22 @@ export const AdDebugPanel: React.FC<AdDebugPanelProps> = ({
   const testInterstitialAd = async () => {
     if (!isLoaded) {
       console.log('Interstitial ad not ready, loading...');
-      load();
+      loadAd();
       return;
     }
 
     try {
-      await show();
+      await showFirstTimeAd();
       console.log('Debug interstitial ad shown successfully');
+      // Refresh stats after showing ad
+      setStats(getStats());
     } catch (error) {
       console.error('Failed to show debug interstitial ad:', error);
     }
+  };
+
+  const refreshStats = () => {
+    setStats(getStats());
   };
 
   const testAdPlacements = [
