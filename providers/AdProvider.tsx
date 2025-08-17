@@ -61,20 +61,6 @@ export const AdProvider: React.FC<AdProviderProps> = ({ children }) => {
     log,
   ]);
 
-  // Log ad state changes
-  useEffect(() => {
-    log('Ad state changed', {
-      isLoaded: interstitialAd.isLoaded,
-      isLoading: interstitialAd.isLoading,
-      error: interstitialAd.error,
-    });
-  }, [
-    interstitialAd.isLoaded,
-    interstitialAd.isLoading,
-    interstitialAd.error,
-    log,
-  ]);
-
   const showSearchAd = useCallback(async () => {
     try {
       log('Attempting to show search ad');
@@ -201,14 +187,14 @@ export const AdProvider: React.FC<AdProviderProps> = ({ children }) => {
 
   const getStats = useCallback(() => {
     const stats = adFrequencyManager.getStats();
-    log('Getting ad stats', stats);
+    // log('Getting ad stats', stats);
     return stats;
-  }, [log]);
+  }, []);
 
   const loadAd = useCallback(() => {
     log('Manual ad load requested');
     interstitialAd.load();
-  }, [interstitialAd.load, log]);
+  }, [interstitialAd, log]);
 
   const value: AdContextType = {
     // Interstitial Ad Methods

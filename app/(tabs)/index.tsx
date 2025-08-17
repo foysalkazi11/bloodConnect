@@ -20,7 +20,6 @@ import { BannerAdComponent } from '@/components/ads/AdMobComponents';
 import { AdDebugTrigger } from '@/components/ads/AdDebugPanel';
 import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { colors } from '@/theme';
-import { useSmartInterstitial } from '@/hooks/useSmartInterstitial';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -52,7 +51,6 @@ export default function HomeScreen() {
   const [imageError, setImageError] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
   const [connectionError, setConnectionError] = useState(false);
-  useSmartInterstitial();
 
   useEffect(() => {
     loadDashboardData();
@@ -575,7 +573,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       {/* Ad Debug Panel (Development Only) */}
-      <AdDebugTrigger />
+      {/* <AdDebugTrigger /> */}
 
       {/* Smart Bottom Banner */}
       <SmartBottomBanner scrollY={scrollY} enabled={true} />

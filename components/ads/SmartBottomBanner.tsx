@@ -97,7 +97,7 @@ export const SmartBottomBanner: React.FC<SmartBottomBannerProps> = ({
         left: 0,
         right: 0,
         backgroundColor: 'white',
-        paddingBottom: insets.bottom,
+        // paddingBottom: insets.bottom > 0 ? insets.bottom : 2,
         transform: [{ translateY }],
         opacity: fadeAnim,
         elevation: 8,
@@ -112,12 +112,12 @@ export const SmartBottomBanner: React.FC<SmartBottomBannerProps> = ({
         borderTopColor: '#E5E7EB',
       }}
     >
-      <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+      <View style={{ alignItems: 'center', paddingVertical: 2 }}>
         <BannerAdComponent
           size={BannerAdSize.BANNER}
           unitId={unitId}
           style={{
-            width: Dimensions.get('window').width - 32,
+            width: Dimensions.get('window').width - 16,
           }}
         />
       </View>

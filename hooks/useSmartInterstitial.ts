@@ -4,10 +4,6 @@ import { adFrequencyManager } from '@/services/adFrequencyManager';
 
 export const useSmartInterstitial = () => {
   const interstitialAd = useInterstitialAd();
-  console.log({
-    isLoaded: interstitialAd.isLoaded,
-    isLoading: interstitialAd.isLoading,
-  });
 
   // Preload an ad when hook initializes
   useEffect(() => {

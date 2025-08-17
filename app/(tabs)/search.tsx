@@ -410,6 +410,8 @@ export default function SearchScreen() {
   };
 
   const handleSearch = (text: string) => {
+    console.log('Search input changed:', text);
+    console.log('Current searchQuery:', searchQuery);
     setSearchQuery(text);
   };
 
@@ -627,6 +629,11 @@ export default function SearchScreen() {
             value={searchQuery}
             onChangeText={handleSearch}
             placeholderTextColor="#9CA3AF"
+            autoCorrect={false}
+            autoCapitalize="none"
+            multiline={false}
+            returnKeyType="search"
+            blurOnSubmit={false}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
