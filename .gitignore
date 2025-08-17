@@ -36,5 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# build files
+*.apk
+*.aab
+*.ipa
+build/
+dist/
+
 # mcp
 .cursor/mcp.json

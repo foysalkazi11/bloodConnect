@@ -25,7 +25,7 @@ export const useInterstitialAd = (unitId?: string): UseInterstitialAdResult => {
     });
 
     const unsubscribeLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
-      console.log('Interstitial ad loaded');
+      console.log('InterstitialAdComponent: Interstitial ad loaded');
       setIsLoaded(true);
       setIsLoading(false);
       setError(null);

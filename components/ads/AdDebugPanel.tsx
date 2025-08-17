@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { X, Settings, BarChart3, TestTube } from 'lucide-react-native';
 import { AdConfigService } from '@/services/adConfigService';
-import { useInterstitialAd } from './AdMobComponents';
+import { useInterstitialAd } from './index';
 
 interface AdDebugPanelProps {
   visible: boolean;
@@ -20,7 +20,7 @@ export const AdDebugPanel: React.FC<AdDebugPanelProps> = ({
   visible,
   onClose,
 }) => {
-  const { showAd, isReady } = useInterstitialAd();
+  const { show, load, isLoaded, isLoading } = useInterstitialAd();
   const [config, setConfig] = useState(AdConfigService.getConfig());
 
   const updateConfig = (key: string, value: any) => {
@@ -37,10 +37,18 @@ export const AdDebugPanel: React.FC<AdDebugPanelProps> = ({
     AdConfigService.updateConfig(newConfig);
   };
 
-  const testInterstitialAd = () => {
-    const success = showAd('debug_test');
-    if (!success) {
-      console.log('Interstitial ad not ready or failed to show');
+  const testInterstitialAd = async () => {
+    if (!isLoaded) {
+      console.log('Interstitial ad not ready, loading...');
+      load();
+      return;
+    }
+
+    try {
+      await show();
+      console.log('Debug interstitial ad shown successfully');
+    } catch (error) {
+      console.error('Failed to show debug interstitial ad:', error);
     }
   };
 
@@ -104,7 +112,11 @@ export const AdDebugPanel: React.FC<AdDebugPanelProps> = ({
                   <Text className="text-gray-600">Interstitial Ready</Text>
                   <View
                     className={`w-3 h-3 rounded-full ${
-                      isReady() ? 'bg-green-500' : 'bg-yellow-500'
+                      isLoaded
+                        ? 'bg-green-500'
+                        : isLoading
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'
                     }`}
                   />
                 </View>

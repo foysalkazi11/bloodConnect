@@ -151,13 +151,13 @@ export default function SearchScreen() {
   useEffect(() => {
     // Show interstitial ad on first visit to search page
     const timer = setTimeout(() => {
-      smartInterstitial.showSearchAd();
+      smartInterstitial.showFirstTimeAd();
     }, 2000); // 2 second delay to let the page load
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Reset filter count when component unmounts
+  //Reset filter count when component unmounts
   useEffect(() => {
     return () => {
       filterCountRef.current = 0;
@@ -388,7 +388,7 @@ export default function SearchScreen() {
     filterCountRef.current++;
     console.log(`Filter applied ${filterCountRef.current} times`);
 
-    if (smartInterstitial.shouldShowSearchAd()) {
+    if (filterCountRef.current % 5 === 0) {
       // Show interstitial ad after a small delay to let results render
       setTimeout(() => {
         smartInterstitial.showSearchAd();
