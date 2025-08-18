@@ -30,6 +30,7 @@ export const useGoogleAuth = () => {
     if (Platform.OS !== 'web') {
       GoogleSignin.configure({
         webClientId: GOOGLE_CLIENT_IDS.web,
+        iosClientId: GOOGLE_CLIENT_IDS.ios,
         offlineAccess: true,
         forceCodeForRefreshToken: true,
       });

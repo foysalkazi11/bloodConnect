@@ -111,13 +111,9 @@ export class AdConfigService {
   // Respect user's app tracking settings on iOS
   static async checkTrackingPermission(): Promise<boolean> {
     if (Platform.OS === 'ios') {
-      try {
-        // This would require additional setup for App Tracking Transparency
-        // For now, we default to non-personalized ads
-        return false;
-      } catch {
-        return false;
-      }
+      // This would require additional setup for App Tracking Transparency
+      // For now, we default to non-personalized ads
+      return false;
     }
     return !this.config.targeting.personalizedAds;
   }
@@ -131,18 +127,18 @@ export class AdConfigService {
     };
   }
 
-  // Production ad unit IDs (replace with your actual IDs)
+  // Production ad unit IDs
   static getProductionIds() {
     return {
       android: {
-        banner: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        interstitial: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        native: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+        banner: 'ca-app-pub-4835334878783801/3897476779',
+        interstitial: 'ca-app-pub-4835334878783801/2723710497', // Create interstitial ad unit in AdMob
+        native: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // Create native ad unit in AdMob
       },
       ios: {
-        banner: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        interstitial: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-        native: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
+        banner: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // Create iOS banner ad unit
+        interstitial: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // Create iOS interstitial ad unit
+        native: 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX', // Create iOS native ad unit
       },
     };
   }
@@ -172,8 +168,8 @@ export class AdConfigService {
 
     // Here you can integrate with your analytics service
     // Example: Firebase Analytics, Mixpanel, etc.
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'ad_interaction', {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'ad_interaction', {
         event_category: 'ads',
         event_label: `${adType}_${event}`,
         custom_parameter_1: placement || 'unknown',
@@ -190,8 +186,8 @@ export class AdConfigService {
     console.log(`Ad Revenue: ${amount} ${currency} from ${adType}`);
 
     // Integrate with revenue tracking
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('event', 'purchase', {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'purchase', {
         transaction_id: `ad_${Date.now()}`,
         value: amount,
         currency: currency,

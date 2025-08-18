@@ -5,16 +5,8 @@ import {
   BannerAdSize,
   InterstitialAd,
   AdEventType,
-  TestIds,
 } from 'react-native-google-mobile-ads';
-
-// Test Ad Unit IDs (replace with production IDs later)
-const AD_UNIT_IDS = {
-  banner: __DEV__ ? TestIds.BANNER : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-  interstitial: __DEV__
-    ? TestIds.INTERSTITIAL
-    : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX',
-};
+import { AdConfigService } from '../../services/adConfigService';
 
 interface BannerAdComponentProps {
   placement:
@@ -33,8 +25,9 @@ export const BannerAdComponent: React.FC<BannerAdComponentProps> = ({
   const [adError, setAdError] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
 
-  if (adError) {
-    return null; // Hide ad if there's an error
+  // Check if banner ads are enabled for this placement
+  if (!AdConfigService.isBannerEnabled(placement) || adError) {
+    return null;
   }
 
   return (
@@ -43,20 +36,21 @@ export const BannerAdComponent: React.FC<BannerAdComponentProps> = ({
       style={style}
     >
       <BannerAd
-        unitId={AD_UNIT_IDS.banner}
+        unitId={AdConfigService.getAdUnitId('banner')}
         size={BannerAdSize.LARGE_BANNER}
-        requestOptions={{
-          requestNonPersonalizedAdsOnly: true, // GDPR compliance
-        }}
+        requestOptions={AdConfigService.getAdRequestOptions()}
         onAdLoaded={() => {
           setAdLoaded(true);
+          AdConfigService.trackAdEvent('impression', 'banner', placement);
           console.log(`Banner ad loaded: ${placement}`);
         }}
         onAdFailedToLoad={(error) => {
+          AdConfigService.trackAdEvent('error', 'banner', placement);
           console.log(`Banner ad failed to load (${placement}):`, error);
           setAdError(true);
         }}
         onAdOpened={() => {
+          AdConfigService.trackAdEvent('click', 'banner', placement);
           console.log(`Banner ad opened: ${placement}`);
         }}
       />
