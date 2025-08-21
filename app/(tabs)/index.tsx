@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import NotificationBell from '@/components/NotificationBell';
 import { BannerAdComponent } from '@/components/ads/AdMobComponents';
+import { getProfileImageUrl } from '@/utils/avatarUtils';
 import { AdDebugTrigger } from '@/components/ads/AdDebugPanel';
 import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { colors } from '@/theme';
@@ -314,13 +315,7 @@ export default function HomeScreen() {
     return t('home.heroMessage');
   };
 
-  const getProfileImage = () => {
-    // Generate a consistent avatar based on user ID
-    const avatarId = user?.id
-      ? (parseInt(user.id.slice(-3), 16) % 1000) + 1
-      : 220453;
-    return `https://images.pexels.com/photos/${avatarId}/pexels-photo-${avatarId}.jpeg?auto=compress&cs=tinysrgb&w=80&h=80&fit=crop`;
-  };
+  const getProfileImage = () => getProfileImageUrl(user, profile, 80);
 
   const renderProfileAvatar = () => {
     if (!user || !profile) return null;

@@ -227,14 +227,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           }
 
+          // Extract avatar URL from social auth metadata (Google OAuth)
+          const avatarUrl =
+            currentUser.user_metadata?.avatar_url ||
+            currentUser.user_metadata?.picture ||
+            null;
+
           // Create initial profile
           const initialProfileData: Partial<UserProfile> = {
             email: currentUser.email || '',
             user_type: pendingData?.userType || 'donor',
             country: pendingData?.country || 'BANGLADESH',
-            name: pendingData?.name || currentUser.email || '', // Use email as temporary name
+            name:
+              pendingData?.name ||
+              currentUser.user_metadata?.full_name ||
+              currentUser.email ||
+              '', // Use social auth name or email as temporary name
             phone: pendingData?.phone || '',
             is_available: false,
+            avatar_url: avatarUrl,
           };
 
           // Add optional fields if available

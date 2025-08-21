@@ -50,6 +50,7 @@ import { supabase } from '@/lib/supabase';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import { NotificationSettings } from '@/components/NotificationSettings';
+import { getProfileImageUrl } from '@/utils/avatarUtils';
 
 interface UserStats {
   totalDonations: number;
@@ -1068,13 +1069,7 @@ export default function ProfileScreen() {
     }
   };
 
-  const getProfileImage = () => {
-    // Generate a consistent avatar based on user ID
-    const avatarId = user?.id
-      ? (parseInt(user.id.slice(-3), 16) % 1000) + 1
-      : 220453;
-    return `https://images.pexels.com/photos/${avatarId}/pexels-photo-${avatarId}.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop`;
-  };
+  const getProfileImage = () => getProfileImageUrl(user, profile, 200);
 
   const handleBack = () => {
     if (router.canGoBack()) {
