@@ -32,6 +32,7 @@ import { useNotification } from '@/components/NotificationSystem';
 import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { useProgressivePermissions } from '@/hooks/useProgressivePermissions';
 import { TextAvatar } from '@/components/TextAvatar';
+import { getProfileImageUrl, getAvatarUrl } from '@/utils/avatarUtils';
 import * as ImagePicker from 'expo-image-picker';
 import { Platform } from 'react-native';
 
@@ -627,7 +628,20 @@ export default function GalleryScreen() {
     <View style={styles.postCard}>
       {/* Post Header */}
       <View style={styles.postHeader}>
-        <TextAvatar name={item.author} size={40} />
+        {item.authorAvatar ? (
+          <Image
+            source={{
+              uri: getAvatarUrl(
+                { avatar_url: item.authorAvatar, id: item.authorId },
+                40
+              ),
+            }}
+            style={styles.authorAvatar}
+            onError={() => {}}
+          />
+        ) : (
+          <TextAvatar name={item.author} size={40} />
+        )}
         <View style={styles.authorInfo}>
           <View style={styles.authorNameRow}>
             <Text style={styles.authorName}>{item.author}</Text>
@@ -962,7 +976,11 @@ export default function GalleryScreen() {
 
           {user && (
             <View style={styles.addCommentContainer}>
-              <TextAvatar name={profile?.name || 'User'} size={40} />
+              <Image
+                source={{ uri: getProfileImageUrl(user, profile, 40) }}
+                style={styles.commentAvatar}
+                onError={() => {}}
+              />
               <View style={styles.commentInputWrapper}>
                 <TextInput
                   style={styles.commentInput}
@@ -1411,5 +1429,19 @@ const styles = StyleSheet.create({
   },
   sendCommentButtonDisabled: {
     backgroundColor: '#9CA3AF',
+  },
+  authorAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  commentAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
 });

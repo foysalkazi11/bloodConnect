@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import NotificationBell from '@/components/NotificationBell';
 import { BannerAdComponent } from '@/components/ads/AdMobComponents';
-import { getProfileImageUrl } from '@/utils/avatarUtils';
+import { getProfileImageUrl, getAvatarUrl } from '@/utils/avatarUtils';
 import { AdDebugTrigger } from '@/components/ads/AdDebugPanel';
 import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { colors } from '@/theme';
@@ -532,7 +532,22 @@ export default function HomeScreen() {
                   className="flex-row items-center bg-secondary-50 p-4 rounded-xl gap-3"
                 >
                   <View className="w-12 h-12 rounded-full overflow-hidden">
-                    <TextAvatar name={donation.donor_name} size={48} />
+                    {donation.avatar_url ? (
+                      <Image
+                        source={{
+                          uri: getAvatarUrl(
+                            {
+                              avatar_url: donation.avatar_url,
+                              name: donation.donor_name,
+                            },
+                            48
+                          ),
+                        }}
+                        className="w-12 h-12 rounded-full"
+                      />
+                    ) : (
+                      <TextAvatar name={donation.donor_name} size={48} />
+                    )}
                   </View>
                   <View className="flex-1">
                     <Text className="text-secondary-900 font-inter-semibold text-base">

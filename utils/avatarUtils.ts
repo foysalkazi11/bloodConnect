@@ -30,6 +30,26 @@ export const getProfileImageUrl = (
 };
 
 /**
+ * Get profile image URL for any user (including other users in lists)
+ * This is for displaying other users' avatars in search results, member lists, etc.
+ */
+export const getAvatarUrl = (
+  userProfile: { id?: string; avatar_url?: string; name?: string } | null,
+  size = 200
+): string => {
+  // If user has avatar_url from their profile, use it
+  if (userProfile?.avatar_url) {
+    return userProfile.avatar_url;
+  }
+
+  // Generate a consistent avatar based on user ID as fallback
+  const avatarId = userProfile?.id
+    ? (parseInt(userProfile.id.slice(-3), 16) % 1000) + 1
+    : 220453;
+  return `https://images.pexels.com/photos/${avatarId}/pexels-photo-${avatarId}.jpeg?auto=compress&cs=tinysrgb&w=${size}&h=${size}&fit=crop`;
+};
+
+/**
  * Check if the user has a social auth profile image
  */
 export const hasSocialAuthAvatar = (

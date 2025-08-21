@@ -17,6 +17,7 @@ export interface ClubMessage {
   sender_name?: string;
   sender_email?: string;
   sender_blood_group?: string;
+  sender_avatar_url?: string;
 }
 
 export interface DirectMessage {
@@ -35,6 +36,7 @@ export interface DirectMessage {
   updated_at: string;
   sender_name?: string;
   sender_email?: string;
+  sender_avatar_url?: string;
   is_read?: boolean;
 }
 
@@ -75,7 +77,7 @@ class ChatService {
       .select(
         `
         *,
-        sender:user_profiles!club_messages_sender_id_fkey(name, email, blood_group)
+        sender:user_profiles!club_messages_sender_id_fkey(name, email, blood_group, avatar_url)
       `
       )
       .eq('club_id', clubId)
@@ -89,6 +91,7 @@ class ChatService {
       sender_name: msg.sender?.name,
       sender_email: msg.sender?.email,
       sender_blood_group: msg.sender?.blood_group,
+      sender_avatar_url: msg.sender?.avatar_url,
     }));
   }
 
@@ -120,7 +123,7 @@ class ChatService {
       .select(
         `
         *,
-        sender:user_profiles!club_messages_sender_id_fkey(name, email, blood_group)
+        sender:user_profiles!club_messages_sender_id_fkey(name, email, blood_group, avatar_url)
       `
       )
       .single();
@@ -168,7 +171,7 @@ class ChatService {
       .select(
         `
         *,
-        sender:user_profiles!direct_messages_sender_id_fkey(name, email),
+        sender:user_profiles!direct_messages_sender_id_fkey(name, email, avatar_url),
         message_read_status(read_at)
       `
       )
@@ -182,6 +185,7 @@ class ChatService {
       ...msg,
       sender_name: msg.sender?.name,
       sender_email: msg.sender?.email,
+      sender_avatar_url: msg.sender?.avatar_url,
       is_read: msg.message_read_status && msg.message_read_status.length > 0,
     }));
   }

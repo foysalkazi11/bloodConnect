@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -23,6 +24,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import {
   chatService,
   ClubMessage,
@@ -300,9 +302,23 @@ export default function ClubChatScreen() {
           ]}
         >
           <View style={styles.otherMessageRow}>
-            {!isConsecutive && (
-              <TextAvatar name={message.sender_name || 'Unknown'} size={36} />
-            )}
+            {!isConsecutive &&
+              (message.sender_avatar_url ? (
+                <Image
+                  source={{
+                    uri: getAvatarUrl(
+                      {
+                        avatar_url: message.sender_avatar_url,
+                        id: message.sender_id,
+                      },
+                      36
+                    ),
+                  }}
+                  style={styles.messageAvatar}
+                />
+              ) : (
+                <TextAvatar name={message.sender_name || 'Unknown'} size={36} />
+              ))}
             {isConsecutive && <View style={styles.avatarSpacer} />}
 
             <View style={styles.otherMessageContent}>
@@ -554,6 +570,13 @@ const styles = StyleSheet.create({
   },
   avatarSpacer: {
     width: 36,
+  },
+  messageAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   otherMessageContent: {
     flex: 0,

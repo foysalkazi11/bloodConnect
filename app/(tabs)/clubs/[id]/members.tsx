@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -28,6 +29,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { supabase, UserProfile } from '@/lib/supabase';
 
 interface ClubMember {
@@ -41,6 +43,7 @@ interface ClubMember {
   is_online: boolean;
   total_donations: number;
   phone?: string;
+  avatar_url?: string;
 }
 
 interface JoinRequest {
@@ -183,7 +186,7 @@ export default function ClubMembersScreen() {
         if (rpcError) throw rpcError;
 
         // Transform the data to match the expected format
-        data = rpcData.map((member) => ({
+        data = rpcData.map((member: any) => ({
           id: member.id,
           role: member.role,
           joined_at: member.joined_at,
@@ -194,6 +197,7 @@ export default function ClubMembersScreen() {
             email: member.member_email,
             blood_group: member.member_blood_group,
             phone: member.member_phone,
+            avatar_url: member.member_avatar_url,
           },
         }));
       } catch (rpcError) {
@@ -216,7 +220,8 @@ export default function ClubMembersScreen() {
               name,
               email,
               blood_group,
-              phone
+              phone,
+              avatar_url
             )
           `
           )
@@ -230,7 +235,7 @@ export default function ClubMembersScreen() {
       if (error) throw error;
 
       // Format member data
-      const formattedMembers: ClubMember[] = data.map((member) => ({
+      const formattedMembers: ClubMember[] = data.map((member: any) => ({
         id: member.user_profiles?.id || member.id,
         name: member.user_profiles?.name || 'Unknown User',
         email: member.user_profiles?.email || 'No email',
@@ -243,6 +248,7 @@ export default function ClubMembersScreen() {
         is_online: Math.random() > 0.7, // Random for demo
         total_donations: Math.floor(Math.random() * 20), // Random for demo
         phone: member.user_profiles?.phone,
+        avatar_url: member.user_profiles?.avatar_url,
       }));
 
       setMembers(formattedMembers);
@@ -850,7 +856,15 @@ export default function ClubMembersScreen() {
 
                   <View style={styles.memberInfo}>
                     <View style={styles.avatarContainer}>
-                      <TextAvatar name={member.name} size={48} />
+                      {member.avatar_url ? (
+                        <Image
+                          source={{ uri: getAvatarUrl(member, 48) }}
+                          style={styles.memberAvatar}
+                          onError={() => {}}
+                        />
+                      ) : (
+                        <TextAvatar name={member.name} size={48} />
+                      )}
                       {member.is_online && (
                         <View style={styles.onlineIndicator} />
                       )}
@@ -1405,6 +1419,13 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: 'relative',
+  },
+  memberAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   onlineIndicator: {
     position: 'absolute',

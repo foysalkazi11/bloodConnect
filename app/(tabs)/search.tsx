@@ -26,6 +26,7 @@ import { useI18n } from '@/providers/I18nProvider';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import { useNotification } from '@/components/NotificationSystem';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import useProgressivePermissions from '@/hooks/useProgressivePermissions';
 import { useAds } from '@/providers/AdProvider';
 import ContextualPermissionRequest from '@/components/ContextualPermissionRequest';
@@ -197,7 +198,7 @@ export default function SearchScreen() {
       let query = supabase
         .from('user_profiles')
         .select(
-          'id, name, email, phone, blood_group, country, district, police_station, state, city, is_available'
+          'id, name, email, phone, blood_group, country, district, police_station, state, city, is_available, avatar_url'
         )
         .eq('user_type', 'donor')
         .order('created_at', { ascending: false })
@@ -276,6 +277,8 @@ export default function SearchScreen() {
         is_available: true,
         phone: '+880 1234567890',
         email: 'ahmed@example.com',
+        avatar_url:
+          'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
       },
       {
         id: '2',
@@ -290,6 +293,8 @@ export default function SearchScreen() {
         is_available: true,
         phone: '+880 1987654321',
         email: 'fatima@example.com',
+        avatar_url:
+          'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
       },
       {
         id: '3',
@@ -304,6 +309,8 @@ export default function SearchScreen() {
         is_available: false,
         phone: '+880 1555666777',
         email: 'ali@example.com',
+        avatar_url:
+          'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
       },
       {
         id: '4',
@@ -318,6 +325,8 @@ export default function SearchScreen() {
         is_available: true,
         phone: '+1 555-123-4567',
         email: 'sarah@example.com',
+        avatar_url:
+          'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
       },
     ];
   };
@@ -546,7 +555,11 @@ export default function SearchScreen() {
     <View style={styles.donorCard}>
       <View style={styles.donorHeader}>
         {item.avatar_url ? (
-          <Image source={{ uri: item.avatar_url }} style={styles.donorAvatar} />
+          <Image
+            source={{ uri: getAvatarUrl(item, 56) }}
+            style={styles.donorAvatar}
+            onError={() => {}}
+          />
         ) : (
           <TextAvatar name={item.name} size={56} />
         )}
