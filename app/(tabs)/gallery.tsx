@@ -325,7 +325,8 @@ export default function GalleryScreen() {
           user_id,
           user_profiles:user_id (
             name,
-            blood_group
+            blood_group,
+            avatar_url
           )
         `
         )
@@ -335,13 +336,14 @@ export default function GalleryScreen() {
       if (error) throw error;
 
       if (data) {
-        const formattedComments = data.map((comment) => ({
+        const formattedComments = data.map((comment: any) => ({
           id: comment.id,
           author: comment.user_profiles?.name || 'Unknown User',
           authorId: comment.user_id,
           content: comment.content,
           timeAgo: formatTimeAgo(comment.created_at),
           bloodGroup: comment.user_profiles?.blood_group || undefined,
+          authorAvatar: comment.user_profiles?.avatar_url || undefined,
         }));
 
         setComments(formattedComments);
@@ -955,7 +957,20 @@ export default function GalleryScreen() {
             }
             renderItem={({ item }) => (
               <View style={styles.commentItem}>
-                <TextAvatar name={item.author} size={40} />
+                {item.authorAvatar ? (
+                  <Image
+                    source={{
+                      uri: getAvatarUrl(
+                        { avatar_url: item.authorAvatar, id: item.authorId },
+                        40
+                      ),
+                    }}
+                    style={styles.commentItemAvatar}
+                    onError={() => {}}
+                  />
+                ) : (
+                  <TextAvatar name={item.author} size={40} />
+                )}
                 <View style={styles.commentContent}>
                   <View style={styles.commentHeader}>
                     <Text style={styles.commentAuthor}>{item.author}</Text>
@@ -1438,6 +1453,13 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   commentAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  commentItemAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,

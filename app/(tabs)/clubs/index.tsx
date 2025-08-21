@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -21,6 +22,7 @@ import {
 import { useI18n } from '@/providers/I18nProvider';
 import { router } from 'expo-router';
 import { TextAvatar } from '@/components/TextAvatar';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
@@ -48,6 +50,7 @@ interface Club {
   is_pending?: boolean;
   has_new_posts?: boolean;
   last_activity?: string;
+  avatar_url?: string;
 }
 
 export default function ClubsScreen() {
@@ -74,6 +77,7 @@ export default function ClubsScreen() {
   const [joinRequestLoading, setJoinRequestLoading] = useState<string | null>(
     null
   );
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const scrollY = useRef(new Animated.Value(0)).current;
   const smartInterstitial = useSmartInterstitial();
 
@@ -584,7 +588,19 @@ export default function ClubsScreen() {
                   {/* Club Header */}
                   <View style={styles.clubHeader}>
                     <View style={styles.clubLogoContainer}>
-                      <TextAvatar name={club.name} size={48} />
+                      {club.avatar_url && !imageErrors.has(club.id) ? (
+                        <Image
+                          source={{ uri: club.avatar_url }}
+                          style={styles.clubAvatar}
+                          onError={() => {
+                            setImageErrors((prev) =>
+                              new Set(prev).add(club.id)
+                            );
+                          }}
+                        />
+                      ) : (
+                        <TextAvatar name={club.name} size={48} />
+                      )}
                       {club.has_new_posts && (
                         <View style={styles.newPostIndicator} />
                       )}
@@ -829,6 +845,13 @@ const styles = StyleSheet.create({
   },
   clubLogoContainer: {
     position: 'relative',
+  },
+  clubAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   newPostIndicator: {
     position: 'absolute',

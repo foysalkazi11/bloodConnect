@@ -29,6 +29,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
+import { getAvatarUrl } from '@/utils/avatarUtils';
 import { supabase } from '@/lib/supabase';
 
 interface ClubDetails {
@@ -50,6 +51,7 @@ interface ClubDetails {
   created_at: string;
   updated_at: string;
   owner_id?: string;
+  avatar_url?: string;
 }
 
 interface ClubStats {
@@ -90,6 +92,7 @@ export default function ClubDetailScreen() {
   const [pendingJoinRequests, setPendingJoinRequests] = useState<number>(0);
   const [joinRequestLoading, setJoinRequestLoading] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     loadClubDetails();
@@ -496,7 +499,17 @@ export default function ClubDetailScreen() {
         {/* Club Profile */}
         <View style={styles.clubProfile}>
           <View style={styles.clubAvatarContainer}>
-            <TextAvatar name={club.name} size={80} />
+            {club.avatar_url && !imageError ? (
+              <Image
+                source={{ uri: getAvatarUrl(club, 80) }}
+                style={styles.clubAvatar}
+                onError={() => {
+                  setImageError(true);
+                }}
+              />
+            ) : (
+              <TextAvatar name={club.name} size={80} />
+            )}
           </View>
 
           <Text style={styles.clubName}>{club.name}</Text>
@@ -743,6 +756,18 @@ const styles = StyleSheet.create({
   },
   clubAvatarContainer: {
     marginBottom: 16,
+  },
+  clubAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   clubName: {
     fontFamily: 'Inter-Bold',
