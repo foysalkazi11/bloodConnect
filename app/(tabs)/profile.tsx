@@ -447,34 +447,67 @@ export default function ProfileScreen() {
     try {
       setLoadingRequests(true);
 
-      // Fetch pending join requests
-      const { data, error } = await supabase
-        .from('club_join_requests')
-        .select(
+      // Try using the RPC function first (same as members page)
+      let data: any;
+      let error: any;
+
+      try {
+        const { data: functionData, error: functionError } = await supabase.rpc(
+          'get_join_requests',
+          { club_id_param: user.id }
+        );
+
+        if (functionError) throw functionError;
+
+        data = functionData.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id,
+          message: item.message,
+          created_at: item.created_at,
+          user_profiles: {
+            name: item.user_name,
+            email: item.user_email,
+            blood_group: item.user_blood_group,
+          },
+        }));
+      } catch (functionError) {
+        console.log(
+          'Function approach failed, falling back to direct query:',
+          functionError
+        );
+
+        // Fallback to direct query with proper join syntax
+        const { data: directData, error: directError } = await supabase
+          .from('club_join_requests')
+          .select(
+            `
+            id,
+            user_id,
+            message,
+            created_at,
+            user_profiles:user_profiles!inner(
+              name,
+              email,
+              blood_group
+            )
           `
-          id,
-          user_id,
-          message,
-          created_at,
-          user_profiles:user_id(
-            name,
-            email,
-            blood_group
           )
-        `
-        )
-        .eq('club_id', user.id)
-        .eq('status', 'pending');
+          .eq('club_id', user.id)
+          .eq('status', 'pending');
+
+        data = directData;
+        error = directError;
+      }
 
       if (error) throw error;
 
       // Format request data
-      const formattedRequests: JoinRequest[] = data.map((request) => ({
+      const formattedRequests: JoinRequest[] = data.map((request: any) => ({
         id: request.id,
         user_id: request.user_id,
-        user_name: request.user_profiles[0]?.name,
-        user_email: request.user_profiles[0]?.email,
-        blood_group: request.user_profiles[0]?.blood_group,
+        user_name: request.user_profiles?.name,
+        user_email: request.user_profiles?.email,
+        blood_group: request.user_profiles?.blood_group,
         message: request.message,
         created_at: request.created_at,
       }));
@@ -605,20 +638,24 @@ export default function ProfileScreen() {
 
       // Get attendee counts for each event
       const eventIds = data.map((event) => event.id);
-      const { data: attendeesData, error: attendeesError } = await supabase
-        .from('club_event_attendees')
-        .select('event_id, count')
-        .in('event_id', eventIds)
-        .eq('status', 'going')
-        .group('event_id');
-      console.log('attendeesData', { attendeesData, attendeesError });
-      if (attendeesError) throw attendeesError;
 
-      // Create a map of event ID to attendee count
+      // Get attendee counts using a proper query
       const attendeeCounts: Record<string, number> = {};
-      attendeesData?.forEach((item) => {
-        attendeeCounts[item.event_id] = parseInt(item.count.toString());
-      });
+      if (eventIds.length > 0) {
+        const { data: attendeesData, error: attendeesError } = await supabase
+          .from('club_event_attendees')
+          .select('event_id')
+          .in('event_id', eventIds)
+          .eq('status', 'going');
+
+        if (attendeesError) throw attendeesError;
+
+        // Count attendees manually
+        attendeesData?.forEach((attendee: any) => {
+          attendeeCounts[attendee.event_id] =
+            (attendeeCounts[attendee.event_id] || 0) + 1;
+        });
+      }
 
       // Format event data
       const formattedEvents: ClubEvent[] = data.map((event) => ({
@@ -1302,7 +1339,7 @@ export default function ProfileScreen() {
                       }
                       disabled={actionLoading !== null}
                     >
-                      <CircleX size={16} color="#EF4444" />
+                      {/* <CircleX size={16} color="#EF4444" /> */}
                       <RNText style={styles.rejectButtonText}>Reject</RNText>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -1316,7 +1353,7 @@ export default function ProfileScreen() {
                       }
                       disabled={actionLoading !== null}
                     >
-                      <CircleCheck size={16} color="#FFFFFF" />
+                      {/* <CircleCheck size={16} color="#FFFFFF" /> */}
                       <RNText style={styles.approveButtonText}>Approve</RNText>
                     </TouchableOpacity>
                   </View>
@@ -1661,22 +1698,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Club Description */}
-        {profile.user_type === 'club' && profile.description && (
-          <View style={styles.descriptionSection}>
-            <RNText style={styles.descriptionTitle}>About</RNText>
-            <RNText style={styles.descriptionText}>
-              {profile.description}
-            </RNText>
-            {profile.website && (
-              <TouchableOpacity style={styles.websiteButton}>
-                <Globe size={16} color="#DC2626" />
-                <RNText style={styles.websiteText}>Visit Website</RNText>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
         {/* Availability Toggle (Donors only) */}
         {profile.user_type === 'donor' && (
           <View style={styles.availabilitySection}>
@@ -1756,8 +1777,8 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Club Management Section - Only for club profiles */}
-        {profile.user_type === 'club' && (
+        {/* This section is unreachable in donor profile - removing for type safety */}
+        {false && (
           <View style={styles.clubManagementSection}>
             <RNText style={styles.sectionTitle}>Club Management</RNText>
 
@@ -1863,7 +1884,7 @@ export default function ProfileScreen() {
                         }
                         disabled={actionLoading !== null}
                       >
-                        <CircleX size={20} color="#EF4444" />
+                        <RNText style={styles.rejectButtonText}>Reject</RNText>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -1876,7 +1897,9 @@ export default function ProfileScreen() {
                         }
                         disabled={actionLoading !== null}
                       >
-                        <CircleCheck size={20} color="#FFFFFF" />
+                        <RNText style={styles.approveButtonText}>
+                          Approve
+                        </RNText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -1887,36 +1910,6 @@ export default function ProfileScreen() {
         )}
 
         {/* Donor-specific sections */}
-        {profile.user_type === 'donor' && (
-          <View style={styles.donorSection}>
-            {/* Availability toggle */}
-            <View style={styles.availabilitySection}>
-              <View style={styles.availabilityCard}>
-                <View style={styles.availabilityInfo}>
-                  <RNText style={styles.availabilityTitle}>
-                    Donation Availability
-                  </RNText>
-                  <RNText style={styles.availabilitySubtitle}>
-                    {profile.is_available
-                      ? 'You are available for donation'
-                      : 'You are not available for donation'}
-                  </RNText>
-                </View>
-                <TouchableOpacity
-                  style={styles.availabilityToggleContainer}
-                  onPress={toggleAvailability}
-                  disabled={availabilityLoading}
-                >
-                  {profile.is_available ? (
-                    <ToggleRightIcon size={32} color="#DC2626" />
-                  ) : (
-                    <ToggleLeftIcon size={32} color="#9CA3AF" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
 
         {/* Menu Options */}
         <View style={styles.menuSection}>
@@ -2039,7 +2032,7 @@ export default function ProfileScreen() {
                   No pending join requests
                 </RNText>
                 <RNText style={styles.emptyStateSubtitle}>
-                  When users request to join your club, they'll appear here
+                  When users request to join your club, they&apos;ll appear here
                 </RNText>
               </View>
             }
@@ -2810,22 +2803,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rejectButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#FEF2F2',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: '#EF4444',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignItems: 'center',
   },
   approveButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     backgroundColor: '#DC2626',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   fullRejectButton: {
     flex: 1,
@@ -2849,12 +2840,12 @@ const styles = StyleSheet.create({
   },
   rejectButtonText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+    fontSize: 12,
     color: '#EF4444',
   },
   approveButtonText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
+    fontSize: 12,
     color: '#FFFFFF',
   },
   actionButtonDisabled: {

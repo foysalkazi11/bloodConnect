@@ -14,7 +14,7 @@ const StyledView = View;
 const StyledText = Text;
 
 export const TextAvatar: React.FC<TextAvatarProps> = ({
-  name,
+  name = '',
   size = 100,
   backgroundColor,
   textColor = '#FFFFFF',
@@ -25,7 +25,7 @@ export const TextAvatar: React.FC<TextAvatarProps> = ({
     if (!fullName || fullName.trim().length === 0) return '?';
 
     const names = fullName.trim().split(' ');
-    if (names.length === 1) {
+    if (names?.length === 1) {
       return names[0].charAt(0).toUpperCase();
     }
 
