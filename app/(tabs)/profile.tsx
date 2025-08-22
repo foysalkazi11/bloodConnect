@@ -51,6 +51,7 @@ import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { getProfileImageUrl } from '@/utils/avatarUtils';
+import { useImageUpload } from '@/hooks/useImageUpload';
 
 interface UserStats {
   totalDonations: number;
@@ -66,6 +67,7 @@ interface JoinRequest {
   blood_group?: string;
   message?: string;
   created_at: string;
+  avatar_url?: string;
 }
 
 interface ClubMember {
@@ -76,6 +78,7 @@ interface ClubMember {
   role: 'admin' | 'moderator' | 'member';
   joined_date: string;
   is_online: boolean;
+  avatar_url?: string;
 }
 
 interface ClubEvent {
@@ -269,6 +272,17 @@ export default function ProfileScreen() {
   const [imageError, setImageError] = useState(false);
   const [signOutLoading, setSignOutLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { uploadImageFile, loading: imageUploadLoading } = useImageUpload({
+    folder: 'profile',
+    maxWidth: 400,
+    maxHeight: 400,
+    quality: 0.8,
+    currentImageUrl: profile?.avatar_url,
+    onSuccess: async (url) => {
+      await updateProfile({ avatar_url: url });
+      setImageError(false);
+    },
+  });
 
   // Club-specific states
   const [clubMembers, setClubMembers] = useState<ClubMember[]>([]);
@@ -361,7 +375,8 @@ export default function ProfileScreen() {
           user_profiles:user_id(
             name,
             email,
-            blood_group
+            blood_group,
+            avatar_url
           )
         `
         )
@@ -380,6 +395,7 @@ export default function ProfileScreen() {
           blood_group: request.user_profiles[0]?.blood_group || 'A+',
           message: request.message,
           created_at: request.created_at,
+          avatar_url: request.user_profiles[0]?.avatar_url,
         })
       );
 
@@ -398,7 +414,8 @@ export default function ProfileScreen() {
             id,
             name,
             email,
-            blood_group
+            blood_group,
+            avatar_url
           )
         `
         )
@@ -417,6 +434,7 @@ export default function ProfileScreen() {
           role: member.role,
           joined_date: member.joined_at,
           is_online: Math.random() > 0.7, // Random for demo
+          avatar_url: member.user_profiles[0]?.avatar_url,
         })
       );
 
@@ -469,6 +487,7 @@ export default function ProfileScreen() {
             name: item.user_name,
             email: item.user_email,
             blood_group: item.user_blood_group,
+            avatar_url: item.user_avatar_url,
           },
         }));
       } catch (functionError) {
@@ -489,7 +508,8 @@ export default function ProfileScreen() {
             user_profiles:user_profiles!inner(
               name,
               email,
-              blood_group
+              blood_group,
+              avatar_url
             )
           `
           )
@@ -511,6 +531,7 @@ export default function ProfileScreen() {
         blood_group: request.user_profiles?.blood_group,
         message: request.message,
         created_at: request.created_at,
+        avatar_url: request.user_profiles?.avatar_url,
       }));
 
       setJoinRequests(formattedRequests);
@@ -1139,6 +1160,11 @@ export default function ProfileScreen() {
     setShowNotificationSettings(true);
   };
 
+  const handleImageUpload = async () => {
+    if (!user || imageUploadLoading) return;
+    await uploadImageFile(user.id);
+  };
+
   if (!user || !profile) {
     return (
       <SafeAreaView style={styles.container}>
@@ -1196,8 +1222,19 @@ export default function ProfileScreen() {
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
               {renderAvatar()}
-              <TouchableOpacity style={styles.cameraButton}>
-                <Camera size={16} color="#FFFFFF" />
+              <TouchableOpacity
+                style={[
+                  styles.cameraButton,
+                  imageUploadLoading && styles.cameraButtonLoading,
+                ]}
+                onPress={handleImageUpload}
+                disabled={imageUploadLoading}
+              >
+                {imageUploadLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Camera size={16} color="#FFFFFF" />
+                )}
               </TouchableOpacity>
             </View>
 
@@ -1304,7 +1341,15 @@ export default function ProfileScreen() {
               {joinRequests.slice(0, 2).map((request) => (
                 <View key={request.id} style={styles.requestCard}>
                   <View style={styles.requestHeader}>
-                    <TextAvatar name={request.user_name} size={40} />
+                    {request.avatar_url ? (
+                      <Image
+                        source={{ uri: request.avatar_url }}
+                        style={styles.requestAvatar}
+                        onError={() => {}}
+                      />
+                    ) : (
+                      <TextAvatar name={request.user_name} size={40} />
+                    )}
                     <View style={styles.requestInfo}>
                       <RNText style={styles.requestName}>
                         {request.user_name}
@@ -1546,7 +1591,15 @@ export default function ProfileScreen() {
                     ) : null}
 
                     <View style={styles.requestHeader}>
-                      <TextAvatar name={request.user_name} size={48} />
+                      {request.avatar_url ? (
+                        <Image
+                          source={{ uri: request.avatar_url }}
+                          style={styles.requestAvatarLarge}
+                          onError={() => {}}
+                        />
+                      ) : (
+                        <TextAvatar name={request.user_name} size={48} />
+                      )}
                       <View style={styles.requestInfo}>
                         <RNText style={styles.requestName}>
                           {request.user_name}
@@ -1654,8 +1707,19 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             {renderAvatar()}
-            <TouchableOpacity style={styles.cameraButton}>
-              <Camera size={16} color="#FFFFFF" />
+            <TouchableOpacity
+              style={[
+                styles.cameraButton,
+                imageUploadLoading && styles.cameraButtonLoading,
+              ]}
+              onPress={handleImageUpload}
+              disabled={imageUploadLoading}
+            >
+              {imageUploadLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Camera size={16} color="#FFFFFF" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -2040,7 +2104,15 @@ export default function ProfileScreen() {
                 ) : null}
 
                 <View style={styles.requestHeader}>
-                  <TextAvatar name={item.user_name} size={48} />
+                  {item.avatar_url ? (
+                    <Image
+                      source={{ uri: item.avatar_url }}
+                      style={styles.requestAvatarLarge}
+                      onError={() => {}}
+                    />
+                  ) : (
+                    <TextAvatar name={item.user_name} size={48} />
+                  )}
                   <View style={styles.requestInfo}>
                     <RNText style={styles.requestName}>{item.user_name}</RNText>
                     <RNText style={styles.requestEmail}>
@@ -2143,7 +2215,15 @@ export default function ProfileScreen() {
 
                 <View style={styles.memberInfo}>
                   <View style={styles.avatarContainer}>
-                    <TextAvatar name={item.name} size={48} />
+                    {item.avatar_url ? (
+                      <Image
+                        source={{ uri: item.avatar_url }}
+                        style={styles.requestAvatarLarge}
+                        onError={() => {}}
+                      />
+                    ) : (
+                      <TextAvatar name={item.name} size={48} />
+                    )}
                     {item.is_online && <View style={styles.onlineIndicator} />}
                   </View>
 
@@ -2466,6 +2546,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: '#FFFFFF',
+  },
+  cameraButtonLoading: {
+    backgroundColor: '#9CA3AF',
   },
   profileInfo: {
     alignItems: 'center',
@@ -3205,6 +3288,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     fontSize: 16,
     color: '#111827',
+  },
+  requestAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  requestAvatarLarge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   // Donor section styles
   donorSection: {
