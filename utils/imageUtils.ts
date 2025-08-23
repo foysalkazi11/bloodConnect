@@ -144,9 +144,30 @@ export async function pickProfileImage(): Promise<ImagePicker.ImagePickerResult>
 
   // Launch image picker with profile-optimized settings
   return await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images', 'livePhotos'],
+    mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [1, 1], // Square aspect ratio for profile pictures
+    quality: 0.9, // High quality for picker, we'll optimize later
+    exif: false, // Remove EXIF data for privacy
+  });
+}
+
+/**
+ * Launches image picker with optimized settings for gallery posts
+ */
+export async function pickGalleryImage(): Promise<ImagePicker.ImagePickerResult> {
+  // Request permissions
+  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (status !== 'granted') {
+    throw new Error('Camera roll permissions are required');
+  }
+
+  // Launch image picker with gallery-optimized settings
+  return await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    aspect: [4, 3], // 4:3 aspect ratio for gallery posts
     quality: 0.9, // High quality for picker, we'll optimize later
     exif: false, // Remove EXIF data for privacy
   });

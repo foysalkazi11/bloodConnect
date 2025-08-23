@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
-  Alert,
   Animated,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -33,8 +33,11 @@ import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { useProgressivePermissions } from '@/hooks/useProgressivePermissions';
 import { TextAvatar } from '@/components/TextAvatar';
 import { getProfileImageUrl, getAvatarUrl } from '@/utils/avatarUtils';
-import * as ImagePicker from 'expo-image-picker';
-import { Platform } from 'react-native';
+import {
+  uploadImage,
+  generateImageFileName,
+  pickGalleryImage,
+} from '@/utils/imageUtils';
 
 interface GalleryPost {
   id: string;
@@ -158,9 +161,9 @@ export default function GalleryScreen() {
         // Format posts with null safety
         const formattedPosts: GalleryPost[] = data.map((post) => ({
           id: post.id,
-          author: post.user_profiles?.name || 'Unknown User',
+          author: (post.user_profiles as any)?.name || 'Unknown User',
           authorId: post.user_id,
-          bloodGroup: post.user_profiles?.blood_group || undefined,
+          bloodGroup: (post.user_profiles as any)?.blood_group || undefined,
           image: post.image_url,
           caption: post.caption,
           location: post.location,
@@ -338,12 +341,12 @@ export default function GalleryScreen() {
       if (data) {
         const formattedComments = data.map((comment: any) => ({
           id: comment.id,
-          author: comment.user_profiles?.name || 'Unknown User',
+          author: (comment.user_profiles as any)?.name || 'Unknown User',
           authorId: comment.user_id,
           content: comment.content,
           timeAgo: formatTimeAgo(comment.created_at),
-          bloodGroup: comment.user_profiles?.blood_group || undefined,
-          authorAvatar: comment.user_profiles?.avatar_url || undefined,
+          bloodGroup: (comment.user_profiles as any)?.blood_group || undefined,
+          authorAvatar: (comment.user_profiles as any)?.avatar_url || undefined,
         }));
 
         setComments(formattedComments);
@@ -442,27 +445,8 @@ export default function GalleryScreen() {
 
   const handlePickImage = async () => {
     try {
-      // Request permissions
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-      if (status !== 'granted') {
-        showNotification({
-          type: 'error',
-          title: 'Permission Denied',
-          message: 'We need camera roll permissions to upload images',
-          duration: 4000,
-        });
-        return;
-      }
-
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+      // Use our consistent gallery image picker
+      const result = await pickGalleryImage();
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setNewPost({
@@ -472,12 +456,23 @@ export default function GalleryScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      showNotification({
-        type: 'error',
-        title: 'Error',
-        message: 'Failed to pick image',
-        duration: 3000,
-      });
+
+      // Handle permission errors specifically
+      if (error instanceof Error && error.message.includes('permissions')) {
+        showNotification({
+          type: 'error',
+          title: 'Permission Denied',
+          message: 'We need camera roll permissions to upload images',
+          duration: 4000,
+        });
+      } else {
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to pick image',
+          duration: 3000,
+        });
+      }
     }
   };
 
@@ -505,36 +500,21 @@ export default function GalleryScreen() {
     try {
       setUploading(true);
 
-      // 1. Upload image to Supabase Storage
-      const fileExt = newPost.image.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `gallery/${user.id}/${fileName}`;
+      // 1. Upload optimized image to Supabase Storage
+      const fileName = generateImageFileName(user.id, 'gallery');
+      const uploadResult = await uploadImage(newPost.image, 'media', fileName, {
+        maxWidth: 1200, // Larger for gallery images
+        maxHeight: 1200,
+        quality: 0.85, // Good quality for gallery
+      });
 
-      // For web, we need to fetch the image first
-      let file;
-      if (Platform.OS === 'web') {
-        const response = await fetch(newPost.image);
-        const blob = await response.blob();
-        file = blob;
-      } else {
-        // For native, we can use the URI directly
-        file = { uri: newPost.image, name: fileName, type: `image/${fileExt}` };
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
       }
 
-      const { error: uploadError } = await supabase.storage
-        .from('media')
-        .upload(filePath, file);
+      const imageUrl = uploadResult.url;
 
-      if (uploadError) throw uploadError;
-
-      // 2. Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('media')
-        .getPublicUrl(filePath);
-
-      const imageUrl = urlData.publicUrl;
-
-      // 3. Create post in database
+      // 2. Create post in database
       const { data, error } = await supabase
         .from('gallery_posts')
         .insert({
@@ -775,154 +755,163 @@ export default function GalleryScreen() {
         }}
       >
         <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              style={styles.modalBackButton}
-              onPress={() => {
-                if (uploading) {
-                  showNotification({
-                    type: 'info',
-                    title: 'Upload in Progress',
-                    message: 'Please wait for the upload to complete',
-                    duration: 3000,
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                style={styles.modalBackButton}
+                onPress={() => {
+                  if (uploading) {
+                    showNotification({
+                      type: 'info',
+                      title: 'Upload in Progress',
+                      message: 'Please wait for the upload to complete',
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setShowCreateModal(false);
+                  setNewPost({
+                    caption: '',
+                    location: '',
+                    image: null,
                   });
-                  return;
+                }}
+                disabled={uploading}
+              >
+                <ArrowLeft size={24} color="#111827" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Share Your Story</Text>
+              <TouchableOpacity
+                onPress={handleCreatePost}
+                disabled={
+                  !newPost.caption.trim() ||
+                  !newPost.location.trim() ||
+                  !newPost.image ||
+                  uploading
                 }
-                setShowCreateModal(false);
-                setNewPost({
-                  caption: '',
-                  location: '',
-                  image: null,
-                });
-              }}
-              disabled={uploading}
-            >
-              <ArrowLeft size={24} color="#111827" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Share Your Story</Text>
-            <TouchableOpacity
-              onPress={handleCreatePost}
-              disabled={
-                !newPost.caption.trim() ||
-                !newPost.location.trim() ||
-                !newPost.image ||
-                uploading
-              }
-            >
-              <Text
+              >
+                <Text
+                  style={[
+                    styles.modalPostText,
+                    (!newPost.caption.trim() ||
+                      !newPost.location.trim() ||
+                      !newPost.image ||
+                      uploading) &&
+                      styles.modalPostTextDisabled,
+                  ]}
+                >
+                  Post
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalContent}>
+              {/* Image Preview/Selector */}
+              <View style={styles.imageContainer}>
+                {newPost.image ? (
+                  <View style={styles.imagePreviewContainer}>
+                    <Image
+                      source={{ uri: newPost.image }}
+                      style={styles.imagePreview}
+                      resizeMode="cover"
+                    />
+                    <TouchableOpacity
+                      style={styles.changeImageButton}
+                      onPress={handlePickImage}
+                      disabled={uploading}
+                    >
+                      <Text style={styles.changeImageText}>Change Image</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.imagePicker}
+                    onPress={handlePickImage}
+                    disabled={uploading}
+                  >
+                    <Camera size={48} color="#9CA3AF" />
+                    <Text style={styles.imagePickerText}>
+                      Tap to select an image
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Caption Input */}
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Caption</Text>
+                <TextInput
+                  style={styles.captionInput}
+                  placeholder="Write a caption..."
+                  placeholderTextColor="#9CA3AF"
+                  value={newPost.caption}
+                  onChangeText={(text) =>
+                    setNewPost({ ...newPost, caption: text })
+                  }
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  editable={!uploading}
+                />
+              </View>
+
+              {/* Location Input */}
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Location</Text>
+                <View style={styles.locationInputContainer}>
+                  <MapPin size={20} color="#6B7280" />
+                  <TextInput
+                    style={styles.locationInput}
+                    placeholder="Add location"
+                    placeholderTextColor="#9CA3AF"
+                    value={newPost.location}
+                    onChangeText={(text) =>
+                      setNewPost({ ...newPost, location: text })
+                    }
+                    editable={!uploading}
+                  />
+                </View>
+              </View>
+
+              {/* Create Post Button */}
+              <TouchableOpacity
                 style={[
-                  styles.modalPostText,
+                  styles.createPostButton,
                   (!newPost.caption.trim() ||
                     !newPost.location.trim() ||
                     !newPost.image ||
                     uploading) &&
-                    styles.modalPostTextDisabled,
+                    styles.createPostButtonDisabled,
                 ]}
-              >
-                Post
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalContent}>
-            {/* Image Preview/Selector */}
-            <View style={styles.imageContainer}>
-              {newPost.image ? (
-                <View style={styles.imagePreviewContainer}>
-                  <Image
-                    source={{ uri: newPost.image }}
-                    style={styles.imagePreview}
-                    resizeMode="cover"
-                  />
-                  <TouchableOpacity
-                    style={styles.changeImageButton}
-                    onPress={handlePickImage}
-                    disabled={uploading}
-                  >
-                    <Text style={styles.changeImageText}>Change Image</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={styles.imagePicker}
-                  onPress={handlePickImage}
-                  disabled={uploading}
-                >
-                  <Camera size={48} color="#9CA3AF" />
-                  <Text style={styles.imagePickerText}>
-                    Tap to select an image
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* Caption Input */}
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Caption</Text>
-              <TextInput
-                style={styles.captionInput}
-                placeholder="Write a caption..."
-                placeholderTextColor="#9CA3AF"
-                value={newPost.caption}
-                onChangeText={(text) =>
-                  setNewPost({ ...newPost, caption: text })
-                }
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                editable={!uploading}
-              />
-            </View>
-
-            {/* Location Input */}
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Location</Text>
-              <View style={styles.locationInputContainer}>
-                <MapPin size={20} color="#6B7280" />
-                <TextInput
-                  style={styles.locationInput}
-                  placeholder="Add location"
-                  placeholderTextColor="#9CA3AF"
-                  value={newPost.location}
-                  onChangeText={(text) =>
-                    setNewPost({ ...newPost, location: text })
-                  }
-                  editable={!uploading}
-                />
-              </View>
-            </View>
-
-            {/* Create Post Button */}
-            <TouchableOpacity
-              style={[
-                styles.createPostButton,
-                (!newPost.caption.trim() ||
+                onPress={handleCreatePost}
+                disabled={
+                  !newPost.caption.trim() ||
                   !newPost.location.trim() ||
                   !newPost.image ||
-                  uploading) &&
-                  styles.createPostButtonDisabled,
-              ]}
-              onPress={handleCreatePost}
-              disabled={
-                !newPost.caption.trim() ||
-                !newPost.location.trim() ||
-                !newPost.image ||
-                uploading
-              }
-            >
-              {uploading ? (
-                <View style={styles.uploadingContainer}>
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                  <Text style={styles.createPostButtonText}>Uploading...</Text>
-                </View>
-              ) : (
-                <>
-                  <Upload size={20} color="#FFFFFF" />
-                  <Text style={styles.createPostButtonText}>Share Story</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+                  uploading
+                }
+              >
+                {uploading ? (
+                  <View style={styles.uploadingContainer}>
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text style={styles.createPostButtonText}>
+                      Uploading...
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <Upload size={20} color="#FFFFFF" />
+                    <Text style={styles.createPostButtonText}>Share Story</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </SafeAreaView>
       </Modal>
 
@@ -1036,6 +1025,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
