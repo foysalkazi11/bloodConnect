@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -19,12 +20,18 @@ import {
   Phone,
   Video,
   MoveVertical as MoreVertical,
+  X,
 } from 'lucide-react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import {
+  uploadImage,
+  generateImageFileName,
+  pickGalleryImage,
+} from '@/utils/imageUtils';
 import {
   chatService,
   ClubMessage,
@@ -46,6 +53,8 @@ export default function ClubChatScreen() {
   const [typingUsers, setTypingUsers] = useState<TypingIndicator[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [onlineCount, setOnlineCount] = useState(0);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -184,6 +193,93 @@ export default function ClubChatScreen() {
     }
   };
 
+  const handlePickImage = async () => {
+    try {
+      const result = await pickGalleryImage();
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+
+      if (error instanceof Error && error.message.includes('permissions')) {
+        showNotification({
+          type: 'error',
+          title: 'Permission Denied',
+          message: 'We need camera roll permissions to send images',
+          duration: 4000,
+        });
+      } else {
+        showNotification({
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to pick image',
+          duration: 3000,
+        });
+      }
+    }
+  };
+
+  const handleSendImage = async () => {
+    if (!selectedImage || !id || !user?.id || uploadingImage) return;
+
+    try {
+      setUploadingImage(true);
+
+      // Upload image to storage
+      const fileName = generateImageFileName(user.id, 'chat');
+      const uploadResult = await uploadImage(selectedImage, 'media', fileName, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.8,
+      });
+
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
+
+      // Send message with image
+      await chatService.sendClubMessage(
+        id as string,
+        user.id,
+        '', // Empty content for image messages
+        'image',
+        undefined,
+        {
+          url: uploadResult.url,
+          name: fileName,
+          size: 0, // We don't have size info from the picker
+        }
+      );
+
+      // Clear selected image
+      setSelectedImage(null);
+
+      // Scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
+      showNotification({
+        type: 'success',
+        title: 'Image Sent',
+        message: 'Image sent successfully',
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Error sending image:', error);
+      showNotification({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to send image',
+        duration: 4000,
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !id || !user?.id) return;
 
@@ -280,7 +376,20 @@ export default function ClubChatScreen() {
           style={[styles.messageContainer, styles.ownMessageContainer]}
         >
           <View style={styles.ownMessageBubble}>
-            <Text style={styles.ownMessageText}>{message.content}</Text>
+            {message.message_type === 'image' && message.file_url ? (
+              <View style={styles.imageMessageContainer}>
+                <Image
+                  source={{ uri: message.file_url }}
+                  style={styles.messageImage}
+                  resizeMode="cover"
+                />
+                {message.content && (
+                  <Text style={styles.ownMessageText}>{message.content}</Text>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.ownMessageText}>{message.content}</Text>
+            )}
             {message.is_edited && (
               <Text style={styles.editedText}>(edited)</Text>
             )}
@@ -337,7 +446,22 @@ export default function ClubChatScreen() {
                   isConsecutive && styles.consecutiveMessageBubble,
                 ]}
               >
-                <Text style={styles.otherMessageText}>{message.content}</Text>
+                {message.message_type === 'image' && message.file_url ? (
+                  <View style={styles.imageMessageContainer}>
+                    <Image
+                      source={{ uri: message.file_url }}
+                      style={styles.messageImage}
+                      resizeMode="cover"
+                    />
+                    {message.content && (
+                      <Text style={styles.otherMessageText}>
+                        {message.content}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <Text style={styles.otherMessageText}>{message.content}</Text>
+                )}
                 {message.is_edited && (
                   <Text style={styles.editedText}>(edited)</Text>
                 )}
@@ -431,9 +555,50 @@ export default function ClubChatScreen() {
           )}
         </ScrollView>
 
+        {/* Image Preview */}
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <View style={styles.imagePreviewWrapper}>
+              <Image
+                source={{ uri: selectedImage }}
+                style={styles.imagePreview}
+                resizeMode="cover"
+              />
+              <TouchableOpacity
+                style={styles.removeImageButton}
+                onPress={() => setSelectedImage(null)}
+                disabled={uploadingImage}
+              >
+                <X size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.sendImageButton,
+                uploadingImage && styles.sendImageButtonDisabled,
+              ]}
+              onPress={handleSendImage}
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Send size={16} color="#FFFFFF" />
+              )}
+              <Text style={styles.sendImageButtonText}>
+                {uploadingImage ? 'Sending...' : 'Send Image'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Message Input */}
         <View style={styles.inputContainer}>
-          <TouchableOpacity style={styles.attachButton}>
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={handlePickImage}
+            disabled={uploadingImage}
+          >
             <Paperclip size={20} color="#6B7280" />
           </TouchableOpacity>
 
@@ -446,6 +611,7 @@ export default function ClubChatScreen() {
               onChangeText={handleTyping}
               multiline
               maxLength={1000}
+              editable={!uploadingImage}
             />
             <TouchableOpacity style={styles.emojiButton}>
               <Smile size={20} color="#6B7280" />
@@ -460,7 +626,7 @@ export default function ClubChatScreen() {
                 : styles.sendButtonInactive,
             ]}
             onPress={handleSendMessage}
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || uploadingImage}
           >
             <Send size={20} color={newMessage.trim() ? '#FFFFFF' : '#9CA3AF'} />
           </TouchableOpacity>
@@ -786,5 +952,61 @@ const styles = StyleSheet.create({
   },
   sendButtonInactive: {
     backgroundColor: '#F3F4F6',
+  },
+  // Image message styles
+  imageMessageContainer: {
+    overflow: 'hidden',
+  },
+  messageImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  // Image preview styles
+  imagePreviewContainer: {
+    backgroundColor: '#F9FAFB',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  imagePreviewWrapper: {
+    position: 'relative',
+  },
+  imagePreview: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendImageButton: {
+    backgroundColor: '#DC2626',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
+  },
+  sendImageButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  sendImageButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
   },
 });

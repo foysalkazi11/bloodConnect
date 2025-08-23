@@ -407,7 +407,7 @@ class ChatService {
           // Fetch sender details
           const { data: sender } = await supabase
             .from('user_profiles')
-            .select('name, email, blood_group')
+            .select('name, email, blood_group, avatar_url')
             .eq('id', newMessage.sender_id)
             .single();
 
@@ -416,6 +416,7 @@ class ChatService {
             sender_name: sender?.name,
             sender_email: sender?.email,
             sender_blood_group: sender?.blood_group,
+            sender_avatar_url: sender?.avatar_url,
           });
         }
       )
@@ -432,7 +433,7 @@ class ChatService {
 
           const { data: sender } = await supabase
             .from('user_profiles')
-            .select('name, email, blood_group')
+            .select('name, email, blood_group, avatar_url')
             .eq('id', updatedMessage.sender_id)
             .single();
 
@@ -441,6 +442,7 @@ class ChatService {
             sender_name: sender?.name,
             sender_email: sender?.email,
             sender_blood_group: sender?.blood_group,
+            sender_avatar_url: sender?.avatar_url,
           });
         }
       )
@@ -489,7 +491,7 @@ class ChatService {
 
           const { data: sender } = await supabase
             .from('user_profiles')
-            .select('name, email')
+            .select('name, email, avatar_url')
             .eq('id', newMessage.sender_id)
             .single();
 
@@ -497,6 +499,7 @@ class ChatService {
             ...newMessage,
             sender_name: sender?.name,
             sender_email: sender?.email,
+            sender_avatar_url: sender?.avatar_url,
           });
         }
       )
@@ -513,7 +516,7 @@ class ChatService {
 
           const { data: sender } = await supabase
             .from('user_profiles')
-            .select('name, email')
+            .select('name, email, avatar_url')
             .eq('id', updatedMessage.sender_id)
             .single();
 
@@ -521,6 +524,7 @@ class ChatService {
             ...updatedMessage,
             sender_name: sender?.name,
             sender_email: sender?.email,
+            sender_avatar_url: sender?.avatar_url,
           });
         }
       )
