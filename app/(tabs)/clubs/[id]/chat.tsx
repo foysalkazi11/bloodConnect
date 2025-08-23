@@ -27,6 +27,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
 import { TextAvatar } from '@/components/TextAvatar';
 import { getAvatarUrl } from '@/utils/avatarUtils';
+import { ImageViewerModal } from '@/components/ImageViewerModal';
 import {
   uploadImage,
   generateImageFileName,
@@ -55,6 +56,16 @@ export default function ClubChatScreen() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerImages, setImageViewerImages] = useState<
+    {
+      url: string;
+      id: string;
+      sender_name?: string;
+      created_at?: string;
+    }[]
+  >([]);
+  const [imageViewerInitialIndex, setImageViewerInitialIndex] = useState(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -280,6 +291,27 @@ export default function ClubChatScreen() {
     }
   };
 
+  const handleImagePress = (pressedMessage: ChatMessageUI) => {
+    // Get all image messages from the current chat
+    const imageMessages = messages
+      .filter((msg) => msg.message_type === 'image' && msg.file_url)
+      .map((msg) => ({
+        url: msg.file_url!,
+        id: msg.id,
+        sender_name: msg.sender_name,
+        created_at: msg.created_at,
+      }));
+
+    // Find the index of the pressed image
+    const initialIndex = imageMessages.findIndex(
+      (img) => img.id === pressedMessage.id
+    );
+
+    setImageViewerImages(imageMessages);
+    setImageViewerInitialIndex(Math.max(0, initialIndex));
+    setImageViewerVisible(true);
+  };
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !id || !user?.id) return;
 
@@ -378,11 +410,13 @@ export default function ClubChatScreen() {
           <View style={styles.ownMessageBubble}>
             {message.message_type === 'image' && message.file_url ? (
               <View style={styles.imageMessageContainer}>
-                <Image
-                  source={{ uri: message.file_url }}
-                  style={styles.messageImage}
-                  resizeMode="cover"
-                />
+                <TouchableOpacity onPress={() => handleImagePress(message)}>
+                  <Image
+                    source={{ uri: message.file_url }}
+                    style={styles.messageImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
                 {message.content && (
                   <Text style={styles.ownMessageText}>{message.content}</Text>
                 )}
@@ -448,11 +482,13 @@ export default function ClubChatScreen() {
               >
                 {message.message_type === 'image' && message.file_url ? (
                   <View style={styles.imageMessageContainer}>
-                    <Image
-                      source={{ uri: message.file_url }}
-                      style={styles.messageImage}
-                      resizeMode="cover"
-                    />
+                    <TouchableOpacity onPress={() => handleImagePress(message)}>
+                      <Image
+                        source={{ uri: message.file_url }}
+                        style={styles.messageImage}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
                     {message.content && (
                       <Text style={styles.otherMessageText}>
                         {message.content}
@@ -632,6 +668,14 @@ export default function ClubChatScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={imageViewerVisible}
+        images={imageViewerImages}
+        initialIndex={imageViewerInitialIndex}
+        onClose={() => setImageViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
