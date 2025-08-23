@@ -1,24 +1,15 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import {
-  Heart,
-  Search,
-  Users,
-  Award,
-  MapPin,
-  Phone,
-} from 'lucide-react-native';
+import { Heart, Search, Users, Award, Phone } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { TextAvatar } from '@/components/TextAvatar';
 import NotificationBell from '@/components/NotificationBell';
-import { BannerAdComponent } from '@/components/ads/AdMobComponents';
 import { getProfileImageUrl, getAvatarUrl } from '@/utils/avatarUtils';
-import { AdDebugTrigger } from '@/components/ads/AdDebugPanel';
 import { SmartBottomBanner } from '@/components/ads/SmartBottomBanner';
 import { colors } from '@/theme';
 
@@ -53,10 +44,6 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [connectionError, setConnectionError] = useState(false);
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [user]);
-
   const isCorsError = (error: any) => {
     const errorMessage = error?.message || '';
     const errorName = error?.name || '';
@@ -75,7 +62,7 @@ export default function HomeScreen() {
     );
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       setConnectionError(false);
@@ -89,39 +76,11 @@ export default function HomeScreen() {
           console.log('CORS error detected. Using fallback data.');
           setConnectionError(true);
           setStats({
-            totalDonors: 1247,
-            totalClubs: 89,
-            totalDonations: 3456,
+            totalDonors: 0,
+            totalClubs: 0,
+            totalDonations: 0,
           });
-          setRecentDonations([
-            {
-              id: '1',
-              donor_name: 'Ahmed Rahman',
-              blood_group: 'O+',
-              location: 'Dhaka Medical College',
-              donation_date: new Date(
-                Date.now() - 2 * 60 * 60 * 1000
-              ).toISOString(),
-            },
-            {
-              id: '2',
-              donor_name: 'Fatima Khan',
-              blood_group: 'A+',
-              location: 'Chittagong General Hospital',
-              donation_date: new Date(
-                Date.now() - 6 * 60 * 60 * 1000
-              ).toISOString(),
-            },
-            {
-              id: '3',
-              donor_name: 'Mohammad Ali',
-              blood_group: 'B-',
-              location: 'Sylhet MAG Osmani Medical',
-              donation_date: new Date(
-                Date.now() - 24 * 60 * 60 * 1000
-              ).toISOString(),
-            },
-          ]);
+          setRecentDonations([]);
           setLoading(false);
           return;
         }
@@ -176,9 +135,9 @@ export default function HomeScreen() {
 
         if (!error && donations) {
           const formattedDonations: RecentDonation[] = donations.map(
-            (donation) => ({
+            (donation: any) => ({
               id: donation.id,
-              donor_name: donation.user_profiles.name,
+              donor_name: donation.user_profiles?.name || 'Anonymous Donor',
               blood_group: donation.blood_group,
               location: donation.location,
               donation_date: donation.donation_date,
@@ -197,58 +156,26 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       console.log('Error type:', typeof error);
-      console.log('Error name:', error?.name);
-      console.log('Error message:', error?.message);
+      console.log('Error name:', (error as any)?.name);
+      console.log('Error message:', (error as any)?.message);
       if (isCorsError(error)) {
         setConnectionError(true);
-        // Set demo data for CORS error
-        setStats({
-          totalDonors: 1247,
-          totalClubs: 89,
-          totalDonations: 3456,
-        });
-        setRecentDonations([
-          {
-            id: '1',
-            donor_name: 'Ahmed Rahman',
-            blood_group: 'O+',
-            location: 'Dhaka Medical College',
-            donation_date: new Date(
-              Date.now() - 2 * 60 * 60 * 1000
-            ).toISOString(),
-          },
-          {
-            id: '2',
-            donor_name: 'Fatima Khan',
-            blood_group: 'A+',
-            location: 'Chittagong General Hospital',
-            donation_date: new Date(
-              Date.now() - 6 * 60 * 60 * 1000
-            ).toISOString(),
-          },
-          {
-            id: '3',
-            donor_name: 'Mohammad Ali',
-            blood_group: 'B-',
-            location: 'Sylhet MAG Osmani Medical',
-            donation_date: new Date(
-              Date.now() - 24 * 60 * 60 * 1000
-            ).toISOString(),
-          },
-        ]);
-      } else {
-        // Set default values on other errors
-        setStats({
-          totalDonors: 0,
-          totalClubs: 0,
-          totalDonations: 0,
-        });
-        setRecentDonations([]);
       }
+      // Set default values on any error
+      setStats({
+        totalDonors: 0,
+        totalClubs: 0,
+        totalDonations: 0,
+      });
+      setRecentDonations([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [user, loadDashboardData]);
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -347,8 +274,7 @@ export default function HomeScreen() {
         {connectionError && (
           <View className="bg-warning-100 px-4 py-3 border-b border-warning-500">
             <Text className="font-medium text-warning-800 text-center text-sm">
-              ⚠️ Demo Mode: Configure Supabase CORS settings to connect to live
-              data
+              ⚠️ Unable to connect to database. Please check your connection.
             </Text>
           </View>
         )}

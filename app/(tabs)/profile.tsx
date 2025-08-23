@@ -42,6 +42,9 @@ import {
   MessageCircle,
   BellRing as BellIcon,
   Users,
+  CalendarDays,
+  LockKeyhole,
+  LockKeyholeOpen,
 } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
@@ -56,7 +59,6 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 interface UserStats {
   totalDonations: number;
   joinedClubs: number;
-  lastDonation?: string;
 }
 
 interface JoinRequest {
@@ -115,6 +117,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [phone, setPhone] = useState('');
   const [website, setWebsite] = useState('');
   const [description, setDescription] = useState('');
+  const [lastDonation, setLastDonation] = useState('');
+  const [isEngaged, setIsEngaged] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -122,6 +126,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setPhone(profile.phone || '');
       setWebsite(profile.website || '');
       setDescription(profile.description || '');
+      setLastDonation(
+        profile.last_donation ? profile.last_donation.split('T')[0] : ''
+      );
+      setIsEngaged(profile.is_engaged || false);
     }
   }, [profile]);
 
@@ -134,6 +142,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     if (profile?.user_type === 'club') {
       updates.website = website.trim();
       updates.description = description.trim();
+    }
+
+    if (profile?.user_type === 'donor') {
+      updates.last_donation = lastDonation
+        ? lastDonation + 'T00:00:00.000Z'
+        : null;
+      updates.is_engaged = isEngaged;
     }
 
     onSave(updates);
@@ -185,6 +200,48 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               keyboardType="phone-pad"
             />
           </View>
+
+          {profile?.user_type === 'donor' && (
+            <>
+              <View style={styles.modalSection}>
+                <RNText style={styles.modalLabel}>Last Donation Date</RNText>
+                <View style={styles.dateInputContainer}>
+                  <CalendarDays size={20} color="#6B7280" />
+                  <TextInput
+                    style={styles.dateInput}
+                    value={lastDonation}
+                    onChangeText={setLastDonation}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#9CA3AF"
+                  />
+                </View>
+                <RNText style={styles.fieldHint}>
+                  When did you last donate blood? (Optional)
+                </RNText>
+              </View>
+
+              <View style={styles.modalSection}>
+                <TouchableOpacity
+                  style={styles.toggleContainer}
+                  onPress={() => setIsEngaged(!isEngaged)}
+                >
+                  <View style={styles.toggleInfo}>
+                    <RNText style={styles.modalLabel}>Engagement Status</RNText>
+                    <RNText style={styles.fieldHint}>
+                      Are you currently promised to someone for future donation?
+                    </RNText>
+                  </View>
+                  <View style={styles.toggleSwitch}>
+                    {isEngaged ? (
+                      <ToggleRightIcon size={32} color="#DC2626" />
+                    ) : (
+                      <ToggleLeftIcon size={32} color="#9CA3AF" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
           {profile?.user_type === 'club' && (
             <>
@@ -330,30 +387,28 @@ export default function ProfileScreen() {
     if (!user) return;
 
     try {
-      // Load user donations
-      const { data: donations, count: donationCount } = await supabase
+      // Load user donations count only (last donation is now in profile)
+      const { count: donationCount } = await supabase
         .from('donations')
-        .select('donation_date', { count: 'exact' })
-        .eq('donor_id', user.id)
-        .order('donation_date', { ascending: false });
+        .select('id', { count: 'exact' })
+        .eq('donor_id', user.id);
 
       // For clubs, we'll count total members (this would need a proper club membership system)
       // For now, we'll use a placeholder
       const joinedClubs = profile?.user_type === 'club' ? 1 : 0;
 
-      // Get last donation date
-      const lastDonation =
-        donations && donations.length > 0
-          ? donations[0].donation_date
-          : undefined;
-
       setUserStats({
         totalDonations: donationCount || 0,
         joinedClubs,
-        lastDonation,
+        // lastDonation is now available directly from profile.last_donation
       });
     } catch (error) {
       console.error('Error loading user stats:', error);
+      // Set fallback values
+      setUserStats({
+        totalDonations: 0,
+        joinedClubs: profile?.user_type === 'club' ? 1 : 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -1309,12 +1364,12 @@ export default function ProfileScreen() {
                 <View style={styles.statCard}>
                   <CalendarIcon size={24} color="#DC2626" />
                   <RNText style={styles.statValue}>
-                    {userStats.lastDonation
-                      ? formatTimeAgo2(userStats.lastDonation).split(' ')[0]
+                    {profile.last_donation
+                      ? formatTimeAgo2(profile.last_donation).split(' ')[0]
                       : 'Never'}
                   </RNText>
                   <RNText style={styles.statLabel}>
-                    {userStats.lastDonation ? 'Last Drive' : 'No Drives'}
+                    {profile.last_donation ? 'Last Drive' : 'No Drives'}
                   </RNText>
                 </View>
               </>
@@ -1783,6 +1838,27 @@ export default function ProfileScreen() {
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Engagement Status */}
+            <View style={styles.availabilityCard}>
+              <View style={styles.availabilityInfo}>
+                <RNText style={styles.availabilityTitle}>
+                  Engagement Status
+                </RNText>
+                <RNText style={styles.availabilitySubtitle}>
+                  {profile.is_engaged
+                    ? 'You are currently promised to someone'
+                    : 'You are not engaged for future donation'}
+                </RNText>
+              </View>
+              <View style={styles.availabilityToggleContainer}>
+                {profile.is_engaged ? (
+                  <LockKeyhole size={24} color="#DC2626" />
+                ) : (
+                  <LockKeyholeOpen size={24} color="#9CA3AF" />
+                )}
+              </View>
+            </View>
           </View>
         )}
 
@@ -1824,12 +1900,12 @@ export default function ProfileScreen() {
               <View style={styles.statCard}>
                 <CalendarIcon size={24} color="#DC2626" />
                 <RNText style={styles.statValue}>
-                  {userStats.lastDonation
-                    ? formatTimeAgo2(userStats.lastDonation).split(' ')[0]
+                  {profile.last_donation
+                    ? formatTimeAgo2(profile.last_donation).split(' ')[0]
                     : 'Never'}
                 </RNText>
                 <RNText style={styles.statLabel}>
-                  {userStats.lastDonation ? 'Last Donation' : 'No Donations'}
+                  {profile.last_donation ? 'Last Donation' : 'No Donations'}
                 </RNText>
               </View>
             </>
@@ -2632,6 +2708,7 @@ const styles = StyleSheet.create({
   availabilitySection: {
     paddingHorizontal: 20,
     marginBottom: 24,
+    gap: 12,
   },
   availabilityCard: {
     backgroundColor: '#F9FAFB',
@@ -3023,6 +3100,45 @@ const styles = StyleSheet.create({
     color: '#1E40AF',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  dateInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  dateInput: {
+    flex: 1,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#111827',
+  },
+  fieldHint: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+  },
+  toggleInfo: {
+    flex: 1,
+  },
+  toggleSwitch: {
+    marginLeft: 12,
   },
   emptyState: {
     alignItems: 'center',

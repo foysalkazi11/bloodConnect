@@ -36,6 +36,8 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
   avatar_url?: string;
+  last_donation?: string; // Date of last blood donation by the donor
+  is_engaged?: boolean; // Whether the donor has promised someone for a future blood donation
 }
 
 export interface Club {

@@ -20,6 +20,10 @@ import {
   Mail,
   Clock,
   ChevronDown,
+  Heart,
+  Lock,
+  LockKeyhole,
+  LockKeyholeOpen,
   X,
 } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
@@ -198,7 +202,7 @@ export default function SearchScreen() {
       let query = supabase
         .from('user_profiles')
         .select(
-          'id, name, email, phone, blood_group, country, district, police_station, state, city, is_available, avatar_url'
+          'id, name, email, phone, blood_group, country, district, police_station, state, city, is_available, avatar_url, last_donation, is_engaged'
         )
         .eq('user_type', 'donor')
         .order('created_at', { ascending: false })
@@ -210,32 +214,8 @@ export default function SearchScreen() {
         throw error;
       }
 
-      // Get last donation date for each donor
-      const donorsWithLastDonation = await Promise.all(
-        (data || []).map(async (donor) => {
-          try {
-            const { data: donations, error: donationError } = await supabase
-              .from('donations')
-              .select('donation_date')
-              .eq('donor_id', donor.id)
-              .order('donation_date', { ascending: false })
-              .limit(1);
-
-            if (donationError) throw donationError;
-
-            return {
-              ...donor,
-              last_donation:
-                donations && donations.length > 0
-                  ? donations[0].donation_date
-                  : undefined,
-            };
-          } catch (err) {
-            console.error('Error fetching donation date:', err);
-            return donor;
-          }
-        })
-      );
+      // Use the data directly as last_donation is now part of the profile
+      const donorsWithLastDonation = data || [];
 
       if (reset) {
         setDonors(donorsWithLastDonation);
@@ -249,10 +229,9 @@ export default function SearchScreen() {
       console.error('Error loading donors:', err);
       setError('Failed to load donors. Please try again.');
 
-      // Use mock data if there's an error (e.g., CORS issues in development)
+      // Set empty data on error
       if (reset) {
-        const mockDonors = getMockDonors();
-        setDonors(mockDonors);
+        setDonors([]);
         setHasMore(false);
       }
     } finally {
@@ -260,75 +239,6 @@ export default function SearchScreen() {
       setLoadingMore(false);
       setRefreshing(false);
     }
-  };
-
-  const getMockDonors = (): Donor[] => {
-    return [
-      {
-        id: '1',
-        name: 'Ahmed Rahman',
-        blood_group: 'B+',
-        country: 'BANGLADESH',
-        district: 'DHAKA',
-        police_station: 'DHANMONDI',
-        last_donation: new Date(
-          Date.now() - 90 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        is_available: true,
-        phone: '+880 1234567890',
-        email: 'ahmed@example.com',
-        avatar_url:
-          'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
-      },
-      {
-        id: '2',
-        name: 'Fatima Khatun',
-        blood_group: 'A+',
-        country: 'BANGLADESH',
-        district: 'DHAKA',
-        police_station: 'GULSHAN',
-        last_donation: new Date(
-          Date.now() - 60 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        is_available: true,
-        phone: '+880 1987654321',
-        email: 'fatima@example.com',
-        avatar_url:
-          'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
-      },
-      {
-        id: '3',
-        name: 'Mohammad Ali',
-        blood_group: 'O-',
-        country: 'BANGLADESH',
-        district: 'CHATTOGRAM',
-        police_station: 'KOTWALI',
-        last_donation: new Date(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        is_available: false,
-        phone: '+880 1555666777',
-        email: 'ali@example.com',
-        avatar_url:
-          'https://images.pexels.com/photos/91227/pexels-photo-91227.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
-      },
-      {
-        id: '4',
-        name: 'Sarah Ahmed',
-        blood_group: 'AB+',
-        country: 'UNITED STATES OF AMERICA',
-        state: 'California',
-        city: 'Los Angeles',
-        last_donation: new Date(
-          Date.now() - 120 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        is_available: true,
-        phone: '+1 555-123-4567',
-        email: 'sarah@example.com',
-        avatar_url:
-          'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=56&h=56&fit=crop',
-      },
-    ];
   };
 
   const applyFilters = () => {
