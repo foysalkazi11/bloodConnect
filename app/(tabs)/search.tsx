@@ -48,6 +48,7 @@ interface Donor {
   state?: string;
   city?: string;
   last_donation?: string;
+  is_engaged?: boolean;
   is_available: boolean;
   phone?: string;
   email: string;
@@ -501,6 +502,14 @@ export default function SearchScreen() {
               ]}
             />
           </View>
+          {item.is_engaged && (
+            <View style={styles.engagementRow}>
+              <LockKeyhole size={14} color="#DC2626" />
+              <Text style={styles.engagementText}>
+                Engaged for future donation
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -1157,6 +1166,17 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  engagementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  engagementText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#DC2626',
   },
   donorActions: {
     flexDirection: 'row',

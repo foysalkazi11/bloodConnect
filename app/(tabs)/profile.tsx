@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -45,6 +46,7 @@ import {
   CalendarDays,
   LockKeyhole,
   LockKeyholeOpen,
+  Calendar,
 } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
@@ -55,6 +57,7 @@ import { TextAvatar } from '@/components/TextAvatar';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { getProfileImageUrl } from '@/utils/avatarUtils';
 import { useImageUpload } from '@/hooks/useImageUpload';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface UserStats {
   totalDonations: number;
@@ -120,6 +123,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [lastDonation, setLastDonation] = useState('');
   const [isEngaged, setIsEngaged] = useState(false);
 
+  // Date picker state for last donation
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [lastDonationDate, setLastDonationDate] = useState<Date | null>(null);
+
   useEffect(() => {
     if (profile) {
       setName(profile.name || '');
@@ -130,6 +138,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         profile.last_donation ? profile.last_donation.split('T')[0] : ''
       );
       setIsEngaged(profile.is_engaged || false);
+
+      // Set last donation date for picker
+      if (profile.last_donation) {
+        setLastDonationDate(new Date(profile.last_donation));
+        setSelectedDate(new Date(profile.last_donation));
+      } else {
+        setLastDonationDate(null);
+        setSelectedDate(new Date());
+      }
     }
   }, [profile]);
 
@@ -145,13 +162,59 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
 
     if (profile?.user_type === 'donor') {
-      updates.last_donation = lastDonation
-        ? lastDonation + 'T00:00:00.000Z'
+      updates.last_donation = lastDonationDate
+        ? lastDonationDate.toISOString().split('T')[0] + 'T00:00:00.000Z'
         : null;
       updates.is_engaged = isEngaged;
     }
 
     onSave(updates);
+  };
+
+  // Date picker functions
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+
+    if (selectedDate) {
+      setLastDonationDate(selectedDate);
+      setSelectedDate(selectedDate);
+    }
+  };
+
+  // Web-specific date handler
+  const handleWebDateChange = (event: any) => {
+    const value = event.target.value; // Format: YYYY-MM-DD
+    if (value) {
+      const newDate = new Date(value);
+      setLastDonationDate(newDate);
+      setSelectedDate(newDate);
+    }
+  };
+
+  // Format date for web input (YYYY-MM-DD)
+  const formatDateForWeb = (date: Date | null) => {
+    if (!date) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const clearLastDonationDate = () => {
+    setLastDonationDate(null);
+  };
+
+  const formatLastDonationDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   const isFormValid = () => {
@@ -205,16 +268,95 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             <>
               <View style={styles.modalSection}>
                 <RNText style={styles.modalLabel}>Last Donation Date</RNText>
-                <View style={styles.dateInputContainer}>
-                  <CalendarDays size={20} color="#6B7280" />
-                  <TextInput
-                    style={styles.dateInput}
-                    value={lastDonation}
-                    onChangeText={setLastDonation}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#9CA3AF"
-                  />
-                </View>
+
+                {Platform.OS === 'web' ? (
+                  // Web: HTML5 date input
+                  <View style={styles.webDateContainer}>
+                    <input
+                      type="date"
+                      value={formatDateForWeb(lastDonationDate)}
+                      onChange={handleWebDateChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: '1px solid #E5E7EB',
+                        backgroundColor: '#F9FAFB',
+                        fontSize: '16px',
+                        fontFamily: 'Inter-Regular',
+                        color: '#111827',
+                        outline: 'none',
+                      }}
+                    />
+                    {lastDonationDate && (
+                      <TouchableOpacity
+                        style={styles.clearDateButton}
+                        onPress={clearLastDonationDate}
+                      >
+                        <RNText style={styles.clearDateText}>Clear</RNText>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ) : (
+                  // Mobile: Native date/time pickers
+                  <>
+                    {lastDonationDate ? (
+                      <View style={styles.dateDisplayContainer}>
+                        <RNText style={styles.dateDisplayText}>
+                          {formatLastDonationDate(lastDonationDate)}
+                        </RNText>
+                        <TouchableOpacity
+                          style={styles.clearDateButton}
+                          onPress={clearLastDonationDate}
+                        >
+                          <RNText style={styles.clearDateText}>Clear</RNText>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.datePickerButton}
+                        onPress={() => setShowDatePicker(true)}
+                      >
+                        <Calendar size={20} color="#6B7280" />
+                        <RNText style={styles.datePickerButtonText}>
+                          Select Last Donation Date
+                        </RNText>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Update existing date */}
+                    {lastDonationDate && (
+                      <TouchableOpacity
+                        style={[
+                          styles.datePickerButton,
+                          styles.updateDateButton,
+                        ]}
+                        onPress={() => setShowDatePicker(true)}
+                      >
+                        <Calendar size={20} color="#DC2626" />
+                        <RNText
+                          style={[
+                            styles.datePickerButtonText,
+                            { color: '#DC2626' },
+                          ]}
+                        >
+                          Change Date
+                        </RNText>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Date Picker */}
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={handleDateChange}
+                      />
+                    )}
+                  </>
+                )}
+
                 <RNText style={styles.fieldHint}>
                   When did you last donate blood? (Optional)
                 </RNText>
@@ -3117,6 +3259,57 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#111827',
+  },
+  webDateContainer: {
+    position: 'relative',
+  },
+  dateDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dateDisplayText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#111827',
+    flex: 1,
+  },
+  clearDateButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#EF4444',
+    borderRadius: 6,
+  },
+  clearDateText: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    color: '#FFFFFF',
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  datePickerButtonText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  updateDateButton: {
+    marginTop: 8,
+    borderColor: '#DC2626',
   },
   fieldHint: {
     fontFamily: 'Inter-Regular',
