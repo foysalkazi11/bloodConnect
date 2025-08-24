@@ -29,6 +29,7 @@ import {
 } from 'lucide-react-native';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotification } from '@/components/NotificationSystem';
+import { notificationPreferencesService } from '@/services/notificationPreferencesService';
 
 interface NotificationSettingsProps {
   visible?: boolean;
@@ -89,31 +90,45 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
       try {
         setLoading(true);
-        // Progressive permission defaults - start conservative, let users opt-in
-        const mockPreferences: NotificationPreferences = {
-          id: 'pref_' + user.id,
-          user_id: user.id,
-          push_enabled: false, // Start with push disabled
-          in_app_enabled: true, // In-app notifications are less intrusive
-          sound_enabled: false, // Start quiet
-          vibration_enabled: false, // Start quiet
-          quiet_hours_enabled: false,
-          quiet_hours_start: '22:00',
-          quiet_hours_end: '07:00',
-          emergency_notifications: false, // Let users opt-in when they understand the value
-          direct_messages: false, // Enable when user starts messaging
-          club_messages: false, // Enable when user joins a club
-          club_announcements: false, // Enable when user joins a club
-          club_events: false, // Enable when user joins a club
-          social_interactions: false, // Opt-in only for less important notifications
-          system_updates: true, // Keep essential system updates on
-          emergency_only_mode: false,
-          batch_notifications: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
 
-        setPreferences(mockPreferences);
+        // Load real preferences from the service
+        const realPreferences =
+          await notificationPreferencesService.getUserPreferences(user.id);
+
+        if (realPreferences) {
+          setPreferences(realPreferences);
+        } else {
+          // If no preferences exist, create default ones
+          const defaultPreferences: NotificationPreferences = {
+            id: 'pref_' + user.id,
+            user_id: user.id,
+            push_enabled: false, // Start with push disabled
+            in_app_enabled: true, // In-app notifications are less intrusive
+            sound_enabled: false, // Start quiet
+            vibration_enabled: false, // Start quiet
+            quiet_hours_enabled: false,
+            quiet_hours_start: '22:00',
+            quiet_hours_end: '07:00',
+            emergency_notifications: false, // Let users opt-in when they understand the value
+            direct_messages: false, // Enable when user starts messaging
+            club_messages: false, // Enable when user joins a club
+            club_announcements: false, // Enable when user joins a club
+            club_events: false, // Enable when user joins a club
+            social_interactions: false, // Opt-in only for less important notifications
+            system_updates: true, // Keep essential system updates on
+            emergency_only_mode: false,
+            batch_notifications: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
+          // Save default preferences to database
+          await notificationPreferencesService.updateUserPreferences(
+            user.id,
+            defaultPreferences
+          );
+          setPreferences(defaultPreferences);
+        }
       } catch (error) {
         console.error('Error loading notification preferences:', error);
         showNotification({
@@ -141,9 +156,14 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       // Update local state immediately for responsive UI
       const updatedPreferences = { ...preferences, ...updates };
       setPreferences(updatedPreferences);
-
       // In real app, this would update Supabase
       console.log('Updating preferences:', updates);
+
+      // Update preferences in the database
+      await notificationPreferencesService.updateUserPreferences(
+        user.id,
+        updates
+      );
 
       showNotification({
         type: 'success',
@@ -153,6 +173,10 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       });
     } catch (error) {
       console.error('Error updating notification preferences:', error);
+
+      // Revert local state on error
+      setPreferences(preferences);
+
       showNotification({
         type: 'error',
         title: 'Error',

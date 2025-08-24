@@ -96,15 +96,13 @@ export class NotificationPreferencesService {
     updates: NotificationPreferencesUpdate
   ): Promise<NotificationPreferences> {
     try {
-      const { data, error } = await supabase
-        .from('user_notification_preferences')
-        .upsert({
-          user_id: userId,
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc(
+        'upsert_user_notification_preferences',
+        {
+          p_user_id: userId,
+          p_updates: updates,
+        }
+      );
 
       if (error) {
         console.error('Error updating user preferences:', error);
