@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -35,19 +36,13 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export const ContextualPermissionRequest: React.FC<
   ContextualPermissionRequestProps
 > = ({ visible, request, onAccept, onDecline, onSkip, onCustomize }) => {
-  const [slideAnim] = useState(new Animated.Value(screenHeight));
+  const [slideAnim] = useState(new Animated.Value(0));
   const [opacityAnim] = useState(new Animated.Value(0));
 
   React.useEffect(() => {
     if (visible && request) {
-      // Slide up animation
+      // Fade in animation
       Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 50,
-          friction: 8,
-        }),
         Animated.timing(opacityAnim, {
           toValue: 1,
           duration: 300,
@@ -55,13 +50,8 @@ export const ContextualPermissionRequest: React.FC<
         }),
       ]).start();
     } else {
-      // Slide down animation
+      // Fade out animation
       Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }),
         Animated.timing(opacityAnim, {
           toValue: 0,
           duration: 250,
@@ -152,6 +142,7 @@ export const ContextualPermissionRequest: React.FC<
       animationType="none"
       statusBarTranslucent
       onRequestClose={request.canSkip ? onSkip : undefined}
+      presentationStyle="overFullScreen"
     >
       <Animated.View
         style={[
@@ -165,7 +156,7 @@ export const ContextualPermissionRequest: React.FC<
           style={[
             styles.container,
             {
-              transform: [{ translateY: slideAnim }],
+              opacity: opacityAnim,
             },
           ]}
         >
@@ -180,47 +171,53 @@ export const ContextualPermissionRequest: React.FC<
               )}
             </View>
 
-            {/* Icon */}
-            <View style={styles.iconContainer}>{getIcon()}</View>
+            <ScrollView
+              style={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContentContainer}
+            >
+              {/* Icon */}
+              <View style={styles.iconContainer}>{getIcon()}</View>
 
-            {/* Title and Message */}
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>{request.title}</Text>
-              <Text style={styles.message}>{request.message}</Text>
-            </View>
-
-            {/* Categories */}
-            {getCategoryBadges()}
-
-            {/* Benefits */}
-            <View style={styles.benefitsContainer}>
-              <View style={styles.benefitItem}>
-                <View style={styles.benefitIcon}>
-                  <Check size={16} color="#10B981" />
-                </View>
-                <Text style={styles.benefitText}>
-                  Stay connected when it matters most
-                </Text>
+              {/* Title and Message */}
+              <View style={styles.textContainer}>
+                <Text style={styles.title}>{request.title}</Text>
+                <Text style={styles.message}>{request.message}</Text>
               </View>
-              <View style={styles.benefitItem}>
-                <View style={styles.benefitIcon}>
-                  <Check size={16} color="#10B981" />
-                </View>
-                <Text style={styles.benefitText}>
-                  You can change these settings anytime
-                </Text>
-              </View>
-              <View style={styles.benefitItem}>
-                <View style={styles.benefitIcon}>
-                  <Check size={16} color="#10B981" />
-                </View>
-                <Text style={styles.benefitText}>
-                  Only important notifications, no spam
-                </Text>
-              </View>
-            </View>
 
-            {/* Action Buttons */}
+              {/* Categories */}
+              {getCategoryBadges()}
+
+              {/* Benefits */}
+              <View style={styles.benefitsContainer}>
+                <View style={styles.benefitItem}>
+                  <View style={styles.benefitIcon}>
+                    <Check size={16} color="#10B981" />
+                  </View>
+                  <Text style={styles.benefitText}>
+                    Stay connected when it matters most
+                  </Text>
+                </View>
+                <View style={styles.benefitItem}>
+                  <View style={styles.benefitIcon}>
+                    <Check size={16} color="#10B981" />
+                  </View>
+                  <Text style={styles.benefitText}>
+                    You can change these settings anytime
+                  </Text>
+                </View>
+                <View style={styles.benefitItem}>
+                  <View style={styles.benefitIcon}>
+                    <Check size={16} color="#10B981" />
+                  </View>
+                  <Text style={styles.benefitText}>
+                    Only important notifications, no spam
+                  </Text>
+                </View>
+              </View>
+            </ScrollView>
+
+            {/* Action Buttons - Fixed at bottom */}
             <View style={styles.actionsContainer}>
               <TouchableOpacity
                 style={styles.primaryButton}
@@ -272,20 +269,27 @@ export const ContextualPermissionRequest: React.FC<
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: screenHeight * 0.85,
-    minHeight: screenHeight * 0.6,
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingBottom: 24,
+    paddingTop: 16,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    paddingBottom: 16,
   },
   header: {
     flexDirection: 'row',
