@@ -58,6 +58,7 @@ import { NotificationSettings } from '@/components/NotificationSettings';
 import { getProfileImageUrl } from '@/utils/avatarUtils';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Logo } from '@/components/ui';
 
 interface UserStats {
   totalDonations: number;
@@ -1374,8 +1375,9 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.signInContainer}>
-          <Heart size={64} color="#DC2626" />
-          <RNText style={styles.signInTitle}>Join BloodConnect</RNText>
+          {/* <Heart size={64} color="#DC2626" /> */}
+          <Logo size={100} />
+          <RNText style={styles.signInTitle}>Join BloodLink</RNText>
           <RNText style={styles.signInSubtitle}>
             Create an account to donate blood, join clubs, and save lives
           </RNText>
@@ -1747,7 +1749,7 @@ export default function ProfileScreen() {
 
           {/* App Info */}
           <View style={styles.appInfoSection}>
-            <RNText style={styles.appInfoText}>BloodConnect v1.0.0</RNText>
+            <RNText style={styles.appInfoText}>BloodLink v1.0.0</RNText>
             <RNText style={styles.appInfoSubtext}>
               Connecting hearts, saving lives
             </RNText>
@@ -2266,7 +2268,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.appInfoSection}>
-          <RNText style={styles.appInfoText}>BloodConnect v1.0.0</RNText>
+          <RNText style={styles.appInfoText}>BloodLink v1.0.0</RNText>
           <RNText style={styles.appInfoSubtext}>
             Connecting hearts, saving lives
           </RNText>

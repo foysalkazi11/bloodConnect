@@ -1,5 +1,5 @@
 {
-  "name": "blood-donation-app",
+  "name": "bloodlink-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "private": true,
@@ -19,7 +19,15 @@
     "android:publish": "eas submit --platform android --profile production",
     "ios:publish": "eas submit --platform ios --profile production",
     "android:build:local": "eas build -p android --profile development --local",
-    "ios:build:local": "eas build -p ios --profile development --local"
+    "ios:build:local": "eas build -p ios --profile development --local",
+    "build:android:production": "eas build --platform android --profile production",
+    "build:ios:production": "eas build --platform ios --profile production",
+    "deploy:android": "npm run build:android:production && npm run android:publish",
+    "deploy:ios": "npm run build:ios:production && npm run ios:publish",
+    "deploy:all": "npm run deploy:android && npm run deploy:ios",
+    "version:bump": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.2.3",

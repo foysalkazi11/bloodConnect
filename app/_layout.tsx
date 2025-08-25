@@ -61,7 +61,7 @@ export default function RootLayout() {
 
       // Handle OAuth callback
       if (
-        url.includes('bloodconnect://auth/callback') ||
+        url.includes('bloodlink://auth/callback') ||
         url.includes('/auth/callback')
       ) {
         // On web, let Supabase handle session from URL; avoid router redirects that

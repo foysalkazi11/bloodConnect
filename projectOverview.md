@@ -1,6 +1,6 @@
-# BloodConnect - Project Overview
+# BloodLink - Project Overview
 
-## 🩸 About BloodConnect
+## 🩸 About BloodLink
 
 A React Native Expo app connecting blood donors with donation clubs to facilitate life-saving blood donations. Serves two primary user types: individual donors and blood donation clubs.
 

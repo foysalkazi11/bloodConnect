@@ -1,25 +1,26 @@
 {
   "expo": {
-    "name": "Blood Connect",
-    "slug": "blood-connect",
+    "name": "BloodLink",
+    "slug": "blood-link",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "scheme": "bloodconnect",
+    "scheme": "bloodlink",
+    "description": "Join the BloodLink community! Connect with blood donors, manage donation clubs, organize events, and inspire others to save lives through social activities. Build a network of lifesavers in your community.",
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#DC2626"
     },
     "android": {
-      "package": "com.foysalkazi11.bloodconnect",
+      "package": "com.foysalkazi11.bloodlink",
       "versionCode": 1,
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#DC2626"
       },
       "intentFilters": [
         {
@@ -31,7 +32,7 @@
               "host": "auth.expo.io"
             },
             {
-              "scheme": "bloodconnect"
+              "scheme": "bloodlink"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
@@ -39,25 +40,33 @@
       ],
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foysalkazi11.bloodconnect",
+      "bundleIdentifier": "com.foysalkazi11.bloodlink",
+      "buildNumber": "1",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLName": "bloodconnect",
-            "CFBundleURLSchemes": ["bloodconnect"]
-          },
-          {
-            "CFBundleURLName": "bloodconnect",
-            "CFBundleURLSchemes": ["bloodconnect"]
+            "CFBundleURLName": "bloodlink",
+            "CFBundleURLSchemes": ["bloodlink"]
           }
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "BloodLink needs camera access to let you take photos for your profile and share donation stories with your community.",
+        "NSPhotoLibraryUsageDescription": "BloodLink needs photo library access to let you select images for your profile and share inspiring donation stories with your community.",
+        "NSLocationWhenInUseUsageDescription": "BloodLink uses your location to help you find nearby blood donors, donation clubs, and community events.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "BloodLink uses your location to help you find nearby blood donors, donation clubs, and community events.",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "web": {
@@ -78,7 +87,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#DC2626"
         }
       ],
@@ -159,6 +168,23 @@
         "projectId": "f51e542e-612c-4661-8be7-e918192b19b6"
       }
     },
-    "owner": "foysalkazi"
+    "owner": "foysalkazi",
+    "privacy": "public",
+    "platforms": ["ios", "android"],
+    "categories": ["social-networking", "lifestyle", "healthcare-fitness"],
+    "keywords": [
+      "blood donation",
+      "donor",
+      "community",
+      "social network",
+      "club management",
+      "events",
+      "charity",
+      "volunteer",
+      "lifesaver",
+      "emergency",
+      "healthcare",
+      "medical"
+    ]
   }
 }

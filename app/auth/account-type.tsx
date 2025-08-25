@@ -11,6 +11,7 @@ import { Heart, ArrowLeft, Users } from 'lucide-react-native';
 import { useI18n } from '@/providers/I18nProvider';
 import { router } from 'expo-router';
 import { useNotification } from '@/components/NotificationSystem';
+import { Logo } from '@/components/ui';
 
 export default function AccountTypeScreen() {
   const { t } = useI18n();
@@ -56,8 +57,9 @@ export default function AccountTypeScreen() {
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Heart size={32} color="#DC2626" />
-            <Text style={styles.headerTitle}>Join BloodConnect</Text>
+            {/* <Heart size={32} color="#DC2626" /> */}
+            <Logo size={64} />
+            <Text style={styles.headerTitle}>Join BloodLink</Text>
           </View>
           <View style={styles.stepIndicator}>
             <Text style={styles.stepText}>1/3</Text>

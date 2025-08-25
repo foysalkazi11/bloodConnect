@@ -18,6 +18,7 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Logo } from '@/components/ui';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const USER_TYPES = [
@@ -380,7 +381,7 @@ export default function CompleteProfileScreen() {
       showNotification({
         type: 'success',
         title: 'Profile Completed!',
-        message: `Welcome to BloodConnect! Your ${accountType} profile has been set up successfully.`,
+        message: `Welcome to BloodLink! Your ${accountType} profile has been set up successfully.`,
         duration: 4000,
       });
 
@@ -477,7 +478,8 @@ export default function CompleteProfileScreen() {
           >
             <Text style={styles.backButtonText}>Sign Out</Text>
           </TouchableOpacity>
-          <Heart size={48} color="#DC2626" />
+          {/* <Heart size={48} color="#DC2626" /> */}
+          <Logo size={64} />
           <Text style={styles.headerTitle}>Complete Your Profile</Text>
           <Text style={styles.headerSubtitle}>
             Help us set up your {accountType} profile

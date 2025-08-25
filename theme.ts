@@ -1,10 +1,10 @@
 /**
- * BloodConnect Theme Configuration
+ * BloodLink Theme Configuration
  * Centralized theme system for consistent design across the application
  * Optimized for medical/healthcare context with professional styling
  */
 
-// Color palette optimized for BloodConnect (blood donation app)
+// Color palette optimized for BloodLink (blood donation app)
 export const colors = {
   // Primary colors - Red shades (blood theme)
   primary: {
@@ -254,8 +254,8 @@ export const getColor = (colorPath: string): string => {
   return typeof color === 'string' ? color : '';
 };
 
-// BloodConnect specific theme shortcuts
-export const bloodConnectTheme = {
+// BloodLink specific theme shortcuts
+export const bloodLinkTheme = {
   // Primary brand colors
   brand: {
     primary: colors.primary[600], // #DC2626

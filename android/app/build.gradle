@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.foysalkazi11.bloodconnect'
+    namespace 'com.foysalkazi11.bloodlink'
     defaultConfig {
-        applicationId 'com.foysalkazi11.bloodconnect'
+        applicationId 'com.foysalkazi11.bloodlink'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

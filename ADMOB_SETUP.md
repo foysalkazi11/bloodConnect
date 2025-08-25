@@ -1,4 +1,4 @@
-# AdMob Setup Guide for BloodConnect
+# AdMob Setup Guide for BloodLink
 
 ## 🚨 Current Status: Development Mode
 

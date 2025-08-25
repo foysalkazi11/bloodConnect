@@ -14,6 +14,7 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Logo } from '@/components/ui';
 
 export default function SignInScreen() {
   const { t } = useI18n();
@@ -269,7 +270,8 @@ export default function SignInScreen() {
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Heart size={48} color="#DC2626" />
+            {/* <Heart size={48} color="#DC2626" /> */}
+            <Logo size={64} />
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>
               Sign in to continue helping save lives
@@ -314,6 +316,26 @@ export default function SignInScreen() {
               {t('auth.forgotPassword')}
             </Text>
           </TouchableOpacity>
+          {/* Social Sign In */}
+          <View style={styles.socialSection}>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <View style={styles.socialButtons}>
+              <TouchableOpacity
+                style={styles.socialButton}
+                onPress={handleGoogleSignIn}
+                disabled={loading}
+              >
+                <Text style={styles.socialButtonText}>
+                  {t('auth.signInWithGoogle')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           <TouchableOpacity
             style={[
@@ -329,42 +351,21 @@ export default function SignInScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Email Verification Notice */}
-        <View style={styles.verificationNotice}>
-          <Mail size={20} color="#3B82F6" />
-          <Text style={styles.verificationText}>
-            New to BloodConnect? You&apos;ll need to verify your email after
-            signing up.
-          </Text>
-        </View>
-
-        {/* Social Sign In */}
-        <View style={styles.socialSection}>
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <View style={styles.socialButtons}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={handleGoogleSignIn}
-              disabled={loading}
-            >
-              <Text style={styles.socialButtonText}>
-                {t('auth.signInWithGoogle')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Sign Up Link */}
         <View style={styles.signUpSection}>
           <Text style={styles.signUpText}>{t('auth.dontHaveAccount')}</Text>
           <TouchableOpacity onPress={handleSignUp}>
             <Text style={styles.signUpLink}>{t('auth.signUp')}</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Email Verification Notice */}
+        <View style={styles.verificationNotice}>
+          <Mail size={20} color="#3B82F6" />
+          <Text style={styles.verificationText}>
+            New to BloodLink? You&apos;ll need to verify your email after
+            signing up.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 24,
+    marginTop: 24,
     gap: 12,
   },
   verificationText: {

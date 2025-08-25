@@ -1,8 +1,8 @@
-# AdMob Integration Guide for BloodConnect
+# AdMob Integration Guide for BloodLink
 
 ## Overview
 
-This guide explains how Google Mobile Ads are integrated into the BloodConnect app following the official [React Native Google Mobile Ads documentation](https://docs.page/invertase/react-native-google-mobile-ads).
+This guide explains how Google Mobile Ads are integrated into the BloodLink app following the official [React Native Google Mobile Ads documentation](https://docs.page/invertase/react-native-google-mobile-ads).
 
 ## Configuration
 
@@ -95,7 +95,7 @@ const MyComponent = () => {
 };
 ```
 
-## Recommended Ad Placements for BloodConnect
+## Recommended Ad Placements for BloodLink
 
 ### 1. **Banner Ads**
 

@@ -18,6 +18,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { authService } from '@/services/authService';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Logo } from '@/components/ui';
 // QueryParams is not needed on native here; URL parsing is handled in _layout
 
 export default function AuthCallbackScreen() {
@@ -256,7 +257,8 @@ export default function AuthCallbackScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Heart size={48} color="#DC2626" style={styles.logo} />
+        {/* <Heart size={48} color="#DC2626" style={styles.logo} /> */}
+        <Logo size={64} containerStyle={styles.logo} />
 
         <View style={styles.statusContainer}>
           {getIcon()}

@@ -24,11 +24,25 @@ export interface SignInData {
   password: string;
 }
 
+export const getAuthCallbackUrl = (): string => {
+  if (Platform.OS === 'web') {
+    return `${window.location.origin}/auth/callback`;
+  }
+  return 'bloodlink://auth/callback';
+};
+
+export const getAuthRedirectUrl = (): string => {
+  if (Platform.OS === 'web') {
+    return `${window.location.origin}/auth/callback`;
+  }
+  return 'bloodlink://auth/callback';
+};
+
 class AuthService {
   private getRedirectUrl() {
     // Native: always deep link into the app using our custom scheme
     if (Platform.OS !== 'web') {
-      return 'bloodconnect://auth/callback';
+      return 'bloodlink://auth/callback';
     }
 
     // Web: use current origin
@@ -39,7 +53,7 @@ class AuthService {
     }
 
     // Fallback (should rarely be used)
-    return 'bloodconnect://auth/callback';
+    return 'bloodlink://auth/callback';
   }
 
   private parseRateLimitError(error: any): {

@@ -21,6 +21,7 @@ import { ValidatedInput } from '@/components/ValidatedInput';
 import { useFormValidation, CommonValidationRules } from '@/utils/validation';
 import { useNotification } from '@/components/NotificationSystem';
 import { useAuth } from '@/providers/AuthProvider';
+import { Logo } from '@/components/ui';
 
 export default function SignUpScreen() {
   const { t } = useI18n();
@@ -172,7 +173,7 @@ export default function SignUpScreen() {
           {
             type: 'success',
             title: 'Account Created!',
-            message: 'Welcome to BloodConnect! Please complete your profile.',
+            message: 'Welcome to BloodLink! Please complete your profile.',
             duration: 4000,
           },
           true
@@ -393,7 +394,7 @@ export default function SignUpScreen() {
               <AlertCircle size={16} color="#DC2626" />
               <Text style={styles.verificationNoteText}>
                 You must verify your email before you can complete your profile
-                and start using BloodConnect.
+                and start using BloodLink.
               </Text>
             </View>
           </View>
@@ -417,8 +418,9 @@ export default function SignUpScreen() {
             <ArrowLeft size={24} color="#111827" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Heart size={32} color="#DC2626" />
-            <Text style={styles.headerTitle}>Join BloodConnect</Text>
+            {/* <Heart size={32} color="#DC2626" /> */}
+            <Logo size={64} />
+            <Text style={styles.headerTitle}>Join BloodLink</Text>
           </View>
           <View style={styles.stepIndicator}>
             <Text style={styles.stepText}>2/3</Text>

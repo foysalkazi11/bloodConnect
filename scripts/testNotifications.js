@@ -375,7 +375,7 @@ function printSummary(allResults) {
 }
 
 function main() {
-  printHeader('BloodConnect Notification System Test Suite');
+  printHeader('BloodLink Notification System Test Suite');
 
   console.log('🚀 Starting comprehensive notification system tests...');
   console.log('⏱️  This may take a few moments...\n');

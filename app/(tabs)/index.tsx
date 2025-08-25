@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Heart, Search, Users, Award, Phone } from 'lucide-react-native';
+import { Logo } from '@/components/ui';
 import { useI18n } from '@/providers/I18nProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import { router } from 'expo-router';
@@ -286,7 +287,7 @@ export default function HomeScreen() {
               {getWelcomeMessage()}
             </Text>
             <Text className="text-neutral-900 font-inter-bold text-2xl mt-1">
-              BloodConnect
+              BloodLink
             </Text>
           </View>
 
@@ -323,7 +324,7 @@ export default function HomeScreen() {
           className="mx-5 rounded-2xl mt-5"
         >
           <View className="p-6 items-center">
-            <Heart size={48} color={colors.primary[600]} className="mb-4" />
+            <Logo size={64} />
             <Text className="text-secondary-900 font-inter-bold text-2xl text-center mb-2">
               {t('home.title')}
             </Text>

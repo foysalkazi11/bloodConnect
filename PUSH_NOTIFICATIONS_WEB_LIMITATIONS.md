@@ -2,7 +2,7 @@
 
 ## 🚫 Why Push Notifications Don't Work on Web
 
-Your BloodConnect app is running on the **web platform**, but Expo's push notification system is designed exclusively for **native mobile devices** (iOS and Android). Here's why:
+Your BloodLink app is running on the **web platform**, but Expo's push notification system is designed exclusively for **native mobile devices** (iOS and Android). Here's why:
 
 ### Technical Limitations
 

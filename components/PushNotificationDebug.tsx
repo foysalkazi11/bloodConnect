@@ -134,7 +134,7 @@ export default function PushNotificationDebug() {
         await pushNotificationService.sendNotificationWithDeliveryDecision(
           user.id,
           'emergency_blood_request', // Use emergency type for high priority
-          'BloodConnect Test 🩸',
+          'BloodLink Test 🩸',
           'This is a test push notification! If you can see this, push notifications are working correctly.',
           {
             type: 'test',

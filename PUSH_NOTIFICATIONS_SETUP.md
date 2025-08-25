@@ -2,7 +2,7 @@
 
 ## 🚀 Quick Setup
 
-Your BloodConnect app is now configured for push notifications! Follow these steps to enable them:
+Your BloodLink app is now configured for push notifications! Follow these steps to enable them:
 
 ### 1. Configure Environment Variables
 
